@@ -6,15 +6,46 @@ local BASE_URL =
 	"https://raw.githubusercontent.com/reepyissomeone/Fairwell-Heaven/main/"
 
 --==================================================
+-- FUNCTION CHECK
+--==================================================
+
+local function RequireFunction(name, value)
+	if type(value) ~= "function" then
+		error("[Fairwell Heaven] " .. name .. " is not available.")
+	end
+
+	return value
+end
+
+--==================================================
+-- HTTP
+--==================================================
+
+local HttpGet = RequireFunction(
+	"game:HttpGet",
+	game.HttpGet
+)
+
+--==================================================
+-- SCRIPT LOADER
+--==================================================
+
+local Compile = loadstring or load
+
+if type(Compile) ~= "function" then
+	error("[Fairwell Heaven] No Lua compiler is available.")
+end
+
+--==================================================
 -- DOWNLOAD MODULE
 --==================================================
 
 local function LoadModule(path)
 
-	local url = BASE_URL .. path
+	print("[Fairwell Heaven] Downloading:", path)
 
 	local success, source = pcall(function()
-		return game:HttpGet(url)
+		return HttpGet(game, BASE_URL .. path)
 	end)
 
 	if not success then
@@ -24,40 +55,39 @@ local function LoadModule(path)
 	end
 
 	if type(source) ~= "string" or source == "" then
-		warn("[Fairwell Heaven] Empty response:", path)
+		warn("[Fairwell Heaven] Empty module:", path)
 		return nil
 	end
 
-	local success2, result = pcall(function()
-
-		local chunk = loadstring(source)
-
-		if not chunk then
-			error("loadstring failed")
-		end
-
-		return chunk()
-
+	local success2, chunk = pcall(function()
+		return Compile(source)
 	end)
 
-	if not success2 then
-		warn("[Fairwell Heaven] Load failed:", path)
+	if not success2 or type(chunk) ~= "function" then
+		warn("[Fairwell Heaven] Compile failed:", path)
+		warn(chunk)
+		return nil
+	end
+
+	local success3, result = pcall(chunk)
+
+	if not success3 then
+		warn("[Fairwell Heaven] Execution failed:", path)
 		warn(result)
 		return nil
 	end
 
 	return result
-
 end
 
 --==================================================
--- LOAD CORE
+-- CORE
 --==================================================
 
 local Hub = LoadModule("core/Hub.lua")
 
-if not Hub then
-	error("[Fairwell Heaven] Core failed to load.")
+if type(Hub) ~= "table" then
+	error("[Fairwell Heaven] Core did not return a Hub.")
 end
 
 print(
@@ -68,13 +98,13 @@ print(
 )
 
 --==================================================
--- LOAD MANIFEST
+-- MANIFEST
 --==================================================
 
 local Manifest = LoadModule("core/Manifest.lua")
 
-if not Manifest then
-	error("[Fairwell Heaven] Manifest failed to load.")
+if type(Manifest) ~= "table" then
+	error("[Fairwell Heaven] Manifest did not return a table.")
 end
 
 print(
@@ -84,49 +114,53 @@ print(
 )
 
 --==================================================
--- LOAD FEATURES
+-- FEATURES
 --==================================================
 
 for _, path in ipairs(Manifest) do
 
 	local Feature = LoadModule(path)
 
-	if Feature then
+	if type(Feature) ~= "table" then
 
-		local Name = Feature.Name or path
+		warn(
+			"[Fairwell Heaven] Invalid feature:",
+			path
+		)
 
-		local Registered, ErrorMessage =
-			Hub:RegisterFeature(Name, Feature)
+		continue
+	end
 
-		if Registered then
+	local Name = Feature.Name or path
 
-			print(
-				"[Fairwell Heaven] Loaded feature:",
-				Name
-			)
+	if type(Hub.RegisterFeature) ~= "function" then
+		error("[Fairwell Heaven] Hub:RegisterFeature is missing.")
+	end
 
-			-- Start feature
-			Hub:Enable(Name)
+	local Registered, ErrorMessage =
+		Hub:RegisterFeature(Name, Feature)
 
-		else
+	if Registered then
 
-			warn(
-				"[Fairwell Heaven] Registration failed:",
-				Name,
-				ErrorMessage
-			)
+		print(
+			"[Fairwell Heaven] Loaded feature:",
+			Name
+		)
 
+		if type(Hub.Enable) ~= "function" then
+			error("[Fairwell Heaven] Hub:Enable is missing.")
 		end
+
+		Hub:Enable(Name)
 
 	else
 
 		warn(
-			"[Fairwell Heaven] Could not load:",
-			path
+			"[Fairwell Heaven] Registration failed:",
+			Name,
+			ErrorMessage
 		)
-
 	end
-
 end
 
 --==================================================
@@ -136,37 +170,40 @@ end
 print("[Fairwell Heaven] All features loaded.")
 
 --==================================================
--- FINISH LOADING SCREEN
+-- LOADING SCREEN
 --==================================================
 
-local LoadingScreen =
-	Hub:GetFeature("Loading Screen")
+if type(Hub.GetFeature) == "function" then
 
-if LoadingScreen then
+	local LoadingScreen =
+		Hub:GetFeature("Loading Screen")
 
-	if LoadingScreen.Finish then
+	if LoadingScreen then
 
-		LoadingScreen:Finish(Hub)
+		if type(LoadingScreen.Finish) == "function" then
+
+			LoadingScreen:Finish(Hub)
+
+		else
+
+			warn(
+				"[Fairwell Heaven] Loading Screen has no Finish function."
+			)
+		end
 
 	else
 
 		warn(
-			"[Fairwell Heaven] Loading Screen has no Finish function."
+			"[Fairwell Heaven] Loading Screen not found."
 		)
-
 	end
 
 else
 
 	warn(
-		"[Fairwell Heaven] Loading Screen feature not found."
+		"[Fairwell Heaven] Hub:GetFeature is missing."
 	)
-
 end
-
---==================================================
--- DONE
---==================================================
 
 print("[Fairwell Heaven] Startup complete.")
 
