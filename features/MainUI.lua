@@ -1,12 +1,13 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 3.2
+--// Version 3.3
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local ContentProvider = game:GetService("ContentProvider")
 
 local MainUI = {
 	Name = "Main UI",
@@ -1092,29 +1093,35 @@ function MainUI.Start(self, Hub)
 	end
 
 	local function LoadFairwellThumbnail(UserId)
-		local Success, Image, IsReady = pcall(function()
-			return Players:GetUserThumbnailAsync(
-				UserId,
-				Enum.ThumbnailType.AvatarBust,
-				Enum.ThumbnailSize.Size420x420
-			)
+		local ThumbnailUrl = "rbxthumb://type=AvatarBust&id=" .. tostring(UserId) .. "&w=420&h=420"
+		FairwellThumbnail.Image = ThumbnailUrl
+		FairwellThumbnail.Visible = true
+
+		task.spawn(function()
+			local ok, err = pcall(function()
+				ContentProvider:PreloadAsync({FairwellThumbnail})
+			end)
+			if ok then
+				Hub:Log("Fairwell avatar thumbnail is ready.", "INFO")
+			else
+				Hub:Log("Avatar thumbnail preload failed: " .. tostring(err), "WARN")
+			end
 		end)
 
-		if Success and type(Image) == "string" then
-			FairwellThumbnail.Image = Image
-			FairwellThumbnail.Visible = true
-			Hub:Log(
-				"Loaded official fairwelladmi avatar thumbnail" ..
-				(IsReady and " (ready)." or " (waiting)."),
-				"INFO"
-			)
-			return true
-		end
-
-		Hub:Log("Avatar thumbnail failed: " .. tostring(Image), "WARN")
-		return false
+		task.spawn(function()
+			local Success, Image, IsReady = pcall(function()
+				return Players:GetUserThumbnailAsync(UserId, Enum.ThumbnailType.AvatarBust, Enum.ThumbnailSize.Size420x420)
+			end)
+			if Success and type(Image) == "string" and Image ~= "" then
+				FairwellThumbnail.Image = Image
+				FairwellThumbnail.Visible = true
+				Hub:Log("Loaded official fairwelladmi avatar thumbnail" .. (IsReady and " (ready)." or " (waiting)."), "INFO")
+			else
+				Hub:Log("Using direct Roblox thumbnail URL fallback.", "WARN")
+			end
+		end)
+		return true
 	end
-
 	local function LoadFairwellAvatar()
 		local UserIdSuccess, UserId = pcall(function()
 			return Players:GetUserIdFromNameAsync(FAIRWELL_USERNAME)
@@ -1204,7 +1211,8 @@ function MainUI.Start(self, Hub)
 			FairwellThumbnail.Visible = false
 			Hub:Log("Fairwell 3D avatar is now active.", "SUCCESS")
 		else
-			Hub:Log("Using Fairwell's Roblox avatar thumbnail fallback.", "WARN")
+			FairwellThumbnail.Visible = true
+			Hub:Log("3D avatar unavailable; keeping Roblox avatar thumbnail visible.", "WARN")
 		end
 	end)
 
