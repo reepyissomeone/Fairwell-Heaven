@@ -984,98 +984,109 @@ function MainUI.Start(self, Hub)
 	WallStroke.Transparency = 0.35
 	WallStroke.Parent = Wall
 
-	local FairwellSpot = Instance.new("Frame")
+	local FairwellSpot = Instance.new("ViewportFrame")
 	FairwellSpot.Name = "Fairwell"
-	FairwellSpot.Position = UDim2.new(0, 18, 1, -148)
-	FairwellSpot.Size = UDim2.fromOffset(90, 130)
+	FairwellSpot.Position = UDim2.new(0, 12, 1, -164)
+	FairwellSpot.Size = UDim2.fromOffset(105, 150)
 	FairwellSpot.BackgroundTransparency = 1
-	FairwellSpot.Rotation = -8
+	FairwellSpot.Ambient = Color3.fromRGB(180, 190, 210)
+	FairwellSpot.LightColor = Color3.fromRGB(255, 255, 255)
+	FairwellSpot.LightDirection = Vector3.new(-1, -1, -2)
 	FairwellSpot.Parent = ChatStage
 
-	local Head = Instance.new("Frame")
-	Head.Position = UDim2.new(0.5, -25, 0, 0)
-	Head.Size = UDim2.fromOffset(50, 43)
-	Head.BackgroundColor3 = Color3.fromRGB(0, 170, 220)
-	Head.BorderSizePixel = 0
-	Head.Parent = FairwellSpot
+	local FairwellWorld = Instance.new("WorldModel")
+	FairwellWorld.Name = "FairwellWorld"
+	FairwellWorld.Parent = FairwellSpot
 
-	local HeadCorner = Instance.new("UICorner")
-	HeadCorner.CornerRadius = UDim.new(0, 12)
-	HeadCorner.Parent = Head
+	local FairwellCamera = Instance.new("Camera")
+	FairwellCamera.Name = "Camera"
+	FairwellCamera.FieldOfView = 32
+	FairwellCamera.CFrame = CFrame.lookAt(
+		Vector3.new(4.8, 3.1, 8.2),
+		Vector3.new(0, 1.65, 0)
+	)
+	FairwellCamera.Parent = FairwellSpot
+	FairwellSpot.CurrentCamera = FairwellCamera
 
-	local EyeL = Instance.new("Frame")
-	EyeL.Position = UDim2.new(0, 11, 0, 13)
-	EyeL.Size = UDim2.fromOffset(9, 9)
-	EyeL.BackgroundColor3 = Color3.fromRGB(230, 20, 30)
-	EyeL.BorderSizePixel = 0
-	EyeL.Parent = Head
+	local FairwellModel = Instance.new("Model")
+	FairwellModel.Name = "Fairwell3D"
+	FairwellModel.Parent = FairwellWorld
 
-	local EyeR = EyeL:Clone()
-	EyeR.Position = UDim2.new(1, -20, 0, 13)
-	EyeR.Parent = Head
-
-	local Smile = Instance.new("TextLabel")
-	Smile.Position = UDim2.new(0, 8, 0, 22)
-	Smile.Size = UDim2.new(1, -16, 0, 18)
-	Smile.BackgroundTransparency = 1
-	Smile.Text = "⌣"
-	Smile.TextColor3 = Color3.fromRGB(230, 20, 30)
-	Smile.TextSize = 22
-	Smile.Font = Enum.Font.GothamBold
-	Smile.Parent = Head
-
-	local Body = Instance.new("Frame")
-	Body.Position = UDim2.new(0.5, -31, 0, 45)
-	Body.Size = UDim2.fromOffset(62, 38)
-	Body.BackgroundColor3 = Color3.fromRGB(0, 85, 220)
-	Body.BorderSizePixel = 0
-	Body.Parent = FairwellSpot
-
-	local BodyCorner = Instance.new("UICorner")
-	BodyCorner.CornerRadius = UDim.new(0, 7)
-	BodyCorner.Parent = Body
-
-	local Shirt = Instance.new("Frame")
-	Shirt.Position = UDim2.new(0.5, -13, 0, 0)
-	Shirt.Size = UDim2.fromOffset(26, 38)
-	Shirt.BackgroundColor3 = Color3.fromRGB(205, 205, 205)
-	Shirt.BorderSizePixel = 0
-	Shirt.Parent = Body
-
-	for Index = 1, 4 do
-		local Stripe = Instance.new("Frame")
-		Stripe.Position = UDim2.new(0, 0, 0, Index * 8 - 3)
-		Stripe.Size = UDim2.new(1, 0, 0, 2)
-		Stripe.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
-		Stripe.BorderSizePixel = 0
-		Stripe.Parent = Shirt
+	local function MakePart(Name, Size, Color, LocalCFrame, Shape)
+		local Part = Instance.new("Part")
+		Part.Name = Name
+		Part.Size = Size
+		Part.Color = Color
+		Part.Material = Enum.Material.SmoothPlastic
+		Part.Anchored = true
+		Part.CanCollide = false
+		Part.CastShadow = true
+		Part.CFrame = LocalCFrame
+		if Shape then
+			Part.Shape = Shape
+		end
+		Part.Parent = FairwellModel
+		return Part
 	end
 
-	local ArmL = Instance.new("Frame")
-	ArmL.Position = UDim2.new(0, -13, 0, 3)
-	ArmL.Size = UDim2.fromOffset(13, 32)
-	ArmL.Rotation = -18
-	ArmL.BackgroundColor3 = Color3.fromRGB(0, 85, 220)
-	ArmL.BorderSizePixel = 0
-	ArmL.Parent = Body
+	local Cyan = Color3.fromRGB(0, 170, 220)
+	local JacketBlue = Color3.fromRGB(0, 75, 205)
+	local ShirtGray = Color3.fromRGB(205, 205, 205)
+	local StripeGray = Color3.fromRGB(145, 145, 145)
+	local Jeans = Color3.fromRGB(35, 35, 38)
+	local ShoeGreen = Color3.fromRGB(30, 105, 78)
+	local Red = Color3.fromRGB(235, 20, 30)
 
-	local ArmR = ArmL:Clone()
-	ArmR.Position = UDim2.new(1, 0, 0, 3)
-	ArmR.Rotation = 12
-	ArmR.Parent = Body
+	local Head = MakePart(
+		"Head",
+		Vector3.new(1.55, 1.35, 1.35),
+		Cyan,
+		CFrame.new(0, 2.85, 0),
+		Enum.PartType.Ball
+	)
 
-	local LegL = Instance.new("Frame")
-	LegL.Position = UDim2.new(0.5, -27, 0, 83)
-	LegL.Size = UDim2.fromOffset(25, 40)
-	LegL.Rotation = -10
-	LegL.BackgroundColor3 = Color3.fromRGB(30, 30, 33)
-	LegL.BorderSizePixel = 0
-	LegL.Parent = FairwellSpot
+	local EyeL = MakePart("EyeL", Vector3.new(0.18, 0.22, 0.08), Red, CFrame.new(-0.31, 2.92, -0.66), Enum.PartType.Ball)
+	local EyeR = MakePart("EyeR", Vector3.new(0.18, 0.22, 0.08), Red, CFrame.new(0.31, 2.92, -0.66), Enum.PartType.Ball)
 
-	local LegR = LegL:Clone()
-	LegR.Position = UDim2.new(0.5, 2, 0, 83)
-	LegR.Rotation = 5
-	LegR.Parent = FairwellSpot
+	local SmileL = MakePart("SmileL", Vector3.new(0.38, 0.08, 0.07), Red, CFrame.new(-0.19, 2.62, -0.67))
+	local SmileR = MakePart("SmileR", Vector3.new(0.38, 0.08, 0.07), Red, CFrame.new(0.19, 2.62, -0.67))
+	local SmileMid = MakePart("SmileMid", Vector3.new(0.30, 0.07, 0.07), Red, CFrame.new(0, 2.68, -0.68))
+
+	local Torso = MakePart("Torso", Vector3.new(1.75, 1.25, 0.72), JacketBlue, CFrame.new(0, 1.65, 0))
+	local Shirt = MakePart("Shirt", Vector3.new(0.72, 1.24, 0.08), ShirtGray, CFrame.new(0, 1.65, -0.39))
+
+	local Stripes = {}
+	for Index = 1, 4 do
+		Stripes[Index] = MakePart(
+			"ShirtStripe" .. Index,
+			Vector3.new(0.72, 0.07, 0.035),
+			StripeGray,
+			CFrame.new(0, 1.22 + Index * 0.27, -0.435)
+		)
+	end
+
+	local ArmL = MakePart("ArmL", Vector3.new(0.42, 1.15, 0.55), JacketBlue, CFrame.new(-1.08, 1.7, 0))
+	local ArmR = MakePart("ArmR", Vector3.new(0.42, 1.15, 0.55), JacketBlue, CFrame.new(1.08, 1.7, 0))
+	local LegL = MakePart("LegL", Vector3.new(0.65, 1.55, 0.68), Jeans, CFrame.new(-0.43, 0.25, 0))
+	local LegR = MakePart("LegR", Vector3.new(0.65, 1.55, 0.68), Jeans, CFrame.new(0.43, 0.25, 0))
+	local ShoeL = MakePart("ShoeL", Vector3.new(0.72, 0.28, 0.95), ShoeGreen, CFrame.new(-0.43, -0.66, -0.10))
+	local ShoeR = MakePart("ShoeR", Vector3.new(0.72, 0.28, 0.95), ShoeGreen, CFrame.new(0.43, -0.66, -0.10))
+
+	local CharacterParts = {
+		Head, EyeL, EyeR, SmileL, SmileR, SmileMid,
+		Torso, Shirt, ArmL, ArmR, LegL, LegR, ShoeL, ShoeR
+	}
+
+	for _, Stripe in ipairs(Stripes) do
+		table.insert(CharacterParts, Stripe)
+	end
+
+	local BaseParts = {}
+	for _, Part in ipairs(CharacterParts) do
+		BaseParts[Part] = Part.CFrame
+	end
+
+	local FairwellRoot = CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.rad(-8))
 
 	local Bubble = Instance.new("TextLabel")
 	Bubble.Name = "SpeechBubble"
@@ -1206,43 +1217,54 @@ function MainUI.Start(self, Hub)
 	local FairwellTalkingUntil = 0
 	local FairwellTalkCycle = 0
 
+	local FairwellTalkingUntil = 0
+	local FairwellTalkCycle = 0
+
 	local FairwellAnimationConnection = RunService.RenderStepped:Connect(function()
 		if not ChatStage.Parent then
 			return
 		end
 
 		local Time = os.clock()
-		local Bob = math.sin(Time * 2.4) * 2.2
-		local Sway = math.sin(Time * 1.7) * 1.8
+		local Bob = math.sin(Time * 2.4) * 0.035
+		local Sway = math.sin(Time * 1.7) * 0.025
+		local Lean = CFrame.new(Sway, Bob, 0) * CFrame.Angles(0, 0, math.rad(-8 + math.sin(Time * 1.3) * 0.8))
 
-		FairwellSpot.Position = UDim2.new(0, 18 + Sway, 1, -148 + Bob)
-		FairwellSpot.Rotation = -8 + math.sin(Time * 1.3) * 0.7
-		Head.Rotation = math.sin(Time * 1.7) * 1.5
-		Body.Rotation = math.sin(Time * 1.7 + 0.4) * 0.8
+		local function SetPart(Part, Offset, Rotation)
+			Part.CFrame = Lean * Offset * Rotation
+		end
 
-		local ArmWave = math.sin(Time * 2.1) * 2
-		ArmL.Rotation = -18 - ArmWave
-		ArmR.Rotation = 12 + ArmWave
+		SetPart(Head, BaseParts[Head], CFrame.Angles(0, 0, math.sin(Time * 1.7) * math.rad(1.5)))
+		SetPart(Torso, BaseParts[Torso], CFrame.Angles(0, 0, math.sin(Time * 1.7 + 0.4) * math.rad(0.8)))
+		SetPart(Shirt, BaseParts[Shirt], CFrame.Angles(0, 0, math.sin(Time * 1.7 + 0.4) * math.rad(0.8)))
 
-		local LegRelax = math.sin(Time * 1.7) * 1.2
-		LegL.Rotation = -10 + LegRelax
-		LegR.Rotation = 5 - LegRelax
+		SetPart(ArmL, BaseParts[ArmL], CFrame.Angles(0, 0, math.rad(-18 - math.sin(Time * 2.1) * 2)))
+		SetPart(ArmR, BaseParts[ArmR], CFrame.Angles(0, 0, math.rad(12 + math.sin(Time * 2.1) * 2)))
+
+		SetPart(LegL, BaseParts[LegL], CFrame.Angles(0, 0, math.rad(-10 + math.sin(Time * 1.7) * 1.2)))
+		SetPart(LegR, BaseParts[LegR], CFrame.Angles(0, 0, math.rad(5 - math.sin(Time * 1.7) * 1.2)))
+		SetPart(ShoeL, BaseParts[ShoeL], CFrame.Angles(0, 0, math.rad(-10 + math.sin(Time * 1.7) * 1.2)))
+		SetPart(ShoeR, BaseParts[ShoeR], CFrame.Angles(0, 0, math.rad(5 - math.sin(Time * 1.7) * 1.2)))
+
+		for _, Part in ipairs({EyeL, EyeR, SmileL, SmileR, SmileMid}) do
+			local Original = BaseParts[Part]
+			SetPart(Part, Original, CFrame.new())
+		end
+
+		for _, Stripe in ipairs(Stripes) do
+			SetPart(Stripe, BaseParts[Stripe], CFrame.new())
+		end
 
 		if Time < FairwellTalkingUntil then
 			FairwellTalkCycle += 1
 			local Talking = FairwellTalkCycle % 12
+			local MouthLift = Talking < 6 and 0.025 or -0.02
 
-			if Talking < 6 then
-				Smile.Text = "◡"
-			else
-				Smile.Text = "⌣"
-			end
-
-			ArmL.Rotation = -18 - math.sin(Time * 9) * 5
-			ArmR.Rotation = 12 + math.sin(Time * 9) * 5
+			SmileMid.CFrame = Lean * BaseParts[SmileMid] * CFrame.new(0, MouthLift, -0.01)
+			SetPart(ArmL, BaseParts[ArmL], CFrame.Angles(0, 0, math.rad(-18 - math.sin(Time * 9) * 5)))
+			SetPart(ArmR, BaseParts[ArmR], CFrame.Angles(0, 0, math.rad(12 + math.sin(Time * 9) * 5)))
 			Bubble.Position = UDim2.new(0, 92, 0, 40 + math.sin(Time * 8) * 1.5)
 		else
-			Smile.Text = "⌣"
 			Bubble.Position = UDim2.new(0, 92, 0, 42)
 		end
 	end)
@@ -1255,13 +1277,14 @@ function MainUI.Start(self, Hub)
 				break
 			end
 
-			EyeL.Size = UDim2.fromOffset(9, 3)
-			EyeR.Size = UDim2.fromOffset(9, 3)
+			EyeL.Size = Vector3.new(0.18, 0.05, 0.08)
+			EyeR.Size = Vector3.new(0.18, 0.05, 0.08)
 			task.wait(0.09)
-			EyeL.Size = UDim2.fromOffset(9, 9)
-			EyeR.Size = UDim2.fromOffset(9, 9)
+			EyeL.Size = Vector3.new(0.18, 0.22, 0.08)
+			EyeR.Size = Vector3.new(0.18, 0.22, 0.08)
 		end
 	end)
+
 
 	local function FairwellSpeak(Text)
 		Bubble.Text = tostring(Text)
