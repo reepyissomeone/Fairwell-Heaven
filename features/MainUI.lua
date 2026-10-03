@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 3.3
+--// Version 3.4
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
@@ -686,7 +686,7 @@ function MainUI.Start(self, Hub)
 	Version.BackgroundTransparency = 1
 
 	Version.Text =
-		"FAIRWELL HEAVEN • v3.1"
+		"FAIRWELL HEAVEN • v3.4"
 
 	Version.TextColor3 =
 		GREY
@@ -1018,6 +1018,12 @@ function MainUI.Start(self, Hub)
 	local FAIRWELL_USERNAME = "fairwelladmi"
 	local FairwellModel = nil
 
+	-- Animation state is initialized before the asynchronous avatar loader runs.
+	-- This prevents RenderStepped from touching nil state while the avatar loads.
+	local FairwellBasePivot = CFrame.new()
+	local MouthParts = {}
+	local EyeParts = {}
+
 	local FairwellThumbnail = Instance.new("ImageLabel")
 	FairwellThumbnail.Name = "FairwellAvatarThumbnail"
 	FairwellThumbnail.Position = UDim2.new(0, 8, 1, -183)
@@ -1069,6 +1075,23 @@ function MainUI.Start(self, Hub)
 
 		if NormalizedSize.Y > 0 then
 			Model:ScaleTo(TargetHeight / NormalizedSize.Y)
+		end
+
+		-- Cache the model state used by the idle/talking/blink animation.
+		FairwellBasePivot = Model:GetPivot()
+		MouthParts = {}
+		EyeParts = {}
+
+		for _, Descendant in ipairs(Model:GetDescendants()) do
+			if Descendant:IsA("BasePart") then
+				local Name = string.lower(Descendant.Name)
+				if string.find(Name, "mouth", 1, true) or string.find(Name, "lip", 1, true) then
+					table.insert(MouthParts, Descendant)
+				end
+				if string.find(Name, "eye", 1, true) then
+					table.insert(EyeParts, Descendant)
+				end
+			end
 		end
 
 		local FinalCFrame, FinalSize = Model:GetBoundingBox()
@@ -1341,12 +1364,6 @@ function MainUI.Start(self, Hub)
 		}
 		return Replies[(math.floor(os.clock() * 1000) % #Replies) + 1]
 	end
-
-	local FairwellTalkingUntil = 0
-	local FairwellTalkCycle = 0
-
-	local FairwellTalkingUntil = 0
-	local FairwellTalkCycle = 0
 
 	local FairwellTalkingUntil = 0
 	local FairwellTalkCycle = 0
@@ -2509,7 +2526,7 @@ function MainUI.Start(self, Hub)
 	end
 
 	Hub:Log(
-		"Main UI v3.1 initialized with fairwelladmi avatar/character loading."
+		"Main UI v3.4 initialized with fairwelladmi avatar/character loading."
 	)
 end
 
