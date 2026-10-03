@@ -917,12 +917,100 @@ function MainUI.Start(self, Hub)
 		MakeLabel(
 			DevScroll,
 			"DevInfo",
-			"Development tools and future feature testing will appear here.",
-			UDim2.new(1, -10, 0, 60),
+			"Live runtime logs. Useful for debugging feature detection, errors, and state changes.",
+			UDim2.new(1, -10, 0, 42),
 			UDim2.new(0, 5, 0, 42)
 		)
 
 	DevInfo.TextWrapped = true
+
+	local LogFrame = Instance.new("Frame")
+	LogFrame.Name = "DevLogs"
+	LogFrame.Position = UDim2.new(0, 5, 0, 88)
+	LogFrame.Size = UDim2.new(1, -10, 0, 300)
+	LogFrame.BackgroundColor3 = PANEL
+	LogFrame.BorderSizePixel = 0
+	LogFrame.Parent = DevScroll
+
+	local LogStroke = Instance.new("UIStroke")
+	LogStroke.Color = BLUE
+	LogStroke.Thickness = 1
+	LogStroke.Parent = LogFrame
+
+	local LogScroll = Instance.new("ScrollingFrame")
+	LogScroll.Name = "LogScroll"
+	LogScroll.Position = UDim2.new(0, 6, 0, 6)
+	LogScroll.Size = UDim2.new(1, -12, 1, -12)
+	LogScroll.BackgroundTransparency = 1
+	LogScroll.BorderSizePixel = 0
+	LogScroll.ScrollBarThickness = 4
+	LogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	LogScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	LogScroll.Parent = LogFrame
+
+	local LogText = Instance.new("TextLabel")
+	LogText.Name = "LogText"
+	LogText.Size = UDim2.new(1, -6, 0, 0)
+	LogText.AutomaticSize = Enum.AutomaticSize.Y
+	LogText.BackgroundTransparency = 1
+	LogText.Text = "Waiting for logs..."
+	LogText.TextColor3 = WHITE
+	LogText.TextSize = 12
+	LogText.Font = Enum.Font.Code
+	LogText.TextXAlignment = Enum.TextXAlignment.Left
+	LogText.TextYAlignment = Enum.TextYAlignment.Top
+	LogText.TextWrapped = true
+	LogText.Parent = LogScroll
+
+	local ClearLogsButton = Instance.new("TextButton")
+	ClearLogsButton.Name = "ClearLogs"
+	ClearLogsButton.Position = UDim2.new(1, -96, 0, -34)
+	ClearLogsButton.Size = UDim2.fromOffset(90, 28)
+	ClearLogsButton.BackgroundColor3 = PANEL
+	ClearLogsButton.BorderSizePixel = 0
+	ClearLogsButton.Text = "CLEAR LOGS"
+	ClearLogsButton.TextColor3 = WHITE
+	ClearLogsButton.TextSize = 10
+	ClearLogsButton.Font = Enum.Font.GothamBold
+	ClearLogsButton.Parent = DevScroll
+
+	local ClearStroke = Instance.new("UIStroke")
+	ClearStroke.Color = BLUE
+	ClearStroke.Thickness = 1
+	ClearStroke.Parent = ClearLogsButton
+
+	local function RefreshDevLogs()
+		if not self.Hub or not self.Hub.GetLogs then return end
+
+		local Logs = self.Hub:GetLogs()
+		local Lines = {}
+
+		for _, Entry in ipairs(Logs) do
+			table.insert(
+				Lines,
+				string.format(
+					"[%s] [%s] %s",
+					Entry.Timestamp or "--:--:--",
+					Entry.Level or "INFO",
+					Entry.Message or ""
+				)
+			)
+		end
+
+		LogText.Text = #Lines > 0 and table.concat(Lines, "\\n") or "No logs."
+		task.defer(function()
+			LogScroll.CanvasPosition = Vector2.new(0, math.max(0, LogScroll.AbsoluteCanvasSize.Y))
+		end)
+	end
+
+	ClearLogsButton.MouseButton1Click:Connect(function()
+		if self.Hub and self.Hub.ClearLogs then
+			self.Hub:ClearLogs()
+			RefreshDevLogs()
+		end
+	end)
+
+	self.DevLogRefresh = RefreshDevLogs
 
 	--==================================================
 	-- SETTINGS PAGE
@@ -1431,6 +1519,9 @@ function MainUI.Start(self, Hub)
 			self.StatusTimer = os.clock()
 
 			self:UpdateStatus(Hub)
+			if self.DevLogRefresh then
+				self.DevLogRefresh()
+			end
 		end)
 
 	self.Gui = Gui
