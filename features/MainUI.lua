@@ -781,7 +781,7 @@ function MainUI.Start(self, Hub)
 		Instance.new("TextButton")
 
 	MainTab.Size =
-		UDim2.new(0.5, 0, 1, 0)
+		UDim2.new(1/3, 0, 1, 0)
 
 	MainTab.BackgroundTransparency = 1
 
@@ -802,10 +802,10 @@ function MainUI.Start(self, Hub)
 		Instance.new("TextButton")
 
 	DevTab.Position =
-		UDim2.new(0.5, 0, 0, 0)
+		UDim2.new(1/3, 0, 0, 0)
 
 	DevTab.Size =
-		UDim2.new(0.5, 0, 1, 0)
+		UDim2.new(1/3, 0, 1, 0)
 
 	DevTab.BackgroundTransparency = 1
 
@@ -925,23 +925,304 @@ function MainUI.Start(self, Hub)
 	DevInfo.TextWrapped = true
 
 	--==================================================
+	-- SETTINGS PAGE
+	--==================================================
+
+	local SettingsTab =
+		Instance.new("TextButton")
+
+	SettingsTab.Position =
+		UDim2.new(2/3, 0, 0, 0)
+
+	SettingsTab.Size =
+		UDim2.new(1/3, 0, 1, 0)
+
+	SettingsTab.BackgroundTransparency = 1
+	SettingsTab.Text = "SETTINGS"
+	SettingsTab.TextColor3 = GREY
+	SettingsTab.TextSize = 13
+	SettingsTab.Font = Enum.Font.GothamBold
+	SettingsTab.ZIndex = 16
+	SettingsTab.Parent = Tabs
+
+	local SettingsScroll =
+		Instance.new("ScrollingFrame")
+
+	SettingsScroll.Name = "SettingsScroll"
+	SettingsScroll.Position =
+		UDim2.new(0, 8, 0, 8)
+
+	SettingsScroll.Size =
+		UDim2.new(1, -16, 1, -16)
+
+	SettingsScroll.BackgroundTransparency = 1
+	SettingsScroll.BorderSizePixel = 0
+	SettingsScroll.ScrollBarThickness = 4
+	SettingsScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	SettingsScroll.Visible = false
+	SettingsScroll.Parent = Content
+
+	local SettingsTitle =
+		MakeLabel(
+			SettingsScroll,
+			"SettingsTitle",
+			"FAIRWELL HEAVEN SETTINGS",
+			UDim2.new(1, -10, 0, 30),
+			UDim2.new(0, 5, 0, 5)
+		)
+
+	SettingsTitle.TextColor3 = BLUE
+	SettingsTitle.Font = Enum.Font.GothamBold
+	SettingsTitle.TextSize = 16
+
+	local SettingsService =
+		Hub:GetService("Settings")
+
+	local function SaveFeature(Name, Enabled)
+		if not SettingsService then
+			return
+		end
+
+		SettingsService:SetFeatureEnabled(
+			Name,
+			Enabled,
+			true
+		)
+
+		if Enabled then
+			Hub:Enable(Name)
+		else
+			Hub:Disable(Name)
+		end
+	end
+
+	local function MakeToggle(Text, FeatureName, Y)
+		local Button =
+			Instance.new("TextButton")
+
+		Button.Position =
+			UDim2.new(0, 5, 0, Y)
+
+		Button.Size =
+			UDim2.new(1, -10, 0, 38)
+
+		Button.BackgroundColor3 = PANEL
+		Button.BorderSizePixel = 0
+		Button.TextColor3 = WHITE
+		Button.TextSize = 13
+		Button.Font = Enum.Font.Gotham
+		Button.TextXAlignment = Enum.TextXAlignment.Left
+		Button.ZIndex = 2
+		Button.Parent = SettingsScroll
+
+		local Stroke = Instance.new("UIStroke")
+		Stroke.Color = BLUE
+		Stroke.Thickness = 1
+		Stroke.Parent = Button
+
+		local function Refresh()
+			local Enabled = true
+
+			if SettingsService then
+				Enabled =
+					SettingsService:GetFeatureEnabled(
+						FeatureName,
+						true
+					)
+			end
+
+			Button.Text =
+				"  "
+				.. Text
+				.. "    ["
+				.. (Enabled and "ON" or "OFF")
+				.. "]"
+		end
+
+		Refresh()
+
+		Button.MouseButton1Click:Connect(function()
+			local Enabled = true
+
+			if SettingsService then
+				Enabled =
+					SettingsService:GetFeatureEnabled(
+						FeatureName,
+						true
+					)
+			end
+
+			SaveFeature(FeatureName, not Enabled)
+			Refresh()
+		end)
+
+		return Button
+	end
+
+	MakeToggle(
+		"DOORS HIGHLIGHTS",
+		"DOORS Highlights",
+		48
+	)
+
+	MakeToggle(
+		"ENTITY NOTIFICATIONS",
+		"DOORS Entity Notifications",
+		92
+	)
+
+	local IntervalLabel =
+		MakeLabel(
+			SettingsScroll,
+			"IntervalLabel",
+			"Update Check Interval (seconds)",
+			UDim2.new(1, -10, 0, 24),
+			UDim2.new(0, 5, 0, 140)
+		)
+
+	local IntervalBox =
+		Instance.new("TextBox")
+
+	IntervalBox.Position =
+		UDim2.new(0, 5, 0, 166)
+
+	IntervalBox.Size =
+		UDim2.new(1, -10, 0, 38)
+
+	IntervalBox.BackgroundColor3 = PANEL
+	IntervalBox.BorderSizePixel = 0
+	IntervalBox.ClearTextOnFocus = false
+	IntervalBox.PlaceholderText = "30 - 3600"
+	IntervalBox.TextColor3 = WHITE
+	IntervalBox.TextSize = 13
+	IntervalBox.Font = Enum.Font.Gotham
+	IntervalBox.Text = "120"
+	IntervalBox.Parent = SettingsScroll
+
+	local IntervalStroke = Instance.new("UIStroke")
+	IntervalStroke.Color = BLUE
+	IntervalStroke.Thickness = 1
+	IntervalStroke.Parent = IntervalBox
+
+	if SettingsService then
+		IntervalBox.Text =
+			tostring(
+				SettingsService:Get(
+					"UpdateInterval",
+					120
+				)
+			)
+	end
+
+	IntervalBox.FocusLost:Connect(function()
+		if not SettingsService then
+			return
+		end
+
+		local Value = tonumber(IntervalBox.Text)
+
+		if not Value then
+			IntervalBox.Text =
+				tostring(
+					SettingsService:Get(
+						"UpdateInterval",
+						120
+					)
+				)
+			return
+		end
+
+		Value = math.clamp(Value, 30, 3600)
+
+		IntervalBox.Text = tostring(Value)
+		SettingsService:Set("UpdateInterval", Value, true)
+	end)
+
+	local ResetButton =
+		Instance.new("TextButton")
+
+	ResetButton.Position =
+		UDim2.new(0, 5, 0, 214)
+
+	ResetButton.Size =
+		UDim2.new(1, -10, 0, 38)
+
+	ResetButton.BackgroundColor3 = PANEL
+	ResetButton.BorderSizePixel = 0
+	ResetButton.Text = "  RESET SETTINGS"
+	ResetButton.TextColor3 = WHITE
+	ResetButton.TextSize = 13
+	ResetButton.Font = Enum.Font.GothamBold
+	ResetButton.TextXAlignment = Enum.TextXAlignment.Left
+	ResetButton.Parent = SettingsScroll
+
+	local ResetStroke = Instance.new("UIStroke")
+	ResetStroke.Color = BLUE
+	ResetStroke.Thickness = 1
+	ResetStroke.Parent = ResetButton
+
+	ResetButton.MouseButton1Click:Connect(function()
+		if not SettingsService then
+			return
+		end
+
+		SettingsService:Reset()
+
+		IntervalBox.Text = "120"
+
+		Hub:Log("Settings reset to defaults.")
+
+		Hub:Disable("DOORS Highlights")
+		Hub:Disable("DOORS Entity Notifications")
+
+		SettingsService:SetFeatureEnabled(
+			"DOORS Highlights",
+			true,
+			true
+		)
+
+		SettingsService:SetFeatureEnabled(
+			"DOORS Entity Notifications",
+			true,
+			true
+		)
+
+		Hub:Enable("DOORS Highlights")
+		Hub:Enable("DOORS Entity Notifications")
+	end)
+
+	--==================================================
 	-- TAB SWITCHING
 	--==================================================
 
 	MainTab.MouseButton1Click:Connect(function()
 		MainScroll.Visible = true
 		DevScroll.Visible = false
+		SettingsScroll.Visible = false
 
 		MainTab.TextColor3 = BLUE
 		DevTab.TextColor3 = GREY
+		SettingsTab.TextColor3 = GREY
 	end)
 
 	DevTab.MouseButton1Click:Connect(function()
 		MainScroll.Visible = false
 		DevScroll.Visible = true
+		SettingsScroll.Visible = false
 
 		MainTab.TextColor3 = GREY
 		DevTab.TextColor3 = BLUE
+		SettingsTab.TextColor3 = GREY
+	end)
+
+	SettingsTab.MouseButton1Click:Connect(function()
+		MainScroll.Visible = false
+		DevScroll.Visible = false
+		SettingsScroll.Visible = true
+
+		MainTab.TextColor3 = GREY
+		DevTab.TextColor3 = GREY
+		SettingsTab.TextColor3 = BLUE
 	end)
 
 	--==================================================
