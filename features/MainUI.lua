@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 2.9
+--// Version 3.0
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
@@ -685,7 +685,7 @@ function MainUI.Start(self, Hub)
 	Version.BackgroundTransparency = 1
 
 	Version.Text =
-		"FAIRWELL HEAVEN • v2.9"
+		"FAIRWELL HEAVEN • v3.0"
 
 	Version.TextColor3 =
 		GREY
@@ -1011,9 +1011,8 @@ function MainUI.Start(self, Hub)
 	--==================================================
 	-- FAIRWELL ROBLOX AVATAR
 	--==================================================
-	-- Uses the real Roblox account appearance for "fairwelladmi".
-	-- Primary path: build the avatar from its HumanoidDescription.
-	-- Fallback path: use Roblox's official avatar thumbnail directly.
+	-- Uses Roblox's direct user-avatar character API first.
+	-- HumanoidDescription and thumbnail are fallbacks.
 
 	local FAIRWELL_USERNAME = "fairwelladmi"
 	local FairwellModel = nil
@@ -1026,6 +1025,7 @@ function MainUI.Start(self, Hub)
 	FairwellThumbnail.Image = ""
 	FairwellThumbnail.ScaleType = Enum.ScaleType.Fit
 	FairwellThumbnail.Visible = false
+	FairwellThumbnail.ZIndex = 8
 	FairwellThumbnail.Parent = ChatStage
 
 	local FairwellThumbnailCorner = Instance.new("UICorner")
@@ -1036,30 +1036,6 @@ function MainUI.Start(self, Hub)
 	FairwellThumbnailStroke.Color = BLUE
 	FairwellThumbnailStroke.Transparency = 0.25
 	FairwellThumbnailStroke.Parent = FairwellThumbnail
-
-	local function LoadFairwellAvatarThumbnail(UserId)
-		local Success, Content = pcall(function()
-			local Image, IsReady = Players:GetUserThumbnailAsync(
-				UserId,
-				Enum.ThumbnailType.AvatarBust,
-				Enum.ThumbnailSize.Size420x420
-			)
-			return Image, IsReady
-		end)
-
-		if Success and Content then
-			local Image = Content
-			if type(Image) == "string" then
-				FairwellThumbnail.Image = Image
-				FairwellThumbnail.Visible = true
-				Hub:Log("Loaded fairwelladmi avatar thumbnail.", "INFO")
-				return true
-			end
-		end
-
-		Hub:Log("Could not load the fairwelladmi avatar thumbnail.", "WARN")
-		return false
-	end
 
 	local function PrepareFairwellModel(Model)
 		if not Model or not Model:IsA("Model") then
@@ -1075,11 +1051,14 @@ function MainUI.Start(self, Hub)
 				Descendant.CanCollide = false
 				Descendant.CanTouch = false
 				Descendant.CanQuery = false
-				Descendant.CastShadow = true
 			end
 		end
 
 		local BoundingCFrame, BoundingSize = Model:GetBoundingBox()
+		if BoundingSize.Y <= 0 then
+			return nil
+		end
+
 		local Pivot = Model:GetPivot()
 		local CenterOffset = Pivot:ToObjectSpace(BoundingCFrame)
 		Model:PivotTo(CFrame.new(0, 0, 0) * CenterOffset:Inverse())
@@ -1094,75 +1073,127 @@ function MainUI.Start(self, Hub)
 		local FinalCFrame, FinalSize = Model:GetBoundingBox()
 		local FinalCenter = FinalCFrame.Position
 
-		Model:PivotTo(
-			CFrame.new(
-				0,
-				FinalSize.Y * 0.5 - FinalCenter.Y,
-				0
-			)
+		Model:PivotTo(CFrame.new(
+			0,
+			FinalSize.Y * 0.5 - FinalCenter.Y,
+			0
+		))
+
+		local CameraDistance = math.max(6, FinalSize.Y * 2.35)
+		local CameraHeight = math.max(1.35, FinalSize.Y * 0.52)
+
+		FairwellCamera.FieldOfView = 30
+		FairwellCamera.CFrame = CFrame.lookAt(
+			Vector3.new(0, CameraHeight, CameraDistance),
+			Vector3.new(0, FinalSize.Y * 0.52, 0)
 		)
 
 		return Model
 	end
 
-	local function LoadFairwellAvatar()
-		local Success, UserId = pcall(function()
-			return Players:GetUserIdFromNameAsync(FAIRWELL_USERNAME)
-		end)
-
-		if not Success or not UserId then
-			Hub:Log("Could not resolve Roblox username: " .. FAIRWELL_USERNAME, "WARN")
-			return nil
-		end
-
-		-- Start the official Roblox thumbnail fallback immediately.
-		-- This means Fairwell still appears even when character creation
-		-- is unavailable in the current client environment.
-		LoadFairwellAvatarThumbnail(UserId)
-
-		Hub:Log(
-			"Loading Roblox character appearance for " ..
-			FAIRWELL_USERNAME .. " (" .. tostring(UserId) .. ")..."
-		)
-
-		local DescriptionSuccess, Description = pcall(function()
-			return Players:GetHumanoidDescriptionFromUserId(UserId)
-		end)
-
-		if not DescriptionSuccess or not Description then
-			Hub:Log("Roblox character description unavailable; using avatar thumbnail.", "WARN")
-			return nil
-		end
-
-		local ModelSuccess, Model = pcall(function()
-			return Players:CreateHumanoidModelFromDescriptionAsync(
-				Description,
-				Enum.HumanoidRigType.R15
+	local function LoadFairwellThumbnail(UserId)
+		local Success, Image, IsReady = pcall(function()
+			return Players:GetUserThumbnailAsync(
+				UserId,
+				Enum.ThumbnailType.AvatarBust,
+				Enum.ThumbnailSize.Size420x420
 			)
 		end)
 
-		if not ModelSuccess or not Model then
-			ModelSuccess, Model = pcall(function()
-				return Players:CreateHumanoidModelFromDescriptionAsync(
-					Description,
-					Enum.HumanoidRigType.R6
-				)
-			end)
+		if Success and type(Image) == "string" then
+			FairwellThumbnail.Image = Image
+			FairwellThumbnail.Visible = true
+			Hub:Log(
+				"Loaded official fairwelladmi avatar thumbnail" ..
+				(IsReady and " (ready)." or " (waiting)."),
+				"INFO"
+			)
+			return true
 		end
 
-		if not ModelSuccess or not Model then
-			Hub:Log("Roblox character model unavailable; using avatar thumbnail.", "WARN")
+		Hub:Log("Avatar thumbnail failed: " .. tostring(Image), "WARN")
+		return false
+	end
+
+	local function LoadFairwellAvatar()
+		local UserIdSuccess, UserId = pcall(function()
+			return Players:GetUserIdFromNameAsync(FAIRWELL_USERNAME)
+		end)
+
+		if not UserIdSuccess or not UserId then
+			Hub:Log(
+				"Could not resolve " .. FAIRWELL_USERNAME ..
+			": " .. tostring(UserId),
+				"ERROR"
+			)
 			return nil
 		end
 
-		FairwellThumbnail.Visible = false
-		return PrepareFairwellModel(Model)
+		Hub:Log(
+			"Resolved " .. FAIRWELL_USERNAME ..
+			" (UserId " .. tostring(UserId) .. ").",
+			"INFO"
+		)
+
+		-- PRIMARY: Roblox directly builds this user's current avatar.
+		local ModelSuccess, Model = pcall(function()
+			return Players:CreateHumanoidModelFromUserIdAsync(UserId)
+		end)
+
+		if ModelSuccess and Model and Model:IsA("Model") then
+			local Prepared = PrepareFairwellModel(Model)
+			if Prepared then
+				FairwellThumbnail.Visible = false
+				Hub:Log("Loaded the actual 3D fairwelladmi Roblox avatar.", "SUCCESS")
+				return Prepared
+			end
+		end
+
+		Hub:Log(
+			"Direct avatar creation failed: " .. tostring(Model),
+			"WARN"
+		)
+
+		-- SECONDARY: explicit HumanoidDescription path.
+		local DescriptionSuccess, Description = pcall(function()
+			return Players:GetHumanoidDescriptionFromUserIdAsync(UserId)
+		end)
+
+		if DescriptionSuccess and Description then
+			local DescriptionModelSuccess, DescriptionModel = pcall(function()
+				return Players:CreateHumanoidModelFromDescriptionAsync(
+					Description,
+					Enum.HumanoidRigType.R15
+				)
+			end)
+
+			if DescriptionModelSuccess and DescriptionModel then
+				local Prepared = PrepareFairwellModel(DescriptionModel)
+				if Prepared then
+					FairwellThumbnail.Visible = false
+					Hub:Log("Loaded fairwelladmi through HumanoidDescription.", "SUCCESS")
+					return Prepared
+				end
+			end
+		else
+			Hub:Log(
+				"HumanoidDescription failed: " .. tostring(Description),
+				"WARN"
+			)
+		end
+
+		-- FINAL: official Roblox avatar thumbnail.
+		LoadFairwellThumbnail(UserId)
+		return nil
 	end
 
 	FairwellModel = LoadFairwellAvatar()
 
 	if not FairwellModel and not FairwellThumbnail.Visible then
-		Hub:Log("Fairwell avatar could not be displayed.", "ERROR")
+		Hub:Log(
+			"No Fairwell avatar could be rendered. Check DEV > LIVE RUNTIME LOGS.",
+			"ERROR"
+		)
 	end
 
 	local Bubble = Instance.new("TextLabel")
