@@ -781,7 +781,7 @@ function MainUI.Start(self, Hub)
 		Instance.new("TextButton")
 
 	MainTab.Size =
-		UDim2.new(1/3, 0, 1, 0)
+		UDim2.new(1/4, 0, 1, 0)
 
 	MainTab.BackgroundTransparency = 1
 
@@ -802,10 +802,10 @@ function MainUI.Start(self, Hub)
 		Instance.new("TextButton")
 
 	DevTab.Position =
-		UDim2.new(1/3, 0, 0, 0)
+		UDim2.new(1/4, 0, 0, 0)
 
 	DevTab.Size =
-		UDim2.new(1/3, 0, 1, 0)
+		UDim2.new(1/4, 0, 1, 0)
 
 	DevTab.BackgroundTransparency = 1
 
@@ -821,6 +821,22 @@ function MainUI.Start(self, Hub)
 
 	DevTab.Parent =
 		Tabs
+
+	--==================================================
+	-- FAIRWELL CHAT TAB
+	--==================================================
+
+	local ChatTab = Instance.new("TextButton")
+	ChatTab.Name = "FairwellChatTab"
+	ChatTab.Position = UDim2.new(1/2, 0, 0, 0)
+	ChatTab.Size = UDim2.new(1/4, 0, 1, 0)
+	ChatTab.BackgroundTransparency = 1
+	ChatTab.Text = "FAIRWELL CHAT"
+	ChatTab.TextColor3 = GREY
+	ChatTab.TextSize = 11
+	ChatTab.Font = Enum.Font.GothamBold
+	ChatTab.ZIndex = 16
+	ChatTab.Parent = Tabs
 
 	--==================================================
 	-- CONTENT
@@ -870,6 +886,162 @@ function MainUI.Start(self, Hub)
 		Content
 
 	self:CreateStatus(MainScroll)
+
+	--==================================================
+	-- FAIRWELL CHAT PAGE
+	--==================================================
+
+	local ChatScroll = Instance.new("ScrollingFrame")
+	ChatScroll.Name = "FairwellChat"
+	ChatScroll.Position = UDim2.new(0, 8, 0, 8)
+	ChatScroll.Size = UDim2.new(1, -16, 1, -16)
+	ChatScroll.BackgroundTransparency = 1
+	ChatScroll.BorderSizePixel = 0
+	ChatScroll.ScrollBarThickness = 4
+	ChatScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	ChatScroll.Visible = false
+	ChatScroll.Parent = Content
+
+	local ChatTitle = MakeLabel(ChatScroll, "ChatTitle", "FAIRWELL CHAT", UDim2.new(1, -10, 0, 30), UDim2.new(0, 5, 0, 5))
+	ChatTitle.TextColor3 = BLUE
+	ChatTitle.Font = Enum.Font.GothamBold
+	ChatTitle.TextSize = 16
+
+	local ChatInfo = MakeLabel(ChatScroll, "ChatInfo", "Your Fairwell Heaven command and message console.", UDim2.new(1, -10, 0, 28), UDim2.new(0, 5, 0, 40))
+	ChatInfo.TextColor3 = GREY
+	ChatInfo.TextSize = 10
+	ChatInfo.TextWrapped = true
+
+	local ChatMessages = Instance.new("ScrollingFrame")
+	ChatMessages.Name = "Messages"
+	ChatMessages.Position = UDim2.new(0, 5, 0, 74)
+	ChatMessages.Size = UDim2.new(1, -10, 0, 250)
+	ChatMessages.BackgroundColor3 = Color3.fromRGB(4, 3, 30)
+	ChatMessages.BorderSizePixel = 0
+	ChatMessages.ScrollBarThickness = 3
+	ChatMessages.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	ChatMessages.CanvasSize = UDim2.new(0, 0, 0, 0)
+	ChatMessages.Parent = ChatScroll
+
+	local ChatCorner = Instance.new("UICorner")
+	ChatCorner.CornerRadius = UDim.new(0, 7)
+	ChatCorner.Parent = ChatMessages
+
+	local ChatStroke = Instance.new("UIStroke")
+	ChatStroke.Color = BLUE
+	ChatStroke.Transparency = 0.25
+	ChatStroke.Parent = ChatMessages
+
+	local ChatLayout = Instance.new("UIListLayout")
+	ChatLayout.Padding = UDim.new(0, 5)
+	ChatLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	ChatLayout.Parent = ChatMessages
+
+	local ChatPadding = Instance.new("UIPadding")
+	ChatPadding.PaddingTop = UDim.new(0, 8)
+	ChatPadding.PaddingBottom = UDim.new(0, 8)
+	ChatPadding.PaddingLeft = UDim.new(0, 8)
+	ChatPadding.PaddingRight = UDim.new(0, 8)
+	ChatPadding.Parent = ChatMessages
+
+	local function AddChatMessage(Sender, Message, SenderColor)
+		local Row = Instance.new("TextLabel")
+		Row.Name = "Message"
+		Row.LayoutOrder = os.clock() * 1000
+		Row.Size = UDim2.new(1, -4, 0, 30)
+		Row.AutomaticSize = Enum.AutomaticSize.Y
+		Row.BackgroundColor3 = PANEL
+		Row.BackgroundTransparency = 0.2
+		Row.BorderSizePixel = 0
+		Row.Text = tostring(Sender) .. "  •  " .. tostring(Message)
+		Row.TextColor3 = WHITE
+		Row.TextSize = 10
+		Row.Font = Enum.Font.Gotham
+		Row.TextWrapped = true
+		Row.TextXAlignment = Enum.TextXAlignment.Left
+		Row.TextYAlignment = Enum.TextYAlignment.Center
+		Row.Parent = ChatMessages
+
+		local Corner = Instance.new("UICorner")
+		Corner.CornerRadius = UDim.new(0, 5)
+		Corner.Parent = Row
+
+		local Stroke = Instance.new("UIStroke")
+		Stroke.Color = SenderColor or BLUE
+		Stroke.Transparency = 0.55
+		Stroke.Parent = Row
+
+		task.defer(function()
+			ChatMessages.CanvasPosition = Vector2.new(0, math.max(0, ChatMessages.AbsoluteCanvasSize.Y))
+		end)
+	end
+
+	AddChatMessage("FAIRWELL", "Welcome to Fairwell Chat. Type /help for commands.", BLUE)
+
+	local ChatInput = Instance.new("TextBox")
+	ChatInput.Name = "Input"
+	ChatInput.Position = UDim2.new(0, 5, 0, 334)
+	ChatInput.Size = UDim2.new(1, -75, 0, 38)
+	ChatInput.BackgroundColor3 = PANEL
+	ChatInput.BorderSizePixel = 0
+	ChatInput.ClearTextOnFocus = false
+	ChatInput.PlaceholderText = "Type a message or /help..."
+	ChatInput.Text = ""
+	ChatInput.TextColor3 = WHITE
+	ChatInput.PlaceholderColor3 = GREY
+	ChatInput.TextSize = 11
+	ChatInput.Font = Enum.Font.Gotham
+	ChatInput.TextXAlignment = Enum.TextXAlignment.Left
+	ChatInput.Parent = ChatScroll
+
+	local InputCorner = Instance.new("UICorner")
+	InputCorner.CornerRadius = UDim.new(0, 5)
+	InputCorner.Parent = ChatInput
+
+	local InputStroke = Instance.new("UIStroke")
+	InputStroke.Color = BLUE
+	InputStroke.Parent = ChatInput
+
+	local SendButton = Instance.new("TextButton")
+	SendButton.Name = "Send"
+	SendButton.Position = UDim2.new(1, -64, 0, 334)
+	SendButton.Size = UDim2.new(0, 59, 0, 38)
+	SendButton.BackgroundColor3 = BLUE
+	SendButton.BackgroundTransparency = 0.1
+	SendButton.BorderSizePixel = 0
+	SendButton.Text = "SEND"
+	SendButton.TextColor3 = WHITE
+	SendButton.TextSize = 10
+	SendButton.Font = Enum.Font.GothamBold
+	SendButton.Parent = ChatScroll
+
+	local SendCorner = Instance.new("UICorner")
+	SendCorner.CornerRadius = UDim.new(0, 5)
+	SendCorner.Parent = SendButton
+
+	local function SendChat()
+		local Message = ChatInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
+		if Message == "" then return end
+		ChatInput.Text = ""
+
+		if Message:lower() == "/help" then
+			AddChatMessage("FAIRWELL", "/clear • clears chat | /status • shows hub status | /help • commands", BLUE)
+		elseif Message:lower() == "/clear" then
+			for _, Child in ipairs(ChatMessages:GetChildren()) do
+				if Child:IsA("TextLabel") and Child.Name == "Message" then Child:Destroy() end
+			end
+			AddChatMessage("FAIRWELL", "Chat cleared.", BLUE)
+		elseif Message:lower() == "/status" then
+			AddChatMessage("FAIRWELL", "Hub online • " .. tostring(Hub.Version or "unknown") .. " • " .. tostring(Hub.Game.Name or "Unknown"), BLUE)
+		else
+			AddChatMessage(Players.LocalPlayer and Players.LocalPlayer.Name or "YOU", Message, Color3.fromRGB(55, 200, 120))
+		end
+	end
+
+	SendButton.MouseButton1Click:Connect(SendChat)
+	ChatInput.FocusLost:Connect(function(EnterPressed)
+		if EnterPressed then SendChat() end
+	end)
 
 	--==================================================
 	-- DEV PAGE
@@ -1257,10 +1429,10 @@ function MainUI.Start(self, Hub)
 		Instance.new("TextButton")
 
 	SettingsTab.Position =
-		UDim2.new(2/3, 0, 0, 0)
+		UDim2.new(3/4, 0, 0, 0)
 
 	SettingsTab.Size =
-		UDim2.new(1/3, 0, 1, 0)
+		UDim2.new(1/4, 0, 1, 0)
 
 	SettingsTab.BackgroundTransparency = 1
 	SettingsTab.Text = "SETTINGS"
@@ -1537,30 +1709,48 @@ function MainUI.Start(self, Hub)
 	MainTab.MouseButton1Click:Connect(function()
 		MainScroll.Visible = true
 		DevScroll.Visible = false
+		ChatScroll.Visible = false
 		SettingsScroll.Visible = false
 
 		MainTab.TextColor3 = BLUE
 		DevTab.TextColor3 = GREY
+		ChatTab.TextColor3 = GREY
 		SettingsTab.TextColor3 = GREY
 	end)
 
 	DevTab.MouseButton1Click:Connect(function()
 		MainScroll.Visible = false
 		DevScroll.Visible = true
+		ChatScroll.Visible = false
 		SettingsScroll.Visible = false
 
 		MainTab.TextColor3 = GREY
 		DevTab.TextColor3 = BLUE
+		ChatTab.TextColor3 = GREY
+		SettingsTab.TextColor3 = GREY
+	end)
+
+	ChatTab.MouseButton1Click:Connect(function()
+		MainScroll.Visible = false
+		DevScroll.Visible = false
+		ChatScroll.Visible = true
+		SettingsScroll.Visible = false
+
+		MainTab.TextColor3 = GREY
+		DevTab.TextColor3 = GREY
+		ChatTab.TextColor3 = BLUE
 		SettingsTab.TextColor3 = GREY
 	end)
 
 	SettingsTab.MouseButton1Click:Connect(function()
 		MainScroll.Visible = false
 		DevScroll.Visible = false
+		ChatScroll.Visible = false
 		SettingsScroll.Visible = true
 
 		MainTab.TextColor3 = GREY
 		DevTab.TextColor3 = GREY
+		ChatTab.TextColor3 = GREY
 		SettingsTab.TextColor3 = BLUE
 	end)
 
