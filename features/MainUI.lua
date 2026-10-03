@@ -927,40 +927,93 @@ function MainUI.Start(self, Hub)
 	local LogFrame = Instance.new("Frame")
 	LogFrame.Name = "DevLogs"
 	LogFrame.Position = UDim2.new(0, 5, 0, 88)
-	LogFrame.Size = UDim2.new(1, -10, 0, 300)
-	LogFrame.BackgroundColor3 = PANEL
+	LogFrame.Size = UDim2.new(1, -10, 0, 340)
+	LogFrame.BackgroundColor3 = Color3.fromRGB(4, 3, 30)
 	LogFrame.BorderSizePixel = 0
 	LogFrame.Parent = DevScroll
+
+	local LogCorner = Instance.new("UICorner")
+	LogCorner.CornerRadius = UDim.new(0, 6)
+	LogCorner.Parent = LogFrame
 
 	local LogStroke = Instance.new("UIStroke")
 	LogStroke.Color = BLUE
 	LogStroke.Thickness = 1
+	LogStroke.Transparency = 0.15
 	LogStroke.Parent = LogFrame
+
+	local LogHeader = Instance.new("Frame")
+	LogHeader.Size = UDim2.new(1, 0, 0, 34)
+	LogHeader.BackgroundColor3 = PANEL
+	LogHeader.BorderSizePixel = 0
+	LogHeader.Parent = LogFrame
+
+	local HeaderCorner = Instance.new("UICorner")
+	HeaderCorner.CornerRadius = UDim.new(0, 6)
+	HeaderCorner.Parent = LogHeader
+
+	local HeaderMask = Instance.new("Frame")
+	HeaderMask.Position = UDim2.new(0, 0, 1, -6)
+	HeaderMask.Size = UDim2.new(1, 0, 0, 6)
+	HeaderMask.BackgroundColor3 = PANEL
+	HeaderMask.BorderSizePixel = 0
+	HeaderMask.Parent = LogHeader
+
+	local LogHeaderTitle = Instance.new("TextLabel")
+	LogHeaderTitle.Position = UDim2.new(0, 10, 0, 0)
+	LogHeaderTitle.Size = UDim2.new(1, -120, 1, 0)
+	LogHeaderTitle.BackgroundTransparency = 1
+	LogHeaderTitle.Text = "LIVE RUNTIME LOGS"
+	LogHeaderTitle.TextColor3 = WHITE
+	LogHeaderTitle.TextSize = 12
+	LogHeaderTitle.Font = Enum.Font.GothamBold
+	LogHeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+	LogHeaderTitle.Parent = LogHeader
+
+	local LogCount = Instance.new("TextLabel")
+	LogCount.Position = UDim2.new(1, -105, 0, 0)
+	LogCount.Size = UDim2.fromOffset(95, 34)
+	LogCount.BackgroundTransparency = 1
+	LogCount.Text = "0 ENTRIES"
+	LogCount.TextColor3 = GREY
+	LogCount.TextSize = 9
+	LogCount.Font = Enum.Font.GothamBold
+	LogCount.TextXAlignment = Enum.TextXAlignment.Right
+	LogCount.Parent = LogHeader
 
 	local LogScroll = Instance.new("ScrollingFrame")
 	LogScroll.Name = "LogScroll"
-	LogScroll.Position = UDim2.new(0, 6, 0, 6)
-	LogScroll.Size = UDim2.new(1, -12, 1, -12)
+	LogScroll.Position = UDim2.new(0, 6, 0, 40)
+	LogScroll.Size = UDim2.new(1, -12, 1, -46)
 	LogScroll.BackgroundTransparency = 1
 	LogScroll.BorderSizePixel = 0
 	LogScroll.ScrollBarThickness = 4
+	LogScroll.ScrollBarImageColor3 = BLUE
 	LogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	LogScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 	LogScroll.Parent = LogFrame
 
-	local LogText = Instance.new("TextLabel")
-	LogText.Name = "LogText"
-	LogText.Size = UDim2.new(1, -6, 0, 0)
-	LogText.AutomaticSize = Enum.AutomaticSize.Y
-	LogText.BackgroundTransparency = 1
-	LogText.Text = "Waiting for logs..."
-	LogText.TextColor3 = WHITE
-	LogText.TextSize = 12
-	LogText.Font = Enum.Font.Code
-	LogText.TextXAlignment = Enum.TextXAlignment.Left
-	LogText.TextYAlignment = Enum.TextYAlignment.Top
-	LogText.TextWrapped = true
-	LogText.Parent = LogScroll
+	local LogLayout = Instance.new("UIListLayout")
+	LogLayout.Padding = UDim.new(0, 4)
+	LogLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	LogLayout.Parent = LogScroll
+
+	local LogPadding = Instance.new("UIPadding")
+	LogPadding.PaddingTop = UDim.new(0, 2)
+	LogPadding.PaddingBottom = UDim.new(0, 4)
+	LogPadding.PaddingLeft = UDim.new(0, 2)
+	LogPadding.PaddingRight = UDim.new(0, 2)
+	LogPadding.Parent = LogScroll
+
+	local EmptyLabel = Instance.new("TextLabel")
+	EmptyLabel.Name = "Empty"
+	EmptyLabel.Size = UDim2.new(1, -10, 0, 50)
+	EmptyLabel.BackgroundTransparency = 1
+	EmptyLabel.Text = "NO RUNTIME LOGS"
+	EmptyLabel.TextColor3 = GREY
+	EmptyLabel.TextSize = 11
+	EmptyLabel.Font = Enum.Font.GothamBold
+	EmptyLabel.Parent = LogScroll
 
 	local ClearLogsButton = Instance.new("TextButton")
 	ClearLogsButton.Name = "ClearLogs"
@@ -974,6 +1027,10 @@ function MainUI.Start(self, Hub)
 	ClearLogsButton.Font = Enum.Font.GothamBold
 	ClearLogsButton.Parent = DevScroll
 
+	local ClearCorner = Instance.new("UICorner")
+	ClearCorner.CornerRadius = UDim.new(0, 5)
+	ClearCorner.Parent = ClearLogsButton
+
 	local ClearStroke = Instance.new("UIStroke")
 	ClearStroke.Color = BLUE
 	ClearStroke.Thickness = 1
@@ -982,22 +1039,71 @@ function MainUI.Start(self, Hub)
 	local function RefreshDevLogs()
 		if not self.Hub or not self.Hub.GetLogs then return end
 
-		local Logs = self.Hub:GetLogs()
-		local Lines = {}
-
-		for _, Entry in ipairs(Logs) do
-			table.insert(
-				Lines,
-				string.format(
-					"[%s] [%s] %s",
-					Entry.Timestamp or "--:--:--",
-					Entry.Level or "INFO",
-					Entry.Message or ""
-				)
-			)
+		for _, Child in ipairs(LogScroll:GetChildren()) do
+			if Child:IsA("Frame") or Child:IsA("TextLabel") and Child.Name ~= "Empty" then
+				Child:Destroy()
+			end
 		end
 
-		LogText.Text = #Lines > 0 and table.concat(Lines, "\\n") or "No logs."
+		local Logs = self.Hub:GetLogs()
+		LogCount.Text = tostring(#Logs) .. " ENTRIES"
+		EmptyLabel.Visible = #Logs == 0
+
+		for Index, Entry in ipairs(Logs) do
+			local Row = Instance.new("Frame")
+			Row.Name = "Log_" .. tostring(Index)
+			Row.LayoutOrder = Index
+			Row.Size = UDim2.new(1, -4, 0, 38)
+			Row.BackgroundColor3 = Index % 2 == 0 and Color3.fromRGB(8, 7, 43) or Color3.fromRGB(6, 5, 35)
+			Row.BorderSizePixel = 0
+			Row.Parent = LogScroll
+
+			local RowCorner = Instance.new("UICorner")
+			RowCorner.CornerRadius = UDim.new(0, 4)
+			RowCorner.Parent = Row
+
+			local Level = tostring(Entry.Level or "INFO")
+			local Badge = Instance.new("TextLabel")
+			Badge.Position = UDim2.new(0, 6, 0, 7)
+			Badge.Size = UDim2.fromOffset(48, 24)
+			Badge.BackgroundColor3 = Level == "ERROR" and Color3.fromRGB(125, 35, 55)
+				or Level == "WARN" and Color3.fromRGB(120, 80, 25)
+				or Color3.fromRGB(25, 85, 130)
+			Badge.BorderSizePixel = 0
+			Badge.Text = Level
+			Badge.TextColor3 = WHITE
+			Badge.TextSize = 8
+			Badge.Font = Enum.Font.GothamBold
+			Badge.Parent = Row
+
+			local BadgeCorner = Instance.new("UICorner")
+			BadgeCorner.CornerRadius = UDim.new(0, 4)
+			BadgeCorner.Parent = Badge
+
+			local Time = Instance.new("TextLabel")
+			Time.Position = UDim2.new(0, 62, 0, 3)
+			Time.Size = UDim2.fromOffset(70, 14)
+			Time.BackgroundTransparency = 1
+			Time.Text = tostring(Entry.Timestamp or "--:--:--")
+			Time.TextColor3 = GREY
+			Time.TextSize = 8
+			Time.Font = Enum.Font.Code
+			Time.TextXAlignment = Enum.TextXAlignment.Left
+			Time.Parent = Row
+
+			local Message = Instance.new("TextLabel")
+			Message.Position = UDim2.new(0, 62, 0, 16)
+			Message.Size = UDim2.new(1, -70, 0, 18)
+			Message.BackgroundTransparency = 1
+			Message.Text = tostring(Entry.Message or "")
+			Message.TextColor3 = WHITE
+			Message.TextSize = 10
+			Message.Font = Enum.Font.Code
+			Message.TextXAlignment = Enum.TextXAlignment.Left
+			Message.TextTruncate = Enum.TextTruncate.AtEnd
+			Message.Parent = Row
+		end
+
 		task.defer(function()
 			LogScroll.CanvasPosition = Vector2.new(0, math.max(0, LogScroll.AbsoluteCanvasSize.Y))
 		end)
