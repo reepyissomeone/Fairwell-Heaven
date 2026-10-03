@@ -180,7 +180,7 @@ end
 -- UPDATE SETTINGS
 ------------------------------------------------------------
 
-local UPDATE_INTERVAL = 120
+local DEFAULT_UPDATE_INTERVAL = 120
 
 local GITHUB_BRANCH_API =
 	"https://api.github.com/repos/reepyissomeone/Fairwell-Heaven/branches/main"
@@ -226,6 +226,28 @@ local function GetRemoteCommit()
 end
 
 local function StartAutoUpdater(Hub)
+
+	local UPDATE_INTERVAL = DEFAULT_UPDATE_INTERVAL
+
+	local Settings = Hub:GetService("Settings")
+
+	if Settings then
+		local SavedInterval =
+			tonumber(
+				Settings:Get(
+					"UpdateInterval",
+					DEFAULT_UPDATE_INTERVAL
+				)
+			)
+
+		if SavedInterval then
+			UPDATE_INTERVAL = math.clamp(
+				SavedInterval,
+				30,
+				3600
+			)
+		end
+	end
 
 	if type(task) ~= "table"
 		or type(task.spawn) ~= "function"
@@ -401,6 +423,45 @@ print(
 )
 
 GlobalEnv.__FAIRWELL_HEAVEN_HUB = Hub
+
+------------------------------------------------------------
+-- PERSISTENT SETTINGS
+------------------------------------------------------------
+
+local Settings =
+	LoadModule(
+		"core/Settings.lua"
+	)
+
+if type(Settings) ~= "table" then
+
+	warn(
+		"[Fairwell Heaven] "
+		.. "Settings service failed to load."
+	)
+
+else
+
+	Hub:RegisterService(
+		"Settings",
+		Settings
+	)
+
+	if type(Settings.Start) == "function" then
+		local SettingsSuccess, SettingsError =
+			pcall(function()
+				Settings:Start(Hub)
+			end)
+
+		if not SettingsSuccess then
+			Hub:Warn(
+				"Settings startup failed:",
+				SettingsError
+			)
+		end
+	end
+
+end
 
 ------------------------------------------------------------
 -- GAME DETECTION
