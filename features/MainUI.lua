@@ -1,12 +1,13 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 2.6
+--// Version 2.7
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local MainUI = {
 	Name = "Main UI",
@@ -685,7 +686,7 @@ function MainUI.Start(self, Hub)
 	Version.BackgroundTransparency = 1
 
 	Version.Text =
-		"FAIRWELL HEAVEN • v2.6"
+		"FAIRWELL HEAVEN • v2.7"
 
 	Version.TextColor3 =
 		GREY
@@ -1008,85 +1009,125 @@ function MainUI.Start(self, Hub)
 	FairwellCamera.Parent = FairwellSpot
 	FairwellSpot.CurrentCamera = FairwellCamera
 
-	local FairwellModel = Instance.new("Model")
-	FairwellModel.Name = "Fairwell3D"
-	FairwellModel.Parent = FairwellWorld
+	--==================================================
+	-- FAIRWELL 3D MODEL
+	--==================================================
+	-- The OBJ you supplied is imported into Roblox as a Model/MeshParts.
+	-- Preferred setup: put the imported model in ReplicatedStorage and name it
+	-- "FairwellModel". You can also set FAIRWELL_MODEL_ASSET_ID below.
 
-	local function MakePart(Name, Size, Color, LocalCFrame, Shape)
-		local Part = Instance.new("Part")
-		Part.Name = Name
-		Part.Size = Size
-		Part.Color = Color
-		Part.Material = Enum.Material.SmoothPlastic
-		Part.Anchored = true
-		Part.CanCollide = false
-		Part.CastShadow = true
-		Part.CFrame = LocalCFrame
-		if Shape then
-			Part.Shape = Shape
+	local FAIRWELL_MODEL_ASSET_ID = ""
+
+	local FairwellModel = nil
+
+	local function TryCloneFairwell(Source)
+		if not Source then
+			return nil
 		end
-		Part.Parent = FairwellModel
-		return Part
+
+		local Clone = Source:Clone()
+
+		if Clone:IsA("Model") then
+			return Clone
+		end
+
+		if Clone:IsA("BasePart") then
+			local Wrapper = Instance.new("Model")
+			Clone.Parent = Wrapper
+			return Wrapper
+		end
+
+		Clone:Destroy()
+		return nil
 	end
 
-	local Cyan = Color3.fromRGB(0, 170, 220)
-	local JacketBlue = Color3.fromRGB(0, 75, 205)
-	local ShirtGray = Color3.fromRGB(205, 205, 205)
-	local StripeGray = Color3.fromRGB(145, 145, 145)
-	local Jeans = Color3.fromRGB(35, 35, 38)
-	local ShoeGreen = Color3.fromRGB(30, 105, 78)
-	local Red = Color3.fromRGB(235, 20, 30)
-
-	local Head = MakePart(
-		"Head",
-		Vector3.new(1.55, 1.35, 1.35),
-		Cyan,
-		CFrame.new(0, 2.85, 0),
-		Enum.PartType.Ball
-	)
-
-	local EyeL = MakePart("EyeL", Vector3.new(0.18, 0.22, 0.08), Red, CFrame.new(-0.31, 2.92, -0.66), Enum.PartType.Ball)
-	local EyeR = MakePart("EyeR", Vector3.new(0.18, 0.22, 0.08), Red, CFrame.new(0.31, 2.92, -0.66), Enum.PartType.Ball)
-
-	local SmileL = MakePart("SmileL", Vector3.new(0.38, 0.08, 0.07), Red, CFrame.new(-0.19, 2.62, -0.67))
-	local SmileR = MakePart("SmileR", Vector3.new(0.38, 0.08, 0.07), Red, CFrame.new(0.19, 2.62, -0.67))
-	local SmileMid = MakePart("SmileMid", Vector3.new(0.30, 0.07, 0.07), Red, CFrame.new(0, 2.68, -0.68))
-
-	local Torso = MakePart("Torso", Vector3.new(1.75, 1.25, 0.72), JacketBlue, CFrame.new(0, 1.65, 0))
-	local Shirt = MakePart("Shirt", Vector3.new(0.72, 1.24, 0.08), ShirtGray, CFrame.new(0, 1.65, -0.39))
-
-	local Stripes = {}
-	for Index = 1, 4 do
-		Stripes[Index] = MakePart(
-			"ShirtStripe" .. Index,
-			Vector3.new(0.72, 0.07, 0.035),
-			StripeGray,
-			CFrame.new(0, 1.22 + Index * 0.27, -0.435)
-		)
-	end
-
-	local ArmL = MakePart("ArmL", Vector3.new(0.42, 1.15, 0.55), JacketBlue, CFrame.new(-1.08, 1.7, 0))
-	local ArmR = MakePart("ArmR", Vector3.new(0.42, 1.15, 0.55), JacketBlue, CFrame.new(1.08, 1.7, 0))
-	local LegL = MakePart("LegL", Vector3.new(0.65, 1.55, 0.68), Jeans, CFrame.new(-0.43, 0.25, 0))
-	local LegR = MakePart("LegR", Vector3.new(0.65, 1.55, 0.68), Jeans, CFrame.new(0.43, 0.25, 0))
-	local ShoeL = MakePart("ShoeL", Vector3.new(0.72, 0.28, 0.95), ShoeGreen, CFrame.new(-0.43, -0.66, -0.10))
-	local ShoeR = MakePart("ShoeR", Vector3.new(0.72, 0.28, 0.95), ShoeGreen, CFrame.new(0.43, -0.66, -0.10))
-
-	local CharacterParts = {
-		Head, EyeL, EyeR, SmileL, SmileR, SmileMid,
-		Torso, Shirt, ArmL, ArmR, LegL, LegR, ShoeL, ShoeR
+	local Sources = {
+		ReplicatedStorage:FindFirstChild("FairwellModel"),
+		ReplicatedStorage:FindFirstChild("fairwelladmi"),
 	}
 
-	for _, Stripe in ipairs(Stripes) do
-		table.insert(CharacterParts, Stripe)
+	for _, Source in ipairs(Sources) do
+		if Source then
+			FairwellModel = TryCloneFairwell(Source)
+			if FairwellModel then
+				break
+			end
+		end
 	end
 
-	local BaseParts = {}
-	for _, Part in ipairs(CharacterParts) do
-		BaseParts[Part] = Part.CFrame
+	if not FairwellModel and FAIRWELL_MODEL_ASSET_ID ~= "" then
+		local AssetId = FAIRWELL_MODEL_ASSET_ID
+		if not AssetId:find("rbxassetid://", 1, true) then
+			AssetId = "rbxassetid://" .. AssetId
+		end
+
+		local Success, Objects = pcall(function()
+			return game:GetObjects(AssetId)
+		end)
+
+		if Success and type(Objects) == "table" then
+			for _, Object in ipairs(Objects) do
+				FairwellModel = TryCloneFairwell(Object)
+				if FairwellModel then
+					break
+				end
+			end
+		end
+	end
+
+	if not FairwellModel then
+		Hub:Log("Fairwell 3D model not found. Import fairwelladmi.obj into Roblox as a Model named FairwellModel.", "WARN")
+	else
+		FairwellModel.Name = "Fairwell3D"
+		FairwellModel.Parent = FairwellWorld
+
+		for _, Descendant in ipairs(FairwellModel:GetDescendants()) do
+			if Descendant:IsA("BasePart") then
+				Descendant.Anchored = true
+				Descendant.CanCollide = false
+				Descendant.CanTouch = false
+				Descendant.CanQuery = false
+				Descendant.CastShadow = true
+			end
+		end
+
+		-- Normalize the imported model around its own bounding box so the
+		-- supplied OBJ works regardless of its original Prisma3D coordinates.
+		local BoundingCFrame, BoundingSize = FairwellModel:GetBoundingBox()
+		local Pivot = FairwellModel:GetPivot()
+		local CenterOffset = Pivot:ToObjectSpace(BoundingCFrame)
+		FairwellModel:PivotTo(CFrame.new(0, 0, 0) * CenterOffset:Inverse())
+
+		local _, NormalizedSize = FairwellModel:GetBoundingBox()
+		local TargetHeight = 3.65
+		if NormalizedSize.Y > 0 then
+			FairwellModel:ScaleTo(TargetHeight / NormalizedSize.Y)
+		end
+
+		local _, FinalSize = FairwellModel:GetBoundingBox()
+		local FinalCenter = select(1, FairwellModel:GetBoundingBox())
+		FairwellModel:PivotTo(CFrame.new(0, FinalSize.Y * 0.5 - FinalCenter.Y, 0))
 	end
 
 	local FairwellRoot = CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.rad(-8))
+	local FairwellBasePivot = FairwellModel and FairwellModel:GetPivot() or CFrame.new()
+
+	local EyeParts = {}
+	local MouthParts = {}
+
+	if FairwellModel then
+		for _, Descendant in ipairs(FairwellModel:GetDescendants()) do
+			if Descendant:IsA("BasePart") then
+				local LowerName = Descendant.Name:lower()
+				if LowerName:find("eye", 1, true) then
+					table.insert(EyeParts, Descendant)
+				elseif LowerName:find("mouth", 1, true)
+					or LowerName:find("smile", 1, true) then
+					table.insert(MouthParts, Descendant)
+				end
+			end
+		end
+	end
 
 	local Bubble = Instance.new("TextLabel")
 	Bubble.Name = "SpeechBubble"
@@ -1220,55 +1261,50 @@ function MainUI.Start(self, Hub)
 	local FairwellTalkingUntil = 0
 	local FairwellTalkCycle = 0
 
+	local FairwellTalkingUntil = 0
+	local FairwellTalkCycle = 0
+	local FairwellBlinkUntil = 0
+
+	local function SetFairwellPose(Time)
+		if not FairwellModel then
+			return
+		end
+
+		local Bob = math.sin(Time * 2.4) * 0.035
+		local Sway = math.sin(Time * 1.7) * 0.025
+		local Lean = CFrame.new(Sway, Bob, 0)
+			* CFrame.Angles(0, 0, math.rad(-8 + math.sin(Time * 1.3) * 0.8))
+
+		FairwellModel:PivotTo(FairwellBasePivot * Lean)
+	end
+
 	local FairwellAnimationConnection = RunService.RenderStepped:Connect(function()
 		if not ChatStage.Parent then
 			return
 		end
 
 		local Time = os.clock()
-		local Bob = math.sin(Time * 2.4) * 0.035
-		local Sway = math.sin(Time * 1.7) * 0.025
-		local Lean = CFrame.new(Sway, Bob, 0) * CFrame.Angles(0, 0, math.rad(-8 + math.sin(Time * 1.3) * 0.8))
-
-		local function SetPart(Part, Offset, Rotation)
-			Part.CFrame = Lean * Offset * Rotation
-		end
-
-		SetPart(Head, BaseParts[Head], CFrame.Angles(0, 0, math.sin(Time * 1.7) * math.rad(1.5)))
-		SetPart(Torso, BaseParts[Torso], CFrame.Angles(0, 0, math.sin(Time * 1.7 + 0.4) * math.rad(0.8)))
-		SetPart(Shirt, BaseParts[Shirt], CFrame.Angles(0, 0, math.sin(Time * 1.7 + 0.4) * math.rad(0.8)))
-
-		SetPart(ArmL, BaseParts[ArmL], CFrame.Angles(0, 0, math.rad(-18 - math.sin(Time * 2.1) * 2)))
-		SetPart(ArmR, BaseParts[ArmR], CFrame.Angles(0, 0, math.rad(12 + math.sin(Time * 2.1) * 2)))
-
-		SetPart(LegL, BaseParts[LegL], CFrame.Angles(0, 0, math.rad(-10 + math.sin(Time * 1.7) * 1.2)))
-		SetPart(LegR, BaseParts[LegR], CFrame.Angles(0, 0, math.rad(5 - math.sin(Time * 1.7) * 1.2)))
-		SetPart(ShoeL, BaseParts[ShoeL], CFrame.Angles(0, 0, math.rad(-10 + math.sin(Time * 1.7) * 1.2)))
-		SetPart(ShoeR, BaseParts[ShoeR], CFrame.Angles(0, 0, math.rad(5 - math.sin(Time * 1.7) * 1.2)))
-
-		for _, Part in ipairs({EyeL, EyeR, SmileL, SmileR, SmileMid}) do
-			local Original = BaseParts[Part]
-			SetPart(Part, Original, CFrame.new())
-		end
-
-		for _, Stripe in ipairs(Stripes) do
-			SetPart(Stripe, BaseParts[Stripe], CFrame.new())
-		end
+		SetFairwellPose(Time)
 
 		if Time < FairwellTalkingUntil then
 			FairwellTalkCycle += 1
 			local Talking = FairwellTalkCycle % 12
-			local MouthLift = Talking < 6 and 0.025 or -0.02
 
-			SmileMid.CFrame = Lean * BaseParts[SmileMid] * CFrame.new(0, MouthLift, -0.01)
-			SetPart(ArmL, BaseParts[ArmL], CFrame.Angles(0, 0, math.rad(-18 - math.sin(Time * 9) * 5)))
-			SetPart(ArmR, BaseParts[ArmR], CFrame.Angles(0, 0, math.rad(12 + math.sin(Time * 9) * 5)))
+			for _, Part in ipairs(MouthParts) do
+				if Part:IsA("BasePart") then
+					Part.Transparency = Talking < 6 and 0 or math.min(0.35, Part.Transparency)
+				end
+			end
+
 			Bubble.Position = UDim2.new(0, 92, 0, 40 + math.sin(Time * 8) * 1.5)
 		else
 			Bubble.Position = UDim2.new(0, 92, 0, 42)
 		end
 	end)
 
+	-- Blink support is automatic for imported models whose eye meshes/parts
+	-- contain "Eye" in their names. The supplied model can therefore animate
+	-- without requiring its geometry to be rebuilt.
 	task.spawn(function()
 		while ChatStage.Parent do
 			task.wait(math.random(25, 45) / 10)
@@ -1277,14 +1313,23 @@ function MainUI.Start(self, Hub)
 				break
 			end
 
-			EyeL.Size = Vector3.new(0.18, 0.05, 0.08)
-			EyeR.Size = Vector3.new(0.18, 0.05, 0.08)
+			for _, Eye in ipairs(EyeParts) do
+				if Eye:IsA("BasePart") then
+					Eye:SetAttribute("FairwellOriginalTransparency", Eye.Transparency)
+					Eye.Transparency = 1
+				end
+			end
+
 			task.wait(0.09)
-			EyeL.Size = Vector3.new(0.18, 0.22, 0.08)
-			EyeR.Size = Vector3.new(0.18, 0.22, 0.08)
+
+			for _, Eye in ipairs(EyeParts) do
+				if Eye:IsA("BasePart") then
+					local Original = Eye:GetAttribute("FairwellOriginalTransparency")
+					Eye.Transparency = typeof(Original) == "number" and Original or 0
+				end
+			end
 		end
 	end)
-
 
 	local function FairwellSpeak(Text)
 		Bubble.Text = tostring(Text)
@@ -2351,7 +2396,7 @@ function MainUI.Start(self, Hub)
 	end
 
 	Hub:Log(
-		"Main UI v2.6 initialized."
+		"Main UI v2.7 initialized with imported Fairwell model support."
 	)
 end
 
