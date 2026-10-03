@@ -31,6 +31,8 @@ local HttpGet =
 		game.HttpGet
 	)
 
+local StarterGui = game:GetService("StarterGui")
+
 local Compile =
 	loadstring or load
 
@@ -324,6 +326,36 @@ local function StartAutoUpdater(Hub)
 				"->",
 				RemoteCommit:sub(1, 7)
 			)
+
+			-- Ask before installing the new version.
+			local ShouldUpdate = false
+			local DecisionReceived = false
+
+			pcall(function()
+				StarterGui:SetCore("SendNotification", {
+					Title = "Fairwell Heaven",
+					Text = "Update?",
+					Duration = 15,
+					Button1 = "Yes",
+					Button2 = "No",
+					Callback = function(Button)
+						DecisionReceived = true
+						ShouldUpdate = Button == "Yes"
+					end
+				})
+			end)
+
+			if not DecisionReceived then
+				Hub:Warn("Update prompt unavailable or unanswered. Keeping current version.")
+				InitialCommit = RemoteCommit
+				continue
+			end
+
+			if not ShouldUpdate then
+				Hub:Log("Update declined. Staying on current version.")
+				InitialCommit = RemoteCommit
+				continue
+			end
 
 			local CacheBust =
 				"?fairwell=" .. tostring(
