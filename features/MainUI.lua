@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 1.0
+--// Version 2.0
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -16,8 +16,15 @@ local MainUI = {
 
 local BLUE = Color3.fromRGB(27, 147, 227) -- #1B93E3
 local BACKGROUND = Color3.fromRGB(6, 4, 43) -- #06042B
+local DARK = Color3.fromRGB(8, 6, 55)
 local WHITE = Color3.fromRGB(255, 255, 255)
-local DARK = Color3.fromRGB(10, 8, 55)
+local MUTED = Color3.fromRGB(170, 175, 195)
+
+--==================================================
+-- TARGET WINDOW SIZE
+--==================================================
+
+MainUI.TargetSize = UDim2.fromScale(0.78, 0.68)
 
 --==================================================
 -- START
@@ -34,49 +41,26 @@ function MainUI.Start(self, Hub)
 
 	local PlayerGui = Player:WaitForChild("PlayerGui")
 
-	-- Remove existing UI
-	local Existing = PlayerGui:FindFirstChild("FairwellHeaven_Main")
+	--==================================================
+	-- USE LOADING SCREEN'S WINDOW
+	--==================================================
 
-	if Existing then
-		Existing:Destroy()
+	local Gui = PlayerGui:FindFirstChild("FairwellHeaven_Main")
+
+	if not Gui then
+		warn("[Fairwell Heaven] Main window not found.")
+		return
 	end
 
-	--==================================================
-	-- SCREEN GUI
-	--==================================================
+	local Window = Gui:FindFirstChild("Window")
 
-	local Gui = Instance.new("ScreenGui")
+	if not Window then
+		warn("[Fairwell Heaven] Loading window not found.")
+		return
+	end
 
-	Gui.Name = "FairwellHeaven_Main"
-	Gui.ResetOnSpawn = false
-	Gui.IgnoreGuiInset = true
-	Gui.DisplayOrder = 100
-
-	Gui.Parent = PlayerGui
-
-	--==================================================
-	-- MAIN WINDOW
-	--==================================================
-
-	local Window = Instance.new("Frame")
-
-	Window.Name = "Window"
-	Window.AnchorPoint = Vector2.new(0.5, 0.5)
-	Window.Position = UDim2.fromScale(0.5, 0.5)
-	Window.Size = UDim2.fromScale(0.78, 0.68)
-
-	Window.BackgroundColor3 = BACKGROUND
-	Window.BorderSizePixel = 0
-
-	Window.Parent = Gui
-
-	-- Outline
-	local WindowStroke = Instance.new("UIStroke")
-
-	WindowStroke.Color = BLUE
-	WindowStroke.Thickness = 3
-
-	WindowStroke.Parent = Window
+	self.Gui = Gui
+	self.Window = Window
 
 	--==================================================
 	-- TITLE BAR
@@ -85,29 +69,24 @@ function MainUI.Start(self, Hub)
 	local TitleBar = Instance.new("Frame")
 
 	TitleBar.Name = "TitleBar"
-	TitleBar.Size = UDim2.new(1, 0, 0, 48)
+
+	TitleBar.Size = UDim2.new(1, 0, 0, 50)
 
 	TitleBar.BackgroundColor3 = DARK
 	TitleBar.BorderSizePixel = 0
 
+	TitleBar.BackgroundTransparency = 1
+
 	TitleBar.Parent = Window
 
-	-- Bottom line
-	local TitleLine = Instance.new("Frame")
+	--==================================================
+	-- TITLE
+	--==================================================
 
-	TitleLine.Name = "TitleLine"
-	TitleLine.Size = UDim2.new(1, 0, 0, 2)
-	TitleLine.Position = UDim2.new(0, 0, 1, -2)
-
-	TitleLine.BackgroundColor3 = BLUE
-	TitleLine.BorderSizePixel = 0
-
-	TitleLine.Parent = TitleBar
-
-	-- Title
 	local Title = Instance.new("TextLabel")
 
 	Title.Name = "Title"
+
 	Title.Position = UDim2.new(0, 16, 0, 0)
 	Title.Size = UDim2.new(0.6, 0, 1, 0)
 
@@ -119,12 +98,18 @@ function MainUI.Start(self, Hub)
 	Title.Font = Enum.Font.GothamBold
 	Title.TextXAlignment = Enum.TextXAlignment.Left
 
+	Title.TextTransparency = 1
+
 	Title.Parent = TitleBar
 
-	-- Version
+	--==================================================
+	-- VERSION
+	--==================================================
+
 	local Version = Instance.new("TextLabel")
 
 	Version.Name = "Version"
+
 	Version.AnchorPoint = Vector2.new(1, 0)
 	Version.Position = UDim2.new(1, -14, 0, 0)
 	Version.Size = UDim2.new(0.3, 0, 1, 0)
@@ -137,7 +122,27 @@ function MainUI.Start(self, Hub)
 	Version.Font = Enum.Font.GothamMedium
 	Version.TextXAlignment = Enum.TextXAlignment.Right
 
+	Version.TextTransparency = 1
+
 	Version.Parent = TitleBar
+
+	--==================================================
+	-- TITLE LINE
+	--==================================================
+
+	local TitleLine = Instance.new("Frame")
+
+	TitleLine.Name = "TitleLine"
+
+	TitleLine.Position = UDim2.new(0, 0, 1, -2)
+	TitleLine.Size = UDim2.new(1, 0, 0, 2)
+
+	TitleLine.BackgroundColor3 = BLUE
+	TitleLine.BorderSizePixel = 0
+
+	TitleLine.BackgroundTransparency = 1
+
+	TitleLine.Parent = TitleBar
 
 	--==================================================
 	-- TAB BAR
@@ -146,31 +151,37 @@ function MainUI.Start(self, Hub)
 	local TabBar = Instance.new("Frame")
 
 	TabBar.Name = "TabBar"
-	TabBar.Position = UDim2.new(0, 0, 0, 48)
-	TabBar.Size = UDim2.new(0, 125, 1, -48)
+
+	TabBar.Position = UDim2.new(0, 0, 0, 50)
+	TabBar.Size = UDim2.new(0, 125, 1, -50)
 
 	TabBar.BackgroundColor3 = DARK
 	TabBar.BorderSizePixel = 0
 
+	TabBar.BackgroundTransparency = 1
+
 	TabBar.Parent = Window
 
 	--==================================================
-	-- CONTENT AREA
+	-- CONTENT
 	--==================================================
 
 	local Content = Instance.new("Frame")
 
 	Content.Name = "Content"
-	Content.Position = UDim2.new(0, 125, 0, 48)
-	Content.Size = UDim2.new(1, -125, 1, -48)
+
+	Content.Position = UDim2.new(0, 125, 0, 50)
+	Content.Size = UDim2.new(1, -125, 1, -50)
 
 	Content.BackgroundColor3 = BACKGROUND
 	Content.BorderSizePixel = 0
 
+	Content.BackgroundTransparency = 1
+
 	Content.Parent = Window
 
 	--==================================================
-	-- PAGE CREATION
+	-- MAIN PAGE
 	--==================================================
 
 	local MainPage = Instance.new("Frame")
@@ -182,23 +193,14 @@ function MainUI.Start(self, Hub)
 
 	MainPage.Parent = Content
 
-	local DevPage = Instance.new("Frame")
-
-	DevPage.Name = "DevPage"
-	DevPage.Size = UDim2.fromScale(1, 1)
-
-	DevPage.BackgroundTransparency = 1
-	DevPage.Visible = false
-
-	DevPage.Parent = Content
-
 	--==================================================
-	-- MAIN PAGE
+	-- MAIN TITLE
 	--==================================================
 
 	local Welcome = Instance.new("TextLabel")
 
 	Welcome.Name = "Welcome"
+
 	Welcome.Position = UDim2.new(0, 24, 0, 24)
 	Welcome.Size = UDim2.new(1, -48, 0, 40)
 
@@ -210,25 +212,28 @@ function MainUI.Start(self, Hub)
 	Welcome.Font = Enum.Font.GothamBold
 	Welcome.TextXAlignment = Enum.TextXAlignment.Left
 
+	Welcome.TextTransparency = 1
+
 	Welcome.Parent = MainPage
 
 	local Description = Instance.new("TextLabel")
 
 	Description.Name = "Description"
-	Description.Position = UDim2.new(0, 24, 0, 70)
+
+	Description.Position = UDim2.new(0, 24, 0, 72)
 	Description.Size = UDim2.new(1, -48, 0, 60)
 
 	Description.BackgroundTransparency = 1
 
 	Description.Text =
-		"Your feature hub is ready. More tools and features can be added here."
+		"Your feature hub is ready."
 
-	Description.TextColor3 = Color3.fromRGB(180, 180, 200)
+	Description.TextColor3 = MUTED
 	Description.TextSize = 15
 	Description.Font = Enum.Font.Gotham
-	Description.TextWrapped = true
 	Description.TextXAlignment = Enum.TextXAlignment.Left
-	Description.TextYAlignment = Enum.TextYAlignment.Top
+
+	Description.TextTransparency = 1
 
 	Description.Parent = MainPage
 
@@ -236,9 +241,20 @@ function MainUI.Start(self, Hub)
 	-- DEV PAGE
 	--==================================================
 
+	local DevPage = Instance.new("Frame")
+
+	DevPage.Name = "DevPage"
+	DevPage.Size = UDim2.fromScale(1, 1)
+
+	DevPage.BackgroundTransparency = 1
+	DevPage.Visible = false
+
+	DevPage.Parent = Content
+
 	local DevTitle = Instance.new("TextLabel")
 
 	DevTitle.Name = "DevTitle"
+
 	DevTitle.Position = UDim2.new(0, 24, 0, 24)
 	DevTitle.Size = UDim2.new(1, -48, 0, 40)
 
@@ -250,52 +266,37 @@ function MainUI.Start(self, Hub)
 	DevTitle.Font = Enum.Font.GothamBold
 	DevTitle.TextXAlignment = Enum.TextXAlignment.Left
 
+	DevTitle.TextTransparency = 1
+
 	DevTitle.Parent = DevPage
 
-	local FeatureCount = Instance.new("TextLabel")
+	local DevInfo = Instance.new("TextLabel")
 
-	FeatureCount.Name = "FeatureCount"
-	FeatureCount.Position = UDim2.new(0, 24, 0, 75)
-	FeatureCount.Size = UDim2.new(1, -48, 0, 30)
+	DevInfo.Name = "DevInfo"
 
-	FeatureCount.BackgroundTransparency = 1
+	DevInfo.Position = UDim2.new(0, 24, 0, 72)
+	DevInfo.Size = UDim2.new(1, -48, 0, 100)
 
-	FeatureCount.Text =
-		"Loaded Features: " .. tostring(Hub:GetFeatureCount())
+	DevInfo.BackgroundTransparency = 1
 
-	FeatureCount.TextColor3 = BLUE
-	FeatureCount.TextSize = 16
-	FeatureCount.Font = Enum.Font.GothamMedium
-	FeatureCount.TextXAlignment = Enum.TextXAlignment.Left
-
-	FeatureCount.Parent = DevPage
-
-	local DebugText = Instance.new("TextLabel")
-
-	DebugText.Name = "DebugText"
-	DebugText.Position = UDim2.new(0, 24, 0, 115)
-	DebugText.Size = UDim2.new(1, -48, 0, 80)
-
-	DebugText.BackgroundTransparency = 1
-
-	DebugText.Text =
+	DevInfo.Text =
 		"Fairwell Heaven\n"
 		.. "Version: " .. tostring(Hub.Version) .. "\n"
-		.. "Status: Running"
+		.. "Features: " .. tostring(Hub:GetFeatureCount())
 
-	DebugText.TextColor3 = Color3.fromRGB(180, 180, 200)
-	DebugText.TextSize = 15
-	DebugText.Font = Enum.Font.Gotham
-	DebugText.TextXAlignment = Enum.TextXAlignment.Left
-	DebugText.TextYAlignment = Enum.TextYAlignment.Top
+	DevInfo.TextColor3 = MUTED
+	DevInfo.TextSize = 15
+	DevInfo.Font = Enum.Font.Gotham
+	DevInfo.TextXAlignment = Enum.TextXAlignment.Left
+	DevInfo.TextYAlignment = Enum.TextYAlignment.Top
 
-	DebugText.Parent = DevPage
+	DevInfo.TextTransparency = 1
+
+	DevInfo.Parent = DevPage
 
 	--==================================================
-	-- TAB BUTTON FUNCTION
+	-- TAB CREATOR
 	--==================================================
-
-	local CurrentTab = nil
 
 	local function CreateTab(Name, Order)
 
@@ -303,7 +304,9 @@ function MainUI.Start(self, Hub)
 
 		Button.Name = Name .. "Tab"
 
-		Button.Position = UDim2.new(0, 10, 0, 10 + ((Order - 1) * 48))
+		Button.Position =
+			UDim2.new(0, 10, 0, 10 + ((Order - 1) * 48))
+
 		Button.Size = UDim2.new(1, -20, 0, 38)
 
 		Button.BackgroundColor3 = BACKGROUND
@@ -311,11 +314,14 @@ function MainUI.Start(self, Hub)
 
 		Button.Text = Name:upper()
 
-		Button.TextColor3 = Color3.fromRGB(180, 180, 200)
+		Button.TextColor3 = MUTED
 		Button.TextSize = 14
 		Button.Font = Enum.Font.GothamBold
 
 		Button.AutoButtonColor = false
+
+		Button.BackgroundTransparency = 1
+		Button.TextTransparency = 1
 
 		Button.Parent = TabBar
 
@@ -330,12 +336,17 @@ function MainUI.Start(self, Hub)
 		return Button, Stroke
 	end
 
-	local MainButton, MainStroke = CreateTab("Main", 1)
-	local DevButton, DevStroke = CreateTab("Dev", 2)
+	local MainButton, MainStroke =
+		CreateTab("Main", 1)
+
+	local DevButton, DevStroke =
+		CreateTab("Dev", 2)
 
 	--==================================================
 	-- TAB SWITCHING
 	--==================================================
+
+	local CurrentTab
 
 	local function SelectTab(Name)
 
@@ -353,7 +364,7 @@ function MainUI.Start(self, Hub)
 			MainButton.TextColor3 = WHITE
 			MainStroke.Transparency = 0
 
-			DevButton.TextColor3 = Color3.fromRGB(180, 180, 200)
+			DevButton.TextColor3 = MUTED
 			DevStroke.Transparency = 1
 
 		elseif Name == "Dev" then
@@ -361,7 +372,7 @@ function MainUI.Start(self, Hub)
 			MainPage.Visible = false
 			DevPage.Visible = true
 
-			MainButton.TextColor3 = Color3.fromRGB(180, 180, 200)
+			MainButton.TextColor3 = MUTED
 			MainStroke.Transparency = 1
 
 			DevButton.TextColor3 = WHITE
@@ -379,17 +390,123 @@ function MainUI.Start(self, Hub)
 		SelectTab("Dev")
 	end)
 
-	-- Start on Main
 	SelectTab("Main")
 
 	--==================================================
 	-- STORE REFERENCES
 	--==================================================
 
-	self.Gui = Gui
-	self.Window = Window
+	self.TitleBar = TitleBar
+	self.Title = Title
+	self.Version = Version
+	self.TitleLine = TitleLine
 
-	Hub:Log("Main UI created.")
+	self.TabBar = TabBar
+	self.Content = Content
+
+	self.Welcome = Welcome
+	self.Description = Description
+	self.DevTitle = DevTitle
+	self.DevInfo = DevInfo
+
+	self.MainButton = MainButton
+	self.DevButton = DevButton
+
+	Hub:Log("Main UI prepared.")
+
+end
+
+--==================================================
+-- REVEAL
+--==================================================
+
+function MainUI:Reveal()
+
+	local FadeInfo = TweenInfo.new(
+		0.4,
+		Enum.EasingStyle.Quad,
+		Enum.EasingDirection.Out
+	)
+
+	-- Background sections
+	TweenService:Create(
+		self.TitleBar,
+		FadeInfo,
+		{BackgroundTransparency = 0}
+	):Play()
+
+	TweenService:Create(
+		self.TitleLine,
+		FadeInfo,
+		{BackgroundTransparency = 0}
+	):Play()
+
+	TweenService:Create(
+		self.TabBar,
+		FadeInfo,
+		{BackgroundTransparency = 0}
+	):Play()
+
+	TweenService:Create(
+		self.Content,
+		FadeInfo,
+		{BackgroundTransparency = 0}
+	):Play()
+
+	-- Text
+	TweenService:Create(
+		self.Title,
+		FadeInfo,
+		{TextTransparency = 0}
+	):Play()
+
+	TweenService:Create(
+		self.Version,
+		FadeInfo,
+		{TextTransparency = 0}
+	):Play()
+
+	TweenService:Create(
+		self.Welcome,
+		FadeInfo,
+		{TextTransparency = 0}
+	):Play()
+
+	TweenService:Create(
+		self.Description,
+		FadeInfo,
+		{TextTransparency = 0}
+	):Play()
+
+	TweenService:Create(
+		self.DevTitle,
+		FadeInfo,
+		{TextTransparency = 0}
+	):Play()
+
+	TweenService:Create(
+		self.DevInfo,
+		FadeInfo,
+		{TextTransparency = 0}
+	):Play()
+
+	TweenService:Create(
+		self.MainButton,
+		FadeInfo,
+		{
+			BackgroundTransparency = 0,
+			TextTransparency = 0
+		}
+	):Play()
+
+	TweenService:Create(
+		self.DevButton,
+		FadeInfo,
+		{
+			BackgroundTransparency = 0,
+			TextTransparency = 0
+		}
+	):Play()
 
 end
 
