@@ -650,10 +650,10 @@ function MainUI.Start(self, Hub)
 		Instance.new("TextLabel")
 
 	Title.Size =
-		UDim2.new(1, -90, 0, 25)
+		UDim2.new(1, -190, 0, 25)
 
 	Title.Position =
-		UDim2.new(0, 12, 0, 5)
+		UDim2.new(0, 100, 0, 5)
 
 	Title.BackgroundTransparency = 1
 
@@ -678,10 +678,10 @@ function MainUI.Start(self, Hub)
 		Instance.new("TextLabel")
 
 	Version.Size =
-		UDim2.new(1, -90, 0, 16)
+		UDim2.new(1, -190, 0, 16)
 
 	Version.Position =
-		UDim2.new(0, 12, 0, 28)
+		UDim2.new(0, 100, 0, 28)
 
 	Version.BackgroundTransparency = 1
 
