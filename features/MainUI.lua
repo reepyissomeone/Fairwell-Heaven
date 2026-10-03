@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 3.4
+--// Version 3.5
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
@@ -686,7 +686,7 @@ function MainUI.Start(self, Hub)
 	Version.BackgroundTransparency = 1
 
 	Version.Text =
-		"FAIRWELL HEAVEN • v3.4"
+		"FAIRWELL HEAVEN • v3.5"
 
 	Version.TextColor3 =
 		GREY
@@ -950,15 +950,18 @@ function MainUI.Start(self, Hub)
 	ChatTitle.TextColor3 = BLUE
 	ChatTitle.Font = Enum.Font.GothamBold
 	ChatTitle.TextSize = 16
+	ChatTitle.ZIndex = 5
 
 	local ChatInfo = MakeLabel(ChatScroll, "ChatInfo", "Talk to Fairwelladmi. He's right here.", UDim2.new(1, -10, 0, 24), UDim2.new(0, 5, 0, 38))
 	ChatInfo.TextColor3 = GREY
 	ChatInfo.TextSize = 10
+	ChatInfo.Text = "Live avatar • Fairwelladmi • Chat ready"
 
 	local ChatStage = Instance.new("Frame")
 	ChatStage.Name = "FairwellStage"
 	ChatStage.Position = UDim2.new(0, 5, 0, 68)
-	ChatStage.Size = UDim2.new(1, -10, 0, 300)
+	ChatStage.Size = UDim2.new(1, -10, 0, 276)
+	ChatStage.ClipsDescendants = true
 	ChatStage.BackgroundColor3 = Color3.fromRGB(4, 3, 30)
 	ChatStage.BorderSizePixel = 0
 	ChatStage.Parent = ChatScroll
@@ -971,6 +974,51 @@ function MainUI.Start(self, Hub)
 	StageStroke.Color = BLUE
 	StageStroke.Transparency = 0.2
 	StageStroke.Parent = ChatStage
+
+	local StageHeader = Instance.new("TextLabel")
+	StageHeader.Name = "StageHeader"
+	StageHeader.Position = UDim2.new(0, 12, 0, 10)
+	StageHeader.Size = UDim2.new(0, 170, 0, 26)
+	StageHeader.BackgroundTransparency = 1
+	StageHeader.Text = "FAIRWELL"
+	StageHeader.TextColor3 = WHITE
+	StageHeader.TextSize = 14
+	StageHeader.Font = Enum.Font.GothamBold
+	StageHeader.TextXAlignment = Enum.TextXAlignment.Left
+	StageHeader.ZIndex = 11
+	StageHeader.Parent = ChatStage
+
+	local StageStatus = Instance.new("TextLabel")
+	StageStatus.Name = "StageStatus"
+	StageStatus.Position = UDim2.new(0, 72, 0, 13)
+	StageStatus.Size = UDim2.new(0, 100, 0, 20)
+	StageStatus.BackgroundTransparency = 1
+	StageStatus.Text = "● ONLINE"
+	StageStatus.TextColor3 = Color3.fromRGB(70, 220, 145)
+	StageStatus.TextSize = 9
+	StageStatus.Font = Enum.Font.GothamBold
+	StageStatus.TextXAlignment = Enum.TextXAlignment.Left
+	StageStatus.ZIndex = 11
+	StageStatus.Parent = ChatStage
+
+	local AvatarFrame = Instance.new("Frame")
+AvatarFrame.Name = "AvatarFrame"
+AvatarFrame.Position = UDim2.new(0, 10, 0, 46)
+AvatarFrame.Size = UDim2.fromOffset(170, 212)
+AvatarFrame.BackgroundColor3 = Color3.fromRGB(7, 8, 24)
+AvatarFrame.BackgroundTransparency = 0.12
+AvatarFrame.BorderSizePixel = 0
+AvatarFrame.ZIndex = 2
+AvatarFrame.Parent = ChatStage
+
+local AvatarCorner = Instance.new("UICorner")
+AvatarCorner.CornerRadius = UDim.new(0, 10)
+AvatarCorner.Parent = AvatarFrame
+
+local AvatarStroke = Instance.new("UIStroke")
+AvatarStroke.Color = BLUE
+AvatarStroke.Transparency = 0.45
+AvatarStroke.Parent = AvatarFrame
 
 	local Wall = Instance.new("Frame")
 	Wall.Name = "FairwellWall"
@@ -987,9 +1035,12 @@ function MainUI.Start(self, Hub)
 
 	local FairwellSpot = Instance.new("ViewportFrame")
 	FairwellSpot.Name = "Fairwell"
-	FairwellSpot.Position = UDim2.new(0, 8, 1, -183)
-	FairwellSpot.Size = UDim2.fromOffset(125, 175)
-	FairwellSpot.BackgroundTransparency = 1
+	FairwellSpot.Position = UDim2.new(0, 10, 0, 52)
+	FairwellSpot.Size = UDim2.fromOffset(170, 210)
+	FairwellSpot.BackgroundColor3 = Color3.fromRGB(7, 8, 24)
+	FairwellSpot.BackgroundTransparency = 0.05
+	FairwellSpot.ClipsDescendants = true
+	FairwellSpot.ZIndex = 3
 	FairwellSpot.Ambient = Color3.fromRGB(180, 190, 210)
 	FairwellSpot.LightColor = Color3.fromRGB(255, 255, 255)
 	FairwellSpot.LightDirection = Vector3.new(-1, -1, -2)
@@ -1026,13 +1077,14 @@ function MainUI.Start(self, Hub)
 
 	local FairwellThumbnail = Instance.new("ImageLabel")
 	FairwellThumbnail.Name = "FairwellAvatarThumbnail"
-	FairwellThumbnail.Position = UDim2.new(0, 8, 1, -183)
-	FairwellThumbnail.Size = UDim2.fromOffset(125, 175)
-	FairwellThumbnail.BackgroundTransparency = 1
+	FairwellThumbnail.Position = UDim2.new(0, 10, 0, 52)
+	FairwellThumbnail.Size = UDim2.fromOffset(170, 210)
+	FairwellThumbnail.BackgroundColor3 = Color3.fromRGB(7, 8, 24)
+	FairwellThumbnail.BackgroundTransparency = 0
 	FairwellThumbnail.Image = ""
 	FairwellThumbnail.ScaleType = Enum.ScaleType.Fit
-	FairwellThumbnail.Visible = false
-	FairwellThumbnail.ZIndex = 8
+	FairwellThumbnail.Visible = true
+	FairwellThumbnail.ZIndex = 10
 	FairwellThumbnail.Parent = ChatStage
 
 	local FairwellThumbnailCorner = Instance.new("UICorner")
@@ -1043,6 +1095,19 @@ function MainUI.Start(self, Hub)
 	FairwellThumbnailStroke.Color = BLUE
 	FairwellThumbnailStroke.Transparency = 0.25
 	FairwellThumbnailStroke.Parent = FairwellThumbnail
+
+	local AvatarName = Instance.new("TextLabel")
+	AvatarName.Name = "AvatarName"
+	AvatarName.Position = UDim2.new(0, 10, 0, 238)
+	AvatarName.Size = UDim2.fromOffset(170, 22)
+	AvatarName.BackgroundTransparency = 1
+	AvatarName.Text = "@fairwelladmi"
+	AvatarName.TextColor3 = GREY
+	AvatarName.TextSize = 9
+	AvatarName.Font = Enum.Font.GothamBold
+	AvatarName.TextXAlignment = Enum.TextXAlignment.Center
+	AvatarName.ZIndex = 12
+	AvatarName.Parent = ChatStage
 
 	local function PrepareFairwellModel(Model)
 		if not Model or not Model:IsA("Model") then
@@ -1077,8 +1142,7 @@ function MainUI.Start(self, Hub)
 			Model:ScaleTo(TargetHeight / NormalizedSize.Y)
 		end
 
-		-- Cache the model state used by the idle/talking/blink animation.
-		FairwellBasePivot = Model:GetPivot()
+		-- Cache facial parts now; cache the final pivot only after the model has been placed. 
 		MouthParts = {}
 		EyeParts = {}
 
@@ -1102,6 +1166,9 @@ function MainUI.Start(self, Hub)
 			FinalSize.Y * 0.5 - FinalCenter.Y,
 			0
 		))
+
+		-- IMPORTANT: animation must start from the final centered pivot.
+		FairwellBasePivot = Model:GetPivot()
 
 		local CameraDistance = math.max(6, FinalSize.Y * 2.35)
 		local CameraHeight = math.max(1.35, FinalSize.Y * 0.52)
@@ -1173,8 +1240,9 @@ function MainUI.Start(self, Hub)
 		if ModelSuccess and Model and Model:IsA("Model") then
 			local Prepared = PrepareFairwellModel(Model)
 			if Prepared then
-				FairwellThumbnail.Visible = false
-				Hub:Log("Loaded the actual 3D fairwelladmi Roblox avatar.", "SUCCESS")
+				FairwellThumbnail.Visible = true
+				FairwellSpot.Visible = true
+				Hub:Log("Loaded the actual 3D fairwelladmi Roblox avatar behind the guaranteed thumbnail.", "SUCCESS")
 				return Prepared
 			end
 		end
@@ -1200,8 +1268,9 @@ function MainUI.Start(self, Hub)
 			if DescriptionModelSuccess and DescriptionModel then
 				local Prepared = PrepareFairwellModel(DescriptionModel)
 				if Prepared then
-					FairwellThumbnail.Visible = false
-					Hub:Log("Loaded fairwelladmi through HumanoidDescription.", "SUCCESS")
+					FairwellThumbnail.Visible = true
+					FairwellSpot.Visible = true
+					Hub:Log("Loaded fairwelladmi through HumanoidDescription behind the guaranteed thumbnail.", "SUCCESS")
 					return Prepared
 				end
 			end
@@ -1231,8 +1300,9 @@ function MainUI.Start(self, Hub)
 		local Model = LoadFairwellAvatar()
 		if Model then
 			FairwellModel = Model
-			FairwellThumbnail.Visible = false
-			Hub:Log("Fairwell 3D avatar is now active.", "SUCCESS")
+			FairwellThumbnail.Visible = true
+			FairwellSpot.Visible = true
+			Hub:Log("Fairwell 3D avatar is active; thumbnail remains visible as the reliable display layer.", "SUCCESS")
 		else
 			FairwellThumbnail.Visible = true
 			Hub:Log("3D avatar unavailable; keeping Roblox avatar thumbnail visible.", "WARN")
@@ -1241,8 +1311,9 @@ function MainUI.Start(self, Hub)
 
 	local Bubble = Instance.new("TextLabel")
 	Bubble.Name = "SpeechBubble"
-	Bubble.Position = UDim2.new(0, 138, 0, 42)
-	Bubble.Size = UDim2.new(0, 145, 0, 68)
+	Bubble.Position = UDim2.new(0, 194, 0, 48)
+	Bubble.Size = UDim2.new(0, 170, 0, 58)
+	Bubble.ZIndex = 12
 	Bubble.BackgroundColor3 = Color3.fromRGB(245, 245, 250)
 	Bubble.BackgroundTransparency = 0.02
 	Bubble.BorderSizePixel = 0
@@ -1265,8 +1336,9 @@ function MainUI.Start(self, Hub)
 	BubbleStroke.Parent = Bubble
 
 	local BubbleTail = Instance.new("TextLabel")
-	BubbleTail.Position = UDim2.new(0, 118, 0, 78)
-	BubbleTail.Size = UDim2.fromOffset(30, 24)
+	BubbleTail.Position = UDim2.new(0, 174, 0, 78)
+	BubbleTail.Size = UDim2.fromOffset(28, 22)
+	BubbleTail.ZIndex = 12
 	BubbleTail.BackgroundTransparency = 1
 	BubbleTail.Text = "◀"
 	BubbleTail.TextColor3 = Color3.fromRGB(245, 245, 250)
@@ -1276,8 +1348,9 @@ function MainUI.Start(self, Hub)
 
 	local ChatDivider = Instance.new("Frame")
 	ChatDivider.Name = "ChatDivider"
-	ChatDivider.Position = UDim2.new(0.36, 0, 0, 10)
-	ChatDivider.Size = UDim2.new(0, 1, 0, 276)
+	ChatDivider.Position = UDim2.new(0.34, 0, 0, 10)
+	ChatDivider.Size = UDim2.new(0, 1, 0, 256)
+	ChatDivider.ZIndex = 4
 	ChatDivider.BackgroundColor3 = BLUE
 	ChatDivider.BackgroundTransparency = 0.65
 	ChatDivider.BorderSizePixel = 0
@@ -1285,8 +1358,9 @@ function MainUI.Start(self, Hub)
 
 	local ChatMessages = Instance.new("ScrollingFrame")
 	ChatMessages.Name = "Messages"
-	ChatMessages.Position = UDim2.new(0.38, 5, 0, 8)
-	ChatMessages.Size = UDim2.new(0.62, -10, 0, 284)
+	ChatMessages.Position = UDim2.new(0.36, 5, 0, 8)
+	ChatMessages.Size = UDim2.new(0.64, -10, 0, 260)
+	ChatMessages.ZIndex = 5
 	ChatMessages.BackgroundColor3 = Color3.fromRGB(4, 3, 30)
 	ChatMessages.BorderSizePixel = 0
 	ChatMessages.ScrollBarThickness = 3
@@ -1324,6 +1398,7 @@ function MainUI.Start(self, Hub)
 		Row.TextWrapped = true
 		Row.TextXAlignment = Enum.TextXAlignment.Left
 		Row.TextYAlignment = Enum.TextYAlignment.Center
+		Row.ZIndex = 6
 		Row.Parent = ChatMessages
 
 		local Corner = Instance.new("UICorner")
@@ -1458,8 +1533,8 @@ function MainUI.Start(self, Hub)
 
 	local ChatInput = Instance.new("TextBox")
 	ChatInput.Name = "Input"
-	ChatInput.Position = UDim2.new(0, 5, 0, 378)
-	ChatInput.Size = UDim2.new(1, -75, 0, 38)
+	ChatInput.Position = UDim2.new(0, 5, 0, 292)
+	ChatInput.Size = UDim2.new(1, -75, 0, 36)
 	ChatInput.BackgroundColor3 = PANEL
 	ChatInput.BorderSizePixel = 0
 	ChatInput.ClearTextOnFocus = false
@@ -1482,8 +1557,8 @@ function MainUI.Start(self, Hub)
 
 	local SendButton = Instance.new("TextButton")
 	SendButton.Name = "Send"
-	SendButton.Position = UDim2.new(1, -64, 0, 378)
-	SendButton.Size = UDim2.new(0, 59, 0, 38)
+	SendButton.Position = UDim2.new(1, -64, 0, 292)
+	SendButton.Size = UDim2.new(0, 59, 0, 36)
 	SendButton.BackgroundColor3 = BLUE
 	SendButton.BackgroundTransparency = 0.1
 	SendButton.BorderSizePixel = 0
@@ -2526,7 +2601,7 @@ function MainUI.Start(self, Hub)
 	end
 
 	Hub:Log(
-		"Main UI v3.4 initialized with fairwelladmi avatar/character loading."
+		"Main UI v3.5 initialized with repaired fairwelladmi avatar/character display."
 	)
 end
 
