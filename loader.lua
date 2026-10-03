@@ -58,16 +58,27 @@ for _, path in ipairs(Manifest) do
         local registered, err = Hub:RegisterFeature(name, Feature)
 
         if registered then
-            print("[DOORS HUB] Loaded feature:", name)
+            print("[Fairwell heaven] Loaded feature:", name)
 
             -- Start the feature automatically
             Hub:Enable(name)
         else
-            warn("[DOORS HUB] Registration failed:", name, err)
+            warn("[Fairwell heaven] Registration failed:", name, err)
         end
     end
 end
 
-print("[DOORS HUB] All features loaded.")
+print("[Fairwell Heaven] All features loaded.")
+
+-- Fade out the loading screen
+local LoadingScreen = Hub:GetFeature("Loading Screen")
+
+if LoadingScreen and LoadingScreen.Finish then
+    LoadingScreen:Finish(Hub)
+else
+    warn("[Fairwell Heaven] Loading Screen feature could not be finished.")
+end
+
+return Hub
 
 return Hub
