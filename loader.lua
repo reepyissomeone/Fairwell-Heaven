@@ -1,11 +1,42 @@
 --// DOORS FEATURE HUB
 --// Main Loader
 
-local Hub = {}
+local BASE_URL =
+    "https://raw.githubusercontent.com/reepyissomeone/Fairwell-Heaven/main/"
 
-Hub.Version = "0.1.0"
-Hub.Features = {}
+local function LoadModule(path)
+    local url = BASE_URL .. path
 
-print("[DOORS HUB] Loading version " .. Hub.Version)
+    local success, source = pcall(function()
+        return game:HttpGet(url)
+    end)
+
+    if not success then
+        warn("[DOORS HUB] Failed to download:", path)
+        warn(source)
+        return nil
+    end
+
+    local success2, module = pcall(function()
+        return loadstring(source)()
+    end)
+
+    if not success2 then
+        warn("[DOORS HUB] Failed to load:", path)
+        warn(module)
+        return nil
+    end
+
+    return module
+end
+
+local Hub = LoadModule("core/Hub.lua")
+
+if not Hub then
+    error("[DOORS HUB] Core failed to load.")
+end
+
+print("[DOORS HUB] " .. Hub.Name .. " v" .. Hub.Version)
+print("[DOORS HUB] Successfully loaded.")
 
 return Hub
