@@ -1,15 +1,46 @@
---// DOORS FEATURE HUB
+--// FAIRWELL HEAVEN
 --// Core Hub
+--// Version 0.2.0
 
 local Hub = {}
 
-Hub.Name = "DOORS Feature Hub"
-Hub.Version = "0.1.0"
+--==================================================
+-- IDENTITY
+--==================================================
+
+Hub.Name = "Fairwell Heaven"
+Hub.Version = "0.2.0"
+Hub.Prefix = "[Fairwell Heaven]"
+
+--==================================================
+-- STORAGE
+--==================================================
 
 Hub.Features = {}
 Hub.Enabled = {}
 
+--==================================================
+-- LOGGING
+--==================================================
+
+function Hub:Log(...)
+    print(self.Prefix, ...)
+end
+
+function Hub:Warn(...)
+    warn(self.Prefix, ...)
+end
+
+function Hub:Error(...)
+    warn(self.Prefix, "ERROR:", ...)
+end
+
+--==================================================
+-- FEATURE REGISTRATION
+--==================================================
+
 function Hub:RegisterFeature(name, feature)
+
     if type(name) ~= "string" then
         return false, "Feature name must be a string"
     end
@@ -18,71 +49,135 @@ function Hub:RegisterFeature(name, feature)
         return false, "Feature must be a table"
     end
 
-    Hub.Features[name] = feature
+    if self.Features[name] then
+        self:Warn("Replacing existing feature:", name)
+    end
+
+    self.Features[name] = feature
 
     return true
 end
 
+--==================================================
+-- FEATURE ENABLE
+--==================================================
+
 function Hub:Enable(name)
-    local feature = Hub.Features[name]
+
+    local feature = self.Features[name]
 
     if not feature then
-        warn("[DOORS HUB] Feature not found:", name)
+        self:Warn("Feature not found:", name)
         return false
     end
 
-    if Hub.Enabled[name] then
+    if self.Enabled[name] then
+        self:Log("Already enabled:", name)
         return true
     end
 
     if feature.Start then
-        local success, err = pcall(feature.Start, feature, Hub)
+
+        local success, err = pcall(function()
+            feature.Start(feature, self)
+        end)
 
         if not success then
-            warn("[DOORS HUB] Failed to start:", name, err)
+            self:Error("Failed to start", name, "-", err)
             return false
         end
+
     end
 
-    Hub.Enabled[name] = true
+    self.Enabled[name] = true
 
-    print("[DOORS HUB] Enabled:", name)
+    self:Log("Enabled:", name)
 
     return true
 end
 
+--==================================================
+-- FEATURE DISABLE
+--==================================================
+
 function Hub:Disable(name)
-    local feature = Hub.Features[name]
+
+    local feature = self.Features[name]
 
     if not feature then
+        self:Warn("Feature not found:", name)
         return false
     end
 
-    if not Hub.Enabled[name] then
+    if not self.Enabled[name] then
         return true
     end
 
     if feature.Stop then
-        local success, err = pcall(feature.Stop, feature, Hub)
+
+        local success, err = pcall(function()
+            feature.Stop(feature, self)
+        end)
 
         if not success then
-            warn("[DOORS HUB] Failed to stop:", name, err)
+            self:Error("Failed to stop", name, "-", err)
         end
+
     end
 
-    Hub.Enabled[name] = nil
+    self.Enabled[name] = nil
 
-    print("[DOORS HUB] Disabled:", name)
+    self:Log("Disabled:", name)
 
     return true
 end
 
+--==================================================
+-- FEATURE STATUS
+--==================================================
+
 function Hub:IsEnabled(name)
-    return Hub.Enabled[name] == true
+    return self.Enabled[name] == true
 end
 
 function Hub:GetFeature(name)
-    return Hub.Features[name]
+    return self.Features[name]
 end
+
+function Hub:GetFeatures()
+
+    local result = {}
+
+    for name, feature in pairs(self.Features) do
+        table.insert(result, {
+            Name = name,
+            Feature = feature,
+            Enabled = self:IsEnabled(name)
+        })
+    end
+
+    return result
+end
+
+--==================================================
+-- FEATURE COUNT
+--==================================================
+
+function Hub:GetFeatureCount()
+
+    local count = 0
+
+    for _ in pairs(self.Features) do
+        count += 1
+    end
+
+    return count
+end
+
+--==================================================
+-- STARTUP
+--==================================================
+
+Hub:Log(Hub.Name .. " v" .. Hub.Version .. " initialized.")
 
 return Hub
