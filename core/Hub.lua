@@ -69,8 +69,22 @@ function Hub:GetLogs()
 	return Result
 end
 
-function Hub:ClearLogs()
-	table.clear(self.LogHistory)
+function Hub:ClearLogs(level)
+	if level == nil then
+		table.clear(self.LogHistory)
+		return
+	end
+
+	level = string.upper(tostring(level))
+
+	local Kept = {}
+	for _, Entry in ipairs(self.LogHistory) do
+		if string.upper(tostring(Entry.Level or "")) ~= level then
+			table.insert(Kept, Entry)
+		end
+	end
+
+	self.LogHistory = Kept
 end
 
 
