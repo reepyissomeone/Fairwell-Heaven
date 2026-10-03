@@ -924,9 +924,138 @@ function MainUI.Start(self, Hub)
 
 	DevInfo.TextWrapped = true
 
+	--==================================================
+	-- NOTIFICATION TESTER
+	--==================================================
+
+	local NotifyTester = Instance.new("Frame")
+	NotifyTester.Name = "NotificationTester"
+	NotifyTester.Position = UDim2.new(0, 5, 0, 88)
+	NotifyTester.Size = UDim2.new(1, -10, 0, 72)
+	NotifyTester.BackgroundColor3 = Color3.fromRGB(4, 3, 30)
+	NotifyTester.BorderSizePixel = 0
+	NotifyTester.Parent = DevScroll
+
+	local NotifyCorner = Instance.new("UICorner")
+	NotifyCorner.CornerRadius = UDim.new(0, 6)
+	NotifyCorner.Parent = NotifyTester
+
+	local NotifyStroke = Instance.new("UIStroke")
+	NotifyStroke.Color = BLUE
+	NotifyStroke.Thickness = 1
+	NotifyStroke.Transparency = 0.15
+	NotifyStroke.Parent = NotifyTester
+
+	local NotifyTitle = Instance.new("TextLabel")
+	NotifyTitle.Position = UDim2.new(0, 10, 0, 5)
+	NotifyTitle.Size = UDim2.new(1, -20, 0, 20)
+	NotifyTitle.BackgroundTransparency = 1
+	NotifyTitle.Text = "NOTIFICATION TESTER"
+	NotifyTitle.TextColor3 = WHITE
+	NotifyTitle.TextSize = 12
+	NotifyTitle.Font = Enum.Font.GothamBold
+	NotifyTitle.TextXAlignment = Enum.TextXAlignment.Left
+	NotifyTitle.Parent = NotifyTester
+
+	local NotifyInfo = Instance.new("TextLabel")
+	NotifyInfo.Position = UDim2.new(0, 10, 0, 25)
+	NotifyInfo.Size = UDim2.new(1, -20, 0, 14)
+	NotifyInfo.BackgroundTransparency = 1
+	NotifyInfo.Text = "Preview the live Fairwell Heaven notification styles."
+	NotifyInfo.TextColor3 = GREY
+	NotifyInfo.TextSize = 8
+	NotifyInfo.Font = Enum.Font.Gotham
+	NotifyInfo.TextXAlignment = Enum.TextXAlignment.Left
+	NotifyInfo.Parent = NotifyTester
+
+	local NotifyButtons = {
+		{"INFO", "INFO", "Test information notification.", BLUE},
+		{"SUCCESS", "SUCCESS", "Test success notification.", Color3.fromRGB(55, 200, 120)},
+		{"WARNING", "WARNING", "Test warning notification.", Color3.fromRGB(240, 165, 55)},
+		{"ERROR", "ERROR", "Test error notification.", Color3.fromRGB(235, 75, 95)}
+	}
+
+	for Index, Data in ipairs(NotifyButtons) do
+		local Button = Instance.new("TextButton")
+		Button.Name = Data[1]
+		Button.Position = UDim2.new((Index - 1) * 0.25, 3, 0, 46)
+		Button.Size = UDim2.new(0.25, -6, 0, 20)
+		Button.BackgroundColor3 = PANEL
+		Button.BorderSizePixel = 0
+		Button.Text = Data[1]
+		Button.TextColor3 = Data[4]
+		Button.TextSize = 8
+		Button.Font = Enum.Font.GothamBold
+		Button.Parent = NotifyTester
+
+		local ButtonCorner = Instance.new("UICorner")
+		ButtonCorner.CornerRadius = UDim.new(0, 4)
+		ButtonCorner.Parent = Button
+
+		local ButtonStroke = Instance.new("UIStroke")
+		ButtonStroke.Color = Data[4]
+		ButtonStroke.Thickness = 1
+		ButtonStroke.Transparency = 0.25
+		ButtonStroke.Parent = Button
+
+		Button.MouseButton1Click:Connect(function()
+			if self.Hub and self.Hub.Notify then
+				self.Hub:Notify(
+					"DEV TEST • " .. Data[1],
+					Data[3],
+					Data[2],
+					4
+				)
+			end
+		end)
+	end
+
+	local TestAllButton = Instance.new("TextButton")
+	TestAllButton.Name = "TestAll"
+	TestAllButton.Position = UDim2.new(1, -108, 0, 5)
+	TestAllButton.Size = UDim2.fromOffset(98, 20)
+	TestAllButton.BackgroundColor3 = BLUE
+	TestAllButton.BackgroundTransparency = 0.15
+	TestAllButton.BorderSizePixel = 0
+	TestAllButton.Text = "TEST ALL"
+	TestAllButton.TextColor3 = WHITE
+	TestAllButton.TextSize = 8
+	TestAllButton.Font = Enum.Font.GothamBold
+	TestAllButton.Parent = NotifyTester
+
+	local TestAllCorner = Instance.new("UICorner")
+	TestAllCorner.CornerRadius = UDim.new(0, 4)
+	TestAllCorner.Parent = TestAllButton
+
+	TestAllButton.MouseButton1Click:Connect(function()
+		if not self.Hub or not self.Hub.Notify then
+			return
+		end
+
+		local Sequence = {
+			{"INFO", "Information test.", BLUE},
+			{"SUCCESS", "Success test.", Color3.fromRGB(55, 200, 120)},
+			{"WARNING", "Warning test.", Color3.fromRGB(240, 165, 55)},
+			{"ERROR", "Error test.", Color3.fromRGB(235, 75, 95)}
+		}
+
+		for Index, Data in ipairs(Sequence) do
+			task.delay((Index - 1) * 0.35, function()
+				if self.Hub and self.Hub.Notify then
+					self.Hub:Notify(
+						"DEV TEST • " .. Data[1],
+						Data[2],
+						Data[1],
+						4
+					)
+				end
+			end)
+		end
+	end)
+
 	local LogFrame = Instance.new("Frame")
 	LogFrame.Name = "DevLogs"
-	LogFrame.Position = UDim2.new(0, 5, 0, 88)
+	LogFrame.Position = UDim2.new(0, 5, 0, 168)
 	LogFrame.Size = UDim2.new(1, -10, 0, 340)
 	LogFrame.BackgroundColor3 = Color3.fromRGB(4, 3, 30)
 	LogFrame.BorderSizePixel = 0
@@ -1019,7 +1148,7 @@ function MainUI.Start(self, Hub)
 	ClearLogsButton.Name = "ClearLogs"
 	-- Keep the button below the log panel so it does not overlap
 	-- the header or require awkward scrolling/tapping on mobile.
-	ClearLogsButton.Position = UDim2.new(0, 5, 0, 436)
+	ClearLogsButton.Position = UDim2.new(0, 5, 0, 516)
 	ClearLogsButton.Size = UDim2.new(1, -10, 0, 32)
 	ClearLogsButton.BackgroundColor3 = PANEL
 	ClearLogsButton.BorderSizePixel = 0
