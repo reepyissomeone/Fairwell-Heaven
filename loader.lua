@@ -227,27 +227,31 @@ end
 
 local function StartAutoUpdater(Hub)
 
-	local UPDATE_INTERVAL = DEFAULT_UPDATE_INTERVAL
+	local function GetUpdateInterval()
+		local Settings = Hub:GetService("Settings")
 
-	local Settings = Hub:GetService("Settings")
-
-	if Settings then
-		local SavedInterval =
-			tonumber(
-				Settings:Get(
-					"UpdateInterval",
-					DEFAULT_UPDATE_INTERVAL
+		if Settings then
+			local SavedInterval =
+				tonumber(
+					Settings:Get(
+						"UpdateInterval",
+						DEFAULT_UPDATE_INTERVAL
+					)
 				)
-			)
 
-		if SavedInterval then
-			UPDATE_INTERVAL = math.clamp(
-				SavedInterval,
-				30,
-				3600
-			)
+			if SavedInterval then
+				return math.clamp(
+					SavedInterval,
+					30,
+					3600
+				)
+			end
 		end
+
+		return DEFAULT_UPDATE_INTERVAL
 	end
+
+	local UPDATE_INTERVAL = GetUpdateInterval()
 
 	if type(task) ~= "table"
 		or type(task.spawn) ~= "function"
@@ -288,6 +292,7 @@ local function StartAutoUpdater(Hub)
 		while GlobalEnv.__FAIRWELL_HEAVEN_RUNTIME_ID
 			== RuntimeId do
 
+			UPDATE_INTERVAL = GetUpdateInterval()
 			task.wait(UPDATE_INTERVAL)
 
 			if GlobalEnv.__FAIRWELL_HEAVEN_RUNTIME_ID
