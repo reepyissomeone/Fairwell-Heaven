@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 2.5
+--// Version 2.6
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
@@ -685,7 +685,7 @@ function MainUI.Start(self, Hub)
 	Version.BackgroundTransparency = 1
 
 	Version.Text =
-		"FAIRWELL HEAVEN • v2.5"
+		"FAIRWELL HEAVEN • v2.6"
 
 	Version.TextColor3 =
 		GREY
@@ -1071,20 +1071,26 @@ function MainUI.Start(self, Hub)
 		92
 	)
 
+	MakeToggle(
+		"ROOM HUD",
+		"DOORS Room HUD",
+		136
+	)
+
 	local IntervalLabel =
 		MakeLabel(
 			SettingsScroll,
 			"IntervalLabel",
 			"Update Check Interval (seconds)",
 			UDim2.new(1, -10, 0, 24),
-			UDim2.new(0, 5, 0, 140)
+			UDim2.new(0, 5, 0, 184)
 		)
 
 	local IntervalBox =
 		Instance.new("TextBox")
 
 	IntervalBox.Position =
-		UDim2.new(0, 5, 0, 166)
+		UDim2.new(0, 5, 0, 210)
 
 	IntervalBox.Size =
 		UDim2.new(1, -10, 0, 38)
@@ -1142,7 +1148,7 @@ function MainUI.Start(self, Hub)
 		Instance.new("TextButton")
 
 	ResetButton.Position =
-		UDim2.new(0, 5, 0, 214)
+		UDim2.new(0, 5, 0, 258)
 
 	ResetButton.Size =
 		UDim2.new(1, -10, 0, 38)
@@ -1174,6 +1180,7 @@ function MainUI.Start(self, Hub)
 
 		Hub:Disable("DOORS Highlights")
 		Hub:Disable("DOORS Entity Notifications")
+		Hub:Disable("DOORS Room HUD")
 
 		SettingsService:SetFeatureEnabled(
 			"DOORS Highlights",
@@ -1187,8 +1194,15 @@ function MainUI.Start(self, Hub)
 			true
 		)
 
+		SettingsService:SetFeatureEnabled(
+			"DOORS Room HUD",
+			true,
+			true
+		)
+
 		Hub:Enable("DOORS Highlights")
 		Hub:Enable("DOORS Entity Notifications")
+		Hub:Enable("DOORS Room HUD")
 	end)
 
 	--==================================================
@@ -1475,7 +1489,7 @@ function MainUI.Start(self, Hub)
 	end
 
 	Hub:Log(
-		"Main UI v2.5 initialized."
+		"Main UI v2.6 initialized."
 	)
 end
 
