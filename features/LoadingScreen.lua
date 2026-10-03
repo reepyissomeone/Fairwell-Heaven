@@ -1,14 +1,18 @@
 --// FAIRWELL HEAVEN
 --// Loading Screen
---// Version 1.2
+--// Version 2.0
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 
 local LoadingScreen = {
 	Name = "Loading Screen",
-	Description = "Fairwell Heaven startup loading screen."
+	Description = "Fairwell Heaven startup screen."
 }
+
+local BLUE = Color3.fromRGB(27, 147, 227) -- #1B93E3
+local BACKGROUND = Color3.fromRGB(6, 4, 43) -- #06042B
+local WHITE = Color3.fromRGB(255, 255, 255)
 
 function LoadingScreen.Start(self, Hub)
 
@@ -21,23 +25,11 @@ function LoadingScreen.Start(self, Hub)
 
 	local PlayerGui = Player:WaitForChild("PlayerGui")
 
-	--==================================================
-	-- REMOVE OLD SCREEN
-	--==================================================
-
-	local Old = PlayerGui:FindFirstChild("FairwellHeaven_Loading")
+	local Old = PlayerGui:FindFirstChild("FairwellHeaven_Main")
 
 	if Old then
 		Old:Destroy()
 	end
-
-	--==================================================
-	-- COLORS
-	--==================================================
-
-	local OUTLINE_COLOR = Color3.fromRGB(27, 147, 227)
-	local BACKGROUND_COLOR = Color3.fromRGB(6, 4, 43)
-	local TEXT_COLOR = Color3.fromRGB(255, 255, 255)
 
 	--==================================================
 	-- SCREEN GUI
@@ -45,7 +37,7 @@ function LoadingScreen.Start(self, Hub)
 
 	local Gui = Instance.new("ScreenGui")
 
-	Gui.Name = "FairwellHeaven_Loading"
+	Gui.Name = "FairwellHeaven_Main"
 	Gui.ResetOnSpawn = false
 	Gui.IgnoreGuiInset = true
 	Gui.DisplayOrder = 999999
@@ -53,20 +45,22 @@ function LoadingScreen.Start(self, Hub)
 	Gui.Parent = PlayerGui
 
 	--==================================================
-	-- MAIN PANEL
+	-- LOADING WINDOW
 	--==================================================
 
-	local Main = Instance.new("Frame")
+	local Window = Instance.new("Frame")
 
-	Main.Name = "Main"
-	Main.AnchorPoint = Vector2.new(0.5, 0.5)
-	Main.Position = UDim2.fromScale(0.5, 0.5)
-	Main.Size = UDim2.fromScale(0.75, 0.5)
+	Window.Name = "Window"
+	Window.AnchorPoint = Vector2.new(0.5, 0.5)
+	Window.Position = UDim2.fromScale(0.5, 0.5)
 
-	Main.BackgroundColor3 = BACKGROUND_COLOR
-	Main.BorderSizePixel = 0
+	-- Small loading size
+	Window.Size = UDim2.fromScale(0.55, 0.32)
 
-	Main.Parent = Gui
+	Window.BackgroundColor3 = BACKGROUND
+	Window.BorderSizePixel = 0
+
+	Window.Parent = Gui
 
 	--==================================================
 	-- OUTLINE
@@ -75,10 +69,10 @@ function LoadingScreen.Start(self, Hub)
 	local Outline = Instance.new("UIStroke")
 
 	Outline.Name = "Outline"
-	Outline.Color = OUTLINE_COLOR
+	Outline.Color = BLUE
 	Outline.Thickness = 4
 
-	Outline.Parent = Main
+	Outline.Parent = Window
 
 	--==================================================
 	-- LOADING TEXT
@@ -86,20 +80,20 @@ function LoadingScreen.Start(self, Hub)
 
 	local Text = Instance.new("TextLabel")
 
-	Text.Name = "Loading"
+	Text.Name = "LoadingText"
 
 	Text.AnchorPoint = Vector2.new(0.5, 0.5)
 	Text.Position = UDim2.fromScale(0.5, 0.5)
-	Text.Size = UDim2.fromScale(0.8, 0.2)
+	Text.Size = UDim2.fromScale(0.8, 0.25)
 
 	Text.BackgroundTransparency = 1
 
 	Text.Text = "LOADING"
-	Text.TextColor3 = TEXT_COLOR
+	Text.TextColor3 = WHITE
 	Text.TextScaled = true
 	Text.Font = Enum.Font.GothamBold
 
-	Text.Parent = Main
+	Text.Parent = Window
 
 	--==================================================
 	-- ANIMATED DOTS
@@ -116,7 +110,7 @@ function LoadingScreen.Start(self, Hub)
 
 		local Index = 1
 
-		while Gui.Parent do
+		while Gui.Parent and self.IsLoading do
 
 			Text.Text = "LOADING" .. Dots[Index]
 
@@ -131,12 +125,8 @@ function LoadingScreen.Start(self, Hub)
 
 	end)
 
-	--==================================================
-	-- STORE REFERENCES
-	--==================================================
-
 	self.Gui = Gui
-	self.Main = Main
+	self.Window = Window
 	self.Text = Text
 	self.Outline = Outline
 
@@ -147,7 +137,7 @@ function LoadingScreen.Start(self, Hub)
 end
 
 --======================================================
--- FINISH LOADING
+-- FINISH
 --======================================================
 
 function LoadingScreen:Finish(Hub)
@@ -162,59 +152,83 @@ function LoadingScreen:Finish(Hub)
 
 	self.IsLoading = false
 
-	Hub:Log("Main UI ready. Fading loading screen.")
+	Hub:Log("All features loaded. Expanding interface.")
 
-	local FadeInfo = TweenInfo.new(
-		0.6,
+	--==================================================
+	-- FADE LOADING TEXT
+	--==================================================
+
+	local TextFade = TweenInfo.new(
+		0.45,
 		Enum.EasingStyle.Quad,
 		Enum.EasingDirection.Out
 	)
 
-	-- Fade text
 	if self.Text then
-		TweenService:Create(
+
+		local TextTween = TweenService:Create(
 			self.Text,
-			FadeInfo,
+			TextFade,
 			{
 				TextTransparency = 1
 			}
-		):Play()
+		)
+
+		TextTween:Play()
+		TextTween.Completed:Wait()
+
+		self.Text.Visible = false
 	end
 
-	-- Fade outline
-	if self.Outline then
-		TweenService:Create(
-			self.Outline,
-			FadeInfo,
-			{
-				Transparency = 1
-			}
-		):Play()
+	--==================================================
+	-- EXPAND WINDOW
+	--==================================================
+
+	local MainUI = Hub:GetFeature("Main UI")
+
+	if not MainUI then
+
+		warn("[Fairwell Heaven] Main UI was not found.")
+
+		return
 	end
 
-	-- Fade background
-	if self.Main then
-		TweenService:Create(
-			self.Main,
-			FadeInfo,
-			{
-				BackgroundTransparency = 1
-			}
-		):Play()
+	local TargetSize = MainUI.TargetSize
+
+	if not TargetSize then
+
+		warn("[Fairwell Heaven] Main UI has no TargetSize.")
+
+		return
 	end
 
-	task.wait(0.65)
+	local ExpandInfo = TweenInfo.new(
+		0.65,
+		Enum.EasingStyle.Quint,
+		Enum.EasingDirection.Out
+	)
 
-	if self.Gui then
-		self.Gui:Destroy()
+	local ExpandTween = TweenService:Create(
+		self.Window,
+		ExpandInfo,
+		{
+			Size = TargetSize
+		}
+	)
+
+	ExpandTween:Play()
+
+	ExpandTween.Completed:Wait()
+
+	--==================================================
+	-- REVEAL MAIN UI
+	--==================================================
+
+	if MainUI.Reveal then
+		MainUI:Reveal()
 	end
 
-	self.Gui = nil
-	self.Main = nil
-	self.Text = nil
-	self.Outline = nil
-
-	Hub:Log("Loading screen removed.")
+	Hub:Log("Main interface ready.")
 
 end
 
@@ -231,7 +245,7 @@ function LoadingScreen.Stop(self, Hub)
 	end
 
 	self.Gui = nil
-	self.Main = nil
+	self.Window = nil
 	self.Text = nil
 	self.Outline = nil
 
