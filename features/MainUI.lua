@@ -957,7 +957,7 @@ function MainUI.Start(self, Hub)
 	local ChatStage = Instance.new("Frame")
 	ChatStage.Name = "FairwellStage"
 	ChatStage.Position = UDim2.new(0, 5, 0, 68)
-	ChatStage.Size = UDim2.new(1, -10, 0, 220)
+	ChatStage.Size = UDim2.new(1, -10, 0, 300)
 	ChatStage.BackgroundColor3 = Color3.fromRGB(4, 3, 30)
 	ChatStage.BorderSizePixel = 0
 	ChatStage.Parent = ChatScroll
@@ -973,7 +973,7 @@ function MainUI.Start(self, Hub)
 
 	local FairwellSpot = Instance.new("Frame")
 	FairwellSpot.Name = "Fairwell"
-	FairwellSpot.Position = UDim2.new(0, 20, 1, -145)
+	FairwellSpot.Position = UDim2.new(0, 18, 1, -148)
 	FairwellSpot.Size = UDim2.fromOffset(90, 130)
 	FairwellSpot.BackgroundTransparency = 1
 	FairwellSpot.Parent = ChatStage
@@ -1061,8 +1061,8 @@ function MainUI.Start(self, Hub)
 
 	local Bubble = Instance.new("TextLabel")
 	Bubble.Name = "SpeechBubble"
-	Bubble.Position = UDim2.new(0, 105, 0, 30)
-	Bubble.Size = UDim2.new(1, -120, 0, 72)
+	Bubble.Position = UDim2.new(0, 92, 0, 42)
+	Bubble.Size = UDim2.new(0, 145, 0, 68)
 	Bubble.BackgroundColor3 = Color3.fromRGB(245, 245, 250)
 	Bubble.BackgroundTransparency = 0.02
 	Bubble.BorderSizePixel = 0
@@ -1085,7 +1085,7 @@ function MainUI.Start(self, Hub)
 	BubbleStroke.Parent = Bubble
 
 	local BubbleTail = Instance.new("TextLabel")
-	BubbleTail.Position = UDim2.new(0, 88, 0, 67)
+	BubbleTail.Position = UDim2.new(0, 75, 0, 78)
 	BubbleTail.Size = UDim2.fromOffset(30, 24)
 	BubbleTail.BackgroundTransparency = 1
 	BubbleTail.Text = "◀"
@@ -1094,10 +1094,19 @@ function MainUI.Start(self, Hub)
 	BubbleTail.Font = Enum.Font.GothamBold
 	BubbleTail.Parent = ChatStage
 
+	local ChatDivider = Instance.new("Frame")
+	ChatDivider.Name = "ChatDivider"
+	ChatDivider.Position = UDim2.new(0.36, 0, 0, 10)
+	ChatDivider.Size = UDim2.new(0, 1, 0, 276)
+	ChatDivider.BackgroundColor3 = BLUE
+	ChatDivider.BackgroundTransparency = 0.65
+	ChatDivider.BorderSizePixel = 0
+	ChatDivider.Parent = ChatStage
+
 	local ChatMessages = Instance.new("ScrollingFrame")
 	ChatMessages.Name = "Messages"
-	ChatMessages.Position = UDim2.new(0, 5, 0, 298)
-	ChatMessages.Size = UDim2.new(1, -10, 0, 92)
+	ChatMessages.Position = UDim2.new(0.38, 5, 0, 8)
+	ChatMessages.Size = UDim2.new(0.62, -10, 0, 284)
 	ChatMessages.BackgroundColor3 = Color3.fromRGB(4, 3, 30)
 	ChatMessages.BorderSizePixel = 0
 	ChatMessages.ScrollBarThickness = 3
@@ -1182,9 +1191,9 @@ function MainUI.Start(self, Hub)
 		task.spawn(function()
 			for Index = 1, 2 do
 				if Bubble.Parent then
-					Bubble.Position = UDim2.new(0, 105, 0, 28)
+					Bubble.Position = UDim2.new(0, 92, 0, 40)
 					task.wait(0.06)
-					Bubble.Position = UDim2.new(0, 105, 0, 30)
+					Bubble.Position = UDim2.new(0, 92, 0, 42)
 					task.wait(0.06)
 				end
 			end
@@ -1196,7 +1205,7 @@ function MainUI.Start(self, Hub)
 
 	local ChatInput = Instance.new("TextBox")
 	ChatInput.Name = "Input"
-	ChatInput.Position = UDim2.new(0, 5, 0, 400)
+	ChatInput.Position = UDim2.new(0, 5, 0, 378)
 	ChatInput.Size = UDim2.new(1, -75, 0, 38)
 	ChatInput.BackgroundColor3 = PANEL
 	ChatInput.BorderSizePixel = 0
@@ -1220,7 +1229,7 @@ function MainUI.Start(self, Hub)
 
 	local SendButton = Instance.new("TextButton")
 	SendButton.Name = "Send"
-	SendButton.Position = UDim2.new(1, -64, 0, 400)
+	SendButton.Position = UDim2.new(1, -64, 0, 378)
 	SendButton.Size = UDim2.new(0, 59, 0, 38)
 	SendButton.BackgroundColor3 = BLUE
 	SendButton.BackgroundTransparency = 0.1
