@@ -1,11 +1,8 @@
 --// FAIRWELL HEAVEN
 --// Loading Screen
---// Version 1.0
+--// Version 1.1
 
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-
-local Player = Players.LocalPlayer
 
 local LoadingScreen = {
     Name = "Loading Screen",
@@ -14,76 +11,109 @@ local LoadingScreen = {
 
 function LoadingScreen.Start(self, Hub)
 
+    print("[Fairwell Heaven] LoadingScreen.Start()")
+
+    local Player = Players.LocalPlayer
+
+    if not Player then
+        warn("[Fairwell Heaven] LocalPlayer not found.")
+        return
+    end
+
     local PlayerGui = Player:WaitForChild("PlayerGui")
 
-    -- Prevent duplicates
-    local Existing = PlayerGui:FindFirstChild("FairwellHeaven_Loading")
-    if Existing then
-        Existing:Destroy()
+    --==================================================
+    -- REMOVE OLD SCREEN
+    --==================================================
+
+    local Old = PlayerGui:FindFirstChild("FairwellHeaven_Loading")
+
+    if Old then
+        Old:Destroy()
     end
 
     --==================================================
     -- COLORS
     --==================================================
 
-    local OUTLINE_COLOR = Color3.fromRGB(27, 147, 227) -- #1B93E3
-    local BACKGROUND_COLOR = Color3.fromRGB(16, 13, 105) -- #100D69
+    -- Outline: #1B93E3
+    local OUTLINE_COLOR = Color3.fromRGB(27, 147, 227)
+
+    -- Inside: #06042B
+    local BACKGROUND_COLOR = Color3.fromRGB(6, 4, 43)
+
     local TEXT_COLOR = Color3.fromRGB(255, 255, 255)
 
     --==================================================
     -- SCREEN GUI
     --==================================================
 
-    local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "FairwellHeaven_Loading"
-    ScreenGui.ResetOnSpawn = false
-    ScreenGui.IgnoreGuiInset = true
-    ScreenGui.DisplayOrder = 999999
-    ScreenGui.Parent = PlayerGui
+    local Gui = Instance.new("ScreenGui")
+
+    Gui.Name = "FairwellHeaven_Loading"
+    Gui.ResetOnSpawn = false
+    Gui.IgnoreGuiInset = true
+    Gui.DisplayOrder = 999999
+
+    Gui.Parent = PlayerGui
 
     --==================================================
-    -- MAIN UI
+    -- MAIN PANEL
     --==================================================
 
     local Main = Instance.new("Frame")
+
     Main.Name = "Main"
+
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
     Main.Position = UDim2.fromScale(0.5, 0.5)
-    Main.Size = UDim2.fromScale(0.75, 0.55)
-    Main.BackgroundColor3 = BACKGROUND_COLOR
-    Main.BorderSizePixel = 0
-    Main.Parent = ScreenGui
 
-    -- Rounded corners
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 12)
-    Corner.Parent = Main
+    Main.Size = UDim2.fromScale(0.75, 0.5)
+
+    Main.BackgroundColor3 = BACKGROUND_COLOR
+
+    Main.BorderSizePixel = 0
+
+    Main.Parent = Gui
 
     --==================================================
     -- BLUE OUTLINE
     --==================================================
 
-    local Stroke = Instance.new("UIStroke")
-    Stroke.Color = OUTLINE_COLOR
-    Stroke.Thickness = 3
-    Stroke.Transparency = 0
-    Stroke.Parent = Main
+    local Outline = Instance.new("UIStroke")
+
+    Outline.Name = "Outline"
+
+    Outline.Color = OUTLINE_COLOR
+
+    Outline.Thickness = 4
+
+    Outline.Parent = Main
 
     --==================================================
     -- LOADING TEXT
     --==================================================
 
-    local LoadingText = Instance.new("TextLabel")
-    LoadingText.Name = "LoadingText"
-    LoadingText.AnchorPoint = Vector2.new(0.5, 0.5)
-    LoadingText.Position = UDim2.fromScale(0.5, 0.5)
-    LoadingText.Size = UDim2.fromScale(0.8, 0.2)
-    LoadingText.BackgroundTransparency = 1
-    LoadingText.Text = "LOADING"
-    LoadingText.TextColor3 = TEXT_COLOR
-    LoadingText.TextScaled = true
-    LoadingText.Font = Enum.Font.GothamBold
-    LoadingText.Parent = Main
+    local Text = Instance.new("TextLabel")
+
+    Text.Name = "Loading"
+
+    Text.AnchorPoint = Vector2.new(0.5, 0.5)
+    Text.Position = UDim2.fromScale(0.5, 0.5)
+
+    Text.Size = UDim2.fromScale(0.8, 0.2)
+
+    Text.BackgroundTransparency = 1
+
+    Text.Text = "LOADING"
+
+    Text.TextColor3 = TEXT_COLOR
+
+    Text.TextScaled = true
+
+    Text.Font = Enum.Font.GothamBold
+
+    Text.Parent = Main
 
     --==================================================
     -- LOADING DOT ANIMATION
@@ -100,9 +130,9 @@ function LoadingScreen.Start(self, Hub)
 
         local Index = 1
 
-        while ScreenGui.Parent do
+        while Gui.Parent do
 
-            LoadingText.Text = "LOADING" .. Dots[Index]
+            Text.Text = "LOADING" .. Dots[Index]
 
             Index += 1
 
@@ -112,92 +142,32 @@ function LoadingScreen.Start(self, Hub)
 
             task.wait(0.45)
         end
+
     end)
 
     --==================================================
-    -- FADE IN
+    -- STORE REFERENCES
     --==================================================
 
-    Main.BackgroundTransparency = 1
-    Stroke.Transparency = 1
-    LoadingText.TextTransparency = 1
-
-    local FadeInfo = TweenInfo.new(
-        0.5,
-        Enum.EasingStyle.Quad,
-        Enum.EasingDirection.Out
-    )
-
-    TweenService:Create(
-        Main,
-        FadeInfo,
-        {BackgroundTransparency = 0}
-    ):Play()
-
-    TweenService:Create(
-        Stroke,
-        FadeInfo,
-        {Transparency = 0}
-    ):Play()
-
-    TweenService:Create(
-        LoadingText,
-        FadeInfo,
-        {TextTransparency = 0}
-    ):Play()
-
-    self.ScreenGui = ScreenGui
+    self.Gui = Gui
     self.Main = Main
 
-    Hub:Log("Loading screen created.")
+    print("[Fairwell Heaven] Loading UI created successfully.")
 
 end
 
 function LoadingScreen.Stop(self, Hub)
 
-    if self.ScreenGui then
-
-        local Main = self.ScreenGui:FindFirstChild("Main")
-        local Stroke = Main and Main:FindFirstChildOfClass("UIStroke")
-        local Text = Main and Main:FindFirstChild("LoadingText")
-
-        local FadeInfo = TweenInfo.new(
-            0.4,
-            Enum.EasingStyle.Quad,
-            Enum.EasingDirection.In
-        )
-
-        if Main then
-            TweenService:Create(
-                Main,
-                FadeInfo,
-                {BackgroundTransparency = 1}
-            ):Play()
-        end
-
-        if Stroke then
-            TweenService:Create(
-                Stroke,
-                FadeInfo,
-                {Transparency = 1}
-            ):Play()
-        end
-
-        if Text then
-            TweenService:Create(
-                Text,
-                FadeInfo,
-                {TextTransparency = 1}
-            ):Play()
-        end
-
-        task.wait(0.45)
-
-        self.ScreenGui:Destroy()
-        self.ScreenGui = nil
+    if not self.Gui then
+        return
     end
 
-    Hub:Log("Loading screen removed.")
+    self.Gui:Destroy()
+
+    self.Gui = nil
+    self.Main = nil
+
+    print("[Fairwell Heaven] Loading UI removed.")
 
 end
 
