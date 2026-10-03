@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 3.0
+--// Version 3.1
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
@@ -685,7 +685,7 @@ function MainUI.Start(self, Hub)
 	Version.BackgroundTransparency = 1
 
 	Version.Text =
-		"FAIRWELL HEAVEN • v3.0"
+		"FAIRWELL HEAVEN • v3.1"
 
 	Version.TextColor3 =
 		GREY
@@ -1771,15 +1771,34 @@ function MainUI.Start(self, Hub)
 	EmptyLabel.Font = Enum.Font.GothamBold
 	EmptyLabel.Parent = LogScroll
 
+	local ClearInfoButton = Instance.new("TextButton")
+	ClearInfoButton.Name = "ClearInfo"
+	ClearInfoButton.Position = UDim2.new(0, 5, 0, 516)
+	ClearInfoButton.Size = UDim2.new(0.5, -7, 0, 32)
+	ClearInfoButton.BackgroundColor3 = PANEL
+	ClearInfoButton.BorderSizePixel = 0
+	ClearInfoButton.Text = "CLEAR INFO"
+	ClearInfoButton.TextColor3 = WHITE
+	ClearInfoButton.TextSize = 10
+	ClearInfoButton.Font = Enum.Font.GothamBold
+	ClearInfoButton.Parent = DevScroll
+
+	local ClearInfoCorner = Instance.new("UICorner")
+	ClearInfoCorner.CornerRadius = UDim.new(0, 5)
+	ClearInfoCorner.Parent = ClearInfoButton
+
+	local ClearInfoStroke = Instance.new("UIStroke")
+	ClearInfoStroke.Color = BLUE
+	ClearInfoStroke.Thickness = 1
+	ClearInfoStroke.Parent = ClearInfoButton
+
 	local ClearLogsButton = Instance.new("TextButton")
 	ClearLogsButton.Name = "ClearLogs"
-	-- Keep the button below the log panel so it does not overlap
-	-- the header or require awkward scrolling/tapping on mobile.
-	ClearLogsButton.Position = UDim2.new(0, 5, 0, 516)
-	ClearLogsButton.Size = UDim2.new(1, -10, 0, 32)
+	ClearLogsButton.Position = UDim2.new(0.5, 2, 0, 516)
+	ClearLogsButton.Size = UDim2.new(0.5, -7, 0, 32)
 	ClearLogsButton.BackgroundColor3 = PANEL
 	ClearLogsButton.BorderSizePixel = 0
-	ClearLogsButton.Text = "CLEAR LOGS"
+	ClearLogsButton.Text = "CLEAR ALL"
 	ClearLogsButton.TextColor3 = WHITE
 	ClearLogsButton.TextSize = 10
 	ClearLogsButton.Font = Enum.Font.GothamBold
@@ -1866,6 +1885,13 @@ function MainUI.Start(self, Hub)
 			LogScroll.CanvasPosition = Vector2.new(0, math.max(0, LogScroll.AbsoluteCanvasSize.Y))
 		end)
 	end
+
+	ClearInfoButton.MouseButton1Click:Connect(function()
+		if self.Hub and self.Hub.ClearLogs then
+			self.Hub:ClearLogs("INFO")
+			RefreshDevLogs()
+		end
+	end)
 
 	ClearLogsButton.MouseButton1Click:Connect(function()
 		if self.Hub and self.Hub.ClearLogs then
@@ -2463,7 +2489,7 @@ function MainUI.Start(self, Hub)
 	end
 
 	Hub:Log(
-		"Main UI v2.9 initialized with fairwelladmi avatar/character loading."
+		"Main UI v3.1 initialized with fairwelladmi avatar/character loading."
 	)
 end
 
