@@ -1,84 +1,173 @@
---// DOORS FEATURE HUB
+--// FAIRWELL HEAVEN
 --// Main Loader
+--// Client-Side
 
 local BASE_URL =
-    "https://raw.githubusercontent.com/reepyissomeone/Fairwell-Heaven/main/"
+	"https://raw.githubusercontent.com/reepyissomeone/Fairwell-Heaven/main/"
+
+--==================================================
+-- DOWNLOAD MODULE
+--==================================================
 
 local function LoadModule(path)
-    local url = BASE_URL .. path
 
-    local success, source = pcall(function()
-        return game:HttpGet(url)
-    end)
+	local url = BASE_URL .. path
 
-    if not success then
-        warn("[DOORS HUB] Download failed:", path)
-        warn(source)
-        return nil
-    end
+	local success, source = pcall(function()
+		return game:HttpGet(url)
+	end)
 
-    local success2, result = pcall(function()
-        return loadstring(source)()
-    end)
+	if not success then
+		warn("[Fairwell Heaven] Download failed:", path)
+		warn(source)
+		return nil
+	end
 
-    if not success2 then
-        warn("[DOORS HUB] Load failed:", path)
-        warn(result)
-        return nil
-    end
+	if type(source) ~= "string" or source == "" then
+		warn("[Fairwell Heaven] Empty response:", path)
+		return nil
+	end
 
-    return result
+	local success2, result = pcall(function()
+
+		local chunk = loadstring(source)
+
+		if not chunk then
+			error("loadstring failed")
+		end
+
+		return chunk()
+
+	end)
+
+	if not success2 then
+		warn("[Fairwell Heaven] Load failed:", path)
+		warn(result)
+		return nil
+	end
+
+	return result
+
 end
 
--- Load the core
+--==================================================
+-- LOAD CORE
+--==================================================
+
 local Hub = LoadModule("core/Hub.lua")
 
 if not Hub then
-    error("[DOORS HUB] Core failed to load.")
+	error("[Fairwell Heaven] Core failed to load.")
 end
 
-print("[DOORS HUB] " .. Hub.Name .. " v" .. Hub.Version)
+print(
+	"[Fairwell Heaven] "
+	.. tostring(Hub.Name)
+	.. " v"
+	.. tostring(Hub.Version)
+)
 
--- Load the manifest
+--==================================================
+-- LOAD MANIFEST
+--==================================================
+
 local Manifest = LoadModule("core/Manifest.lua")
 
 if not Manifest then
-    error("[DOORS HUB] Manifest failed to load.")
+	error("[Fairwell Heaven] Manifest failed to load.")
 end
 
-print("[DOORS HUB] Found " .. #Manifest .. " feature(s).")
+print(
+	"[Fairwell Heaven] Found "
+	.. tostring(#Manifest)
+	.. " feature(s)."
+)
 
--- Load every feature
+--==================================================
+-- LOAD FEATURES
+--==================================================
+
 for _, path in ipairs(Manifest) do
-    local Feature = LoadModule(path)
 
-    if Feature then
-        local name = Feature.Name or path
+	local Feature = LoadModule(path)
 
-        local registered, err = Hub:RegisterFeature(name, Feature)
+	if Feature then
 
-        if registered then
-            print("[Fairwell heaven] Loaded feature:", name)
+		local Name = Feature.Name or path
 
-            -- Start the feature automatically
-            Hub:Enable(name)
-        else
-            warn("[Fairwell heaven] Registration failed:", name, err)
-        end
-    end
+		local Registered, ErrorMessage =
+			Hub:RegisterFeature(Name, Feature)
+
+		if Registered then
+
+			print(
+				"[Fairwell Heaven] Loaded feature:",
+				Name
+			)
+
+			-- Start feature
+			Hub:Enable(Name)
+
+		else
+
+			warn(
+				"[Fairwell Heaven] Registration failed:",
+				Name,
+				ErrorMessage
+			)
+
+		end
+
+	else
+
+		warn(
+			"[Fairwell Heaven] Could not load:",
+			path
+		)
+
+	end
+
 end
+
+--==================================================
+-- ALL FEATURES LOADED
+--==================================================
 
 print("[Fairwell Heaven] All features loaded.")
 
--- Fade out the loading screen
-local LoadingScreen = Hub:GetFeature("Loading Screen")
+--==================================================
+-- FINISH LOADING SCREEN
+--==================================================
 
-if LoadingScreen and LoadingScreen.Finish then
-    LoadingScreen:Finish(Hub)
+local LoadingScreen =
+	Hub:GetFeature("Loading Screen")
+
+if LoadingScreen then
+
+	if LoadingScreen.Finish then
+
+		LoadingScreen:Finish(Hub)
+
+	else
+
+		warn(
+			"[Fairwell Heaven] Loading Screen has no Finish function."
+		)
+
+	end
+
 else
-    warn("[Fairwell Heaven] Loading Screen feature could not be finished.")
+
+	warn(
+		"[Fairwell Heaven] Loading Screen feature not found."
+	)
+
 end
 
-return Hub
+--==================================================
+-- DONE
+--==================================================
+
+print("[Fairwell Heaven] Startup complete.")
 
 return Hub
