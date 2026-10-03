@@ -131,6 +131,251 @@ local function LoadModule(path)
 end
 
 ------------------------------------------------------------
+-- LIVE UPDATE RUNTIME
+------------------------------------------------------------
+
+local GlobalEnv = _G
+
+pcall(function()
+	if type(getgenv) == "function" then
+		GlobalEnv = getgenv()
+	end
+end)
+
+local PreviousRuntime =
+	GlobalEnv.__FAIRWELL_HEAVEN_RUNTIME_ID
+
+local RuntimeId =
+	(tonumber(PreviousRuntime) or 0) + 1
+
+GlobalEnv.__FAIRWELL_HEAVEN_RUNTIME_ID =
+	RuntimeId
+
+local ExistingHub =
+	GlobalEnv.__FAIRWELL_HEAVEN_HUB
+
+if type(ExistingHub) == "table" then
+
+	pcall(function()
+
+		if type(ExistingHub.Shutdown) == "function" then
+			ExistingHub:Shutdown()
+
+		elseif type(ExistingHub.GetFeatures) == "function"
+			and type(ExistingHub.Disable) == "function" then
+
+			for _, info in ipairs(ExistingHub:GetFeatures()) do
+				if info.Enabled then
+					ExistingHub:Disable(info.Name)
+				end
+			end
+
+		end
+
+	end)
+
+end
+
+------------------------------------------------------------
+-- UPDATE SETTINGS
+------------------------------------------------------------
+
+local UPDATE_INTERVAL = 120
+
+local GITHUB_BRANCH_API =
+	"https://api.github.com/repos/reepyissomeone/Fairwell-Heaven/branches/main"
+
+local function GetRemoteCommit()
+
+	local HttpService =
+		game:GetService("HttpService")
+
+	local CacheBust =
+		"?fairwell=" .. tostring(math.floor(os.clock() * 1000))
+
+	local Success, Body =
+		pcall(function()
+
+			return HttpGet(
+				game,
+				GITHUB_BRANCH_API .. CacheBust
+			)
+
+		end)
+
+	if not Success then
+		return nil, "GitHub check failed: " .. tostring(Body)
+	end
+
+	local DecodeSuccess, Data =
+		pcall(function()
+			return HttpService:JSONDecode(Body)
+		end)
+
+	if not DecodeSuccess or type(Data) ~= "table" then
+		return nil, "GitHub returned invalid JSON."
+	end
+
+	if type(Data.commit) ~= "table"
+		or type(Data.commit.sha) ~= "string" then
+		return nil, "GitHub response has no commit SHA."
+	end
+
+	return Data.commit.sha
+
+end
+
+local function StartAutoUpdater(Hub)
+
+	if type(task) ~= "table"
+		or type(task.spawn) ~= "function"
+		or type(task.wait) ~= "function" then
+
+		Hub:Warn(
+			"Auto-updater disabled: task library unavailable."
+		)
+
+		return
+
+	end
+
+	local InitialCommit, ErrorMessage =
+		GetRemoteCommit()
+
+	if not InitialCommit then
+
+		Hub:Warn(
+			"Auto-updater could not get initial commit:",
+			ErrorMessage
+		)
+
+		return
+
+	end
+
+	Hub:Log(
+		"Auto-updater active. Commit:",
+		InitialCommit:sub(1, 7),
+		"| Check every",
+		UPDATE_INTERVAL,
+		"seconds."
+	)
+
+	task.spawn(function()
+
+		while GlobalEnv.__FAIRWELL_HEAVEN_RUNTIME_ID
+			== RuntimeId do
+
+			task.wait(UPDATE_INTERVAL)
+
+			if GlobalEnv.__FAIRWELL_HEAVEN_RUNTIME_ID
+				~= RuntimeId then
+				break
+			end
+
+			local RemoteCommit, CheckError =
+				GetRemoteCommit()
+
+			if not RemoteCommit then
+
+				Hub:Warn(
+					"Update check failed:",
+					CheckError
+				)
+
+				continue
+
+			end
+
+			if RemoteCommit == InitialCommit then
+				continue
+			end
+
+			Hub:Log(
+				"GitHub update detected:",
+				InitialCommit:sub(1, 7),
+				"->",
+				RemoteCommit:sub(1, 7)
+			)
+
+			local CacheBust =
+				"?fairwell=" .. tostring(
+					math.floor(os.clock() * 1000)
+				)
+
+			local DownloadSuccess, Source =
+				pcall(function()
+
+					return HttpGet(
+						game,
+						BASE_URL
+						.. "loader.lua"
+						.. CacheBust
+					)
+
+				end)
+
+			if not DownloadSuccess
+				or type(Source) ~= "string"
+				or Source == "" then
+
+				Hub:Warn(
+					"Update download failed. Keeping current version."
+				)
+
+				continue
+
+			end
+
+			local CompileSuccess, NewLoader =
+				pcall(function()
+					return Compile(Source)
+				end)
+
+			if not CompileSuccess
+				or type(NewLoader) ~= "function" then
+
+				Hub:Warn(
+					"New loader failed to compile. Keeping current version."
+				)
+
+				continue
+
+			end
+
+			Hub:Log(
+				"Installing GitHub update..."
+			)
+
+			GlobalEnv.__FAIRWELL_HEAVEN_RUNTIME_ID =
+				RuntimeId + 1
+
+			Hub:Shutdown()
+
+			GlobalEnv.__FAIRWELL_HEAVEN_HUB = nil
+
+			local ExecuteSuccess, ExecuteError =
+				pcall(NewLoader)
+
+			if not ExecuteSuccess then
+
+				warn(
+					"[Fairwell Heaven] "
+					.. "Updated loader failed:",
+					ExecuteError
+				)
+
+			end
+
+			break
+
+		end
+
+	end)
+
+end
+
+------------------------------------------------------------
 -- HUB
 ------------------------------------------------------------
 
@@ -154,6 +399,8 @@ print(
 	.. " v"
 	.. tostring(Hub.Version)
 )
+
+GlobalEnv.__FAIRWELL_HEAVEN_HUB = Hub
 
 ------------------------------------------------------------
 -- GAME DETECTION
