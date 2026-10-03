@@ -3,7 +3,6 @@
 --// New-spawn detection with cooldown and no startup spam
 
 local Workspace = game:GetService("Workspace")
-local StarterGui = game:GetService("StarterGui")
 
 local EntityNotifications = {
     Name = "DOORS Entity Notifications",
@@ -61,14 +60,18 @@ end
 
 local COOLDOWN = 2
 
-local function Notify(Name)
-    pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = "Fairwell Heaven • DOORS",
-            Text = Name .. " detected!",
-            Duration = 4
-        })
-    end)
+local function Notify(Hub, Name)
+    if Hub and type(Hub.Notify) == "function" then
+        Hub:Notify(
+            "DOORS • ENTITY DETECTED",
+            Name .. " detected!",
+            "WARNING",
+            4
+        )
+        return
+    end
+
+    Hub:Warn("DOORS entity detected: " .. Name)
 end
 
 local function Detect(self, Object)
@@ -80,7 +83,7 @@ local function Detect(self, Object)
             return
         end
         self.LastAlert[Name] = Now
-        Notify(Name)
+        Notify(self.Hub, Name)
         return
     end
 
@@ -90,7 +93,7 @@ local function Detect(self, Object)
             return
         end
         self.LastAlert.Lever = Now
-        Notify("Lever")
+        Notify(self.Hub, "Lever")
     end
 end
 
@@ -98,6 +101,7 @@ function EntityNotifications.Start(self, Hub)
     local Settings = Hub:GetService("Settings")
     if Settings and Settings:GetFeatureEnabled(self.Name, true) == false then return end
     self.LastAlert = {}
+    self.Hub = Hub
     self.Connection = Workspace.DescendantAdded:Connect(function(Object)
         Detect(self, Object)
     end)
@@ -107,6 +111,7 @@ end
 function EntityNotifications.Stop(self)
     if self.Connection then self.Connection:Disconnect(); self.Connection=nil end
     table.clear(self.LastAlert)
+    self.Hub = nil
 end
 
 return EntityNotifications
