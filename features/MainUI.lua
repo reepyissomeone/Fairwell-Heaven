@@ -553,6 +553,8 @@ end
 --======================================================
 
 function MainUI.Start(self, Hub)
+	self.Hub = Hub
+
 	local Player =
 		Players.LocalPlayer
 
@@ -973,6 +975,29 @@ function MainUI.Start(self, Hub)
 			Enum.UserInputType.Touch then
 
 			Dragging = false
+
+			local Settings = Hub:GetService("Settings")
+
+			if Settings then
+
+				local Position = Window.Position
+
+				Settings:Set(
+					"Window",
+					{
+						Position = {
+							XScale = Position.X.Scale,
+							XOffset = Position.X.Offset,
+							YScale = Position.Y.Scale,
+							YOffset = Position.Y.Offset
+						},
+						Collapsed = self.Collapsed == true
+					},
+					true
+				)
+
+			end
+
 		end
 	end)
 
@@ -1070,6 +1095,26 @@ function MainUI.Start(self, Hub)
 				)
 
 			Tween:Play()
+
+			local Settings = Hub:GetService("Settings")
+
+			if Settings then
+				local Position = Window.Position
+
+				Settings:Set(
+					"Window",
+					{
+						Position = {
+							XScale = Position.X.Scale,
+							XOffset = Position.X.Offset,
+							YScale = Position.Y.Scale,
+							YOffset = Position.Y.Offset
+						},
+						Collapsed = self.Collapsed == true
+					},
+					true
+				)
+			end
 		end
 	end)
 
@@ -1096,6 +1141,58 @@ function MainUI.Start(self, Hub)
 	self.Gui = Gui
 	self.Window = Window
 
+	--------------------------------------------------
+	-- RESTORE PERSISTENT WINDOW SETTINGS
+	--------------------------------------------------
+
+	local Settings = Hub:GetService("Settings")
+
+	if Settings then
+
+		local WindowSettings =
+			Settings:Get("Window", {})
+
+		local SavedPosition =
+			WindowSettings.Position
+
+		if type(SavedPosition) == "table" then
+
+			Window.Position =
+				UDim2.new(
+					tonumber(SavedPosition.XScale) or 0.5,
+					tonumber(SavedPosition.XOffset) or 0,
+					tonumber(SavedPosition.YScale) or 0.5,
+					tonumber(SavedPosition.YOffset) or 0
+				)
+
+			self.ExpandedPosition =
+				Window.Position
+
+		end
+
+		if WindowSettings.Collapsed == true then
+
+			self.Collapsed = true
+			ToggleButton.Text = "+"
+
+			Window.Size =
+				UDim2.fromOffset(
+					270,
+					48
+				)
+
+			Window.Position =
+				UDim2.new(
+					0.5,
+					0,
+					1,
+					-12
+				)
+
+		end
+
+	end
+
 	Hub:Log(
 		"Main UI v2.5 initialized."
 	)
@@ -1110,6 +1207,35 @@ function MainUI:Reveal()
 end
 
 function MainUI.Stop(self)
+
+	local Hub = self.Hub
+
+	if Hub then
+		local Settings = Hub:GetService("Settings")
+
+		if Settings then
+			local Position =
+				self.Window
+				and self.Window.Position
+
+			if Position then
+				Settings:Set(
+					"Window",
+					{
+						Position = {
+							XScale = Position.X.Scale,
+							XOffset = Position.X.Offset,
+							YScale = Position.Y.Scale,
+							YOffset = Position.Y.Offset
+						},
+						Collapsed = self.Collapsed == true
+					},
+					true
+				)
+			end
+		end
+	end
+
 	if self.StatusConnection then
 		self.StatusConnection:Disconnect()
 		self.StatusConnection = nil
