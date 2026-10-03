@@ -971,11 +971,25 @@ function MainUI.Start(self, Hub)
 	StageStroke.Transparency = 0.2
 	StageStroke.Parent = ChatStage
 
+	local Wall = Instance.new("Frame")
+	Wall.Name = "FairwellWall"
+	Wall.Position = UDim2.new(0, 8, 0, 18)
+	Wall.Size = UDim2.new(0, 7, 1, -34)
+	Wall.BackgroundColor3 = Color3.fromRGB(18, 22, 42)
+	Wall.BorderSizePixel = 0
+	Wall.Parent = ChatStage
+
+	local WallStroke = Instance.new("UIStroke")
+	WallStroke.Color = Color3.fromRGB(35, 110, 150)
+	WallStroke.Transparency = 0.35
+	WallStroke.Parent = Wall
+
 	local FairwellSpot = Instance.new("Frame")
 	FairwellSpot.Name = "Fairwell"
 	FairwellSpot.Position = UDim2.new(0, 18, 1, -148)
 	FairwellSpot.Size = UDim2.fromOffset(90, 130)
 	FairwellSpot.BackgroundTransparency = 1
+	FairwellSpot.Rotation = -8
 	FairwellSpot.Parent = ChatStage
 
 	local Head = Instance.new("Frame")
@@ -1040,23 +1054,27 @@ function MainUI.Start(self, Hub)
 	local ArmL = Instance.new("Frame")
 	ArmL.Position = UDim2.new(0, -13, 0, 3)
 	ArmL.Size = UDim2.fromOffset(13, 32)
+	ArmL.Rotation = -18
 	ArmL.BackgroundColor3 = Color3.fromRGB(0, 85, 220)
 	ArmL.BorderSizePixel = 0
 	ArmL.Parent = Body
 
 	local ArmR = ArmL:Clone()
 	ArmR.Position = UDim2.new(1, 0, 0, 3)
+	ArmR.Rotation = 12
 	ArmR.Parent = Body
 
 	local LegL = Instance.new("Frame")
 	LegL.Position = UDim2.new(0.5, -27, 0, 83)
 	LegL.Size = UDim2.fromOffset(25, 40)
+	LegL.Rotation = -10
 	LegL.BackgroundColor3 = Color3.fromRGB(30, 30, 33)
 	LegL.BorderSizePixel = 0
 	LegL.Parent = FairwellSpot
 
 	local LegR = LegL:Clone()
 	LegR.Position = UDim2.new(0.5, 2, 0, 83)
+	LegR.Rotation = 5
 	LegR.Parent = FairwellSpot
 
 	local Bubble = Instance.new("TextLabel")
@@ -1198,16 +1216,17 @@ function MainUI.Start(self, Hub)
 		local Sway = math.sin(Time * 1.7) * 1.8
 
 		FairwellSpot.Position = UDim2.new(0, 18 + Sway, 1, -148 + Bob)
-		Head.Rotation = math.sin(Time * 1.7) * 2
-		Body.Rotation = math.sin(Time * 1.7 + 0.4) * 1.2
+		FairwellSpot.Rotation = -8 + math.sin(Time * 1.3) * 0.7
+		Head.Rotation = math.sin(Time * 1.7) * 1.5
+		Body.Rotation = math.sin(Time * 1.7 + 0.4) * 0.8
 
-		local ArmWave = math.sin(Time * 2.1) * 4
-		ArmL.Rotation = -ArmWave - 3
-		ArmR.Rotation = ArmWave + 3
+		local ArmWave = math.sin(Time * 2.1) * 2
+		ArmL.Rotation = -18 - ArmWave
+		ArmR.Rotation = 12 + ArmWave
 
-		local LegWalk = math.sin(Time * 1.7) * 1.5
-		LegL.Rotation = LegWalk
-		LegR.Rotation = -LegWalk
+		local LegRelax = math.sin(Time * 1.7) * 1.2
+		LegL.Rotation = -10 + LegRelax
+		LegR.Rotation = 5 - LegRelax
 
 		if Time < FairwellTalkingUntil then
 			FairwellTalkCycle += 1
@@ -1219,8 +1238,8 @@ function MainUI.Start(self, Hub)
 				Smile.Text = "⌣"
 			end
 
-			ArmL.Rotation = -10 - math.sin(Time * 9) * 7
-			ArmR.Rotation = 10 + math.sin(Time * 9) * 7
+			ArmL.Rotation = -18 - math.sin(Time * 9) * 5
+			ArmR.Rotation = 12 + math.sin(Time * 9) * 5
 			Bubble.Position = UDim2.new(0, 92, 0, 40 + math.sin(Time * 8) * 1.5)
 		else
 			Smile.Text = "⌣"
