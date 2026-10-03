@@ -1,9 +1,11 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 2.1
+--// Version 2.2
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local MainUI = {
 	Name = "Main UI",
@@ -14,8 +16,8 @@ local MainUI = {
 -- COLORS
 --==================================================
 
-local BLUE = Color3.fromRGB(27, 147, 227) -- #1B93E3
-local BACKGROUND = Color3.fromRGB(6, 4, 43) -- #06042B
+local BLUE = Color3.fromRGB(27, 147, 227)
+local BACKGROUND = Color3.fromRGB(6, 4, 43)
 local DARK = Color3.fromRGB(8, 6, 55)
 local WHITE = Color3.fromRGB(255, 255, 255)
 local MUTED = Color3.fromRGB(170, 175, 195)
@@ -31,7 +33,7 @@ local function IsDOORS()
 end
 
 --==================================================
--- SIZE
+-- WINDOW SIZE
 --==================================================
 
 MainUI.TargetSize = UDim2.fromScale(0.78, 0.68)
@@ -69,18 +71,82 @@ function MainUI.Start(self, Hub)
 	self.Window = Window
 
 	--==================================================
+	-- DRAGGING
+	--==================================================
+
+	local Dragging = false
+	local DragStart
+	local StartPosition
+
+	local function UpdateDrag(Input)
+
+		local Delta = Input.Position - DragStart
+
+		Window.Position = UDim2.new(
+			StartPosition.X.Scale,
+			StartPosition.X.Offset + Delta.X,
+			StartPosition.Y.Scale,
+			StartPosition.Y.Offset + Delta.Y
+		)
+
+	end
+
+	--==================================================
 	-- TITLE BAR
 	--==================================================
 
 	local TitleBar = Instance.new("Frame")
+
 	TitleBar.Name = "TitleBar"
 	TitleBar.Size = UDim2.new(1, 0, 0, 50)
 	TitleBar.BackgroundColor3 = DARK
 	TitleBar.BorderSizePixel = 0
 	TitleBar.BackgroundTransparency = 1
+	TitleBar.Active = true
 	TitleBar.Parent = Window
 
+	TitleBar.InputBegan:Connect(function(Input)
+
+		if Input.UserInputType == Enum.UserInputType.MouseButton1
+			or Input.UserInputType == Enum.UserInputType.Touch then
+
+			Dragging = true
+
+			DragStart = Input.Position
+			StartPosition = Window.Position
+
+			Input.Changed:Connect(function()
+
+				if Input.UserInputState == Enum.UserInputState.End then
+					Dragging = false
+				end
+
+			end)
+		end
+
+	end)
+
+	UserInputService.InputChanged:Connect(function(Input)
+
+		if not Dragging then
+			return
+		end
+
+		if Input.UserInputType == Enum.UserInputType.MouseMovement
+			or Input.UserInputType == Enum.UserInputType.Touch then
+
+			UpdateDrag(Input)
+
+		end
+
+	end)
+
+	--==================================================
+	-- TITLE
+	--==================================================
+
 	local Title = Instance.new("TextLabel")
+
 	Title.Name = "Title"
 	Title.Position = UDim2.new(0, 16, 0, 0)
 	Title.Size = UDim2.new(0.6, 0, 1, 0)
@@ -94,6 +160,7 @@ function MainUI.Start(self, Hub)
 	Title.Parent = TitleBar
 
 	local Version = Instance.new("TextLabel")
+
 	Version.Name = "Version"
 	Version.AnchorPoint = Vector2.new(1, 0)
 	Version.Position = UDim2.new(1, -14, 0, 0)
@@ -108,6 +175,7 @@ function MainUI.Start(self, Hub)
 	Version.Parent = TitleBar
 
 	local TitleLine = Instance.new("Frame")
+
 	TitleLine.Name = "TitleLine"
 	TitleLine.Position = UDim2.new(0, 0, 1, -2)
 	TitleLine.Size = UDim2.new(1, 0, 0, 2)
@@ -121,6 +189,7 @@ function MainUI.Start(self, Hub)
 	--==================================================
 
 	local TabBar = Instance.new("Frame")
+
 	TabBar.Name = "TabBar"
 	TabBar.Position = UDim2.new(0, 0, 0, 50)
 	TabBar.Size = UDim2.new(0, 125, 1, -50)
@@ -130,16 +199,30 @@ function MainUI.Start(self, Hub)
 	TabBar.Parent = Window
 
 	--==================================================
-	-- CONTENT
+	-- SCROLLING CONTENT
 	--==================================================
 
-	local Content = Instance.new("Frame")
+	local Content = Instance.new("ScrollingFrame")
+
 	Content.Name = "Content"
 	Content.Position = UDim2.new(0, 125, 0, 50)
 	Content.Size = UDim2.new(1, -125, 1, -50)
+
 	Content.BackgroundColor3 = BACKGROUND
 	Content.BorderSizePixel = 0
 	Content.BackgroundTransparency = 1
+
+	Content.ScrollBarThickness = 5
+	Content.ScrollBarImageColor3 = BLUE
+	Content.ScrollBarImageTransparency = 0.15
+
+	Content.ScrollingDirection = Enum.ScrollingDirection.Y
+	Content.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+	Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+	Content.Active = true
+
 	Content.Parent = Window
 
 	--==================================================
@@ -147,35 +230,46 @@ function MainUI.Start(self, Hub)
 	--==================================================
 
 	local MainPage = Instance.new("Frame")
+
 	MainPage.Name = "MainPage"
-	MainPage.Size = UDim2.fromScale(1, 1)
+	MainPage.Size = UDim2.new(1, 0, 0, 700)
 	MainPage.BackgroundTransparency = 1
 	MainPage.Parent = Content
 
+	--==================================================
+	-- WELCOME
+	--==================================================
+
 	local Welcome = Instance.new("TextLabel")
+
 	Welcome.Name = "Welcome"
 	Welcome.Position = UDim2.new(0, 24, 0, 20)
 	Welcome.Size = UDim2.new(1, -48, 0, 35)
 	Welcome.BackgroundTransparency = 1
+
 	Welcome.Text = "Welcome to Fairwell Heaven"
 	Welcome.TextColor3 = WHITE
 	Welcome.TextSize = 24
 	Welcome.Font = Enum.Font.GothamBold
 	Welcome.TextXAlignment = Enum.TextXAlignment.Left
 	Welcome.TextTransparency = 1
+
 	Welcome.Parent = MainPage
 
 	local Description = Instance.new("TextLabel")
+
 	Description.Name = "Description"
 	Description.Position = UDim2.new(0, 24, 0, 55)
 	Description.Size = UDim2.new(1, -48, 0, 30)
 	Description.BackgroundTransparency = 1
+
 	Description.Text = "Your feature hub is ready."
 	Description.TextColor3 = MUTED
 	Description.TextSize = 15
 	Description.Font = Enum.Font.Gotham
 	Description.TextXAlignment = Enum.TextXAlignment.Left
 	Description.TextTransparency = 1
+
 	Description.Parent = MainPage
 
 	--==================================================
@@ -183,18 +277,23 @@ function MainUI.Start(self, Hub)
 	--==================================================
 
 	local StatusPanel = Instance.new("Frame")
+
 	StatusPanel.Name = "StatusPanel"
 	StatusPanel.Position = UDim2.new(0, 24, 0, 100)
 	StatusPanel.Size = UDim2.new(1, -48, 0, 235)
+
 	StatusPanel.BackgroundColor3 = DARK
 	StatusPanel.BorderSizePixel = 0
 	StatusPanel.BackgroundTransparency = 1
+
 	StatusPanel.Parent = MainPage
 
 	local StatusTitle = Instance.new("TextLabel")
+
 	StatusTitle.Name = "StatusTitle"
 	StatusTitle.Position = UDim2.new(0, 16, 0, 12)
 	StatusTitle.Size = UDim2.new(1, -32, 0, 25)
+
 	StatusTitle.BackgroundTransparency = 1
 	StatusTitle.Text = "STATUS"
 	StatusTitle.TextColor3 = BLUE
@@ -202,10 +301,11 @@ function MainUI.Start(self, Hub)
 	StatusTitle.Font = Enum.Font.GothamBold
 	StatusTitle.TextXAlignment = Enum.TextXAlignment.Left
 	StatusTitle.TextTransparency = 1
+
 	StatusTitle.Parent = StatusPanel
 
 	--==================================================
-	-- STATUS ROW
+	-- STATUS ROWS
 	--==================================================
 
 	local StatusRows = {}
@@ -213,9 +313,11 @@ function MainUI.Start(self, Hub)
 	local function CreateStatusRow(Name, Y)
 
 		local Label = Instance.new("TextLabel")
+
 		Label.Name = Name .. "Label"
 		Label.Position = UDim2.new(0, 16, 0, Y)
 		Label.Size = UDim2.new(0.45, 0, 0, 25)
+
 		Label.BackgroundTransparency = 1
 		Label.Text = Name
 		Label.TextColor3 = MUTED
@@ -223,12 +325,15 @@ function MainUI.Start(self, Hub)
 		Label.Font = Enum.Font.Gotham
 		Label.TextXAlignment = Enum.TextXAlignment.Left
 		Label.TextTransparency = 1
+
 		Label.Parent = StatusPanel
 
 		local Value = Instance.new("TextLabel")
+
 		Value.Name = Name .. "Value"
 		Value.Position = UDim2.new(0.45, 0, 0, Y)
 		Value.Size = UDim2.new(0.55, -16, 0, 25)
+
 		Value.BackgroundTransparency = 1
 		Value.Text = "..."
 		Value.TextColor3 = WHITE
@@ -236,6 +341,7 @@ function MainUI.Start(self, Hub)
 		Value.Font = Enum.Font.GothamMedium
 		Value.TextXAlignment = Enum.TextXAlignment.Right
 		Value.TextTransparency = 1
+
 		Value.Parent = StatusPanel
 
 		StatusRows[Name] = Value
@@ -252,17 +358,13 @@ function MainUI.Start(self, Hub)
 	CreateStatusRow("Enabled Features", 195)
 
 	--==================================================
-	-- GAME-SPECIFIC STATUS
+	-- INITIAL STATUS
 	--==================================================
 
 	if IsDOORS() then
-
 		StatusRows["Game"].Text = "DOORS"
-
 	else
-
 		StatusRows["Game"].Text = "Universal"
-
 	end
 
 	StatusRows["Place ID"].Text = tostring(game.PlaceId)
@@ -272,16 +374,20 @@ function MainUI.Start(self, Hub)
 	--==================================================
 
 	local DevPage = Instance.new("Frame")
+
 	DevPage.Name = "DevPage"
-	DevPage.Size = UDim2.fromScale(1, 1)
+	DevPage.Size = UDim2.new(1, 0, 0, 700)
 	DevPage.BackgroundTransparency = 1
 	DevPage.Visible = false
+
 	DevPage.Parent = Content
 
 	local DevTitle = Instance.new("TextLabel")
+
 	DevTitle.Name = "DevTitle"
 	DevTitle.Position = UDim2.new(0, 24, 0, 24)
 	DevTitle.Size = UDim2.new(1, -48, 0, 40)
+
 	DevTitle.BackgroundTransparency = 1
 	DevTitle.Text = "Developer"
 	DevTitle.TextColor3 = WHITE
@@ -289,23 +395,29 @@ function MainUI.Start(self, Hub)
 	DevTitle.Font = Enum.Font.GothamBold
 	DevTitle.TextXAlignment = Enum.TextXAlignment.Left
 	DevTitle.TextTransparency = 1
+
 	DevTitle.Parent = DevPage
 
 	local DevInfo = Instance.new("TextLabel")
+
 	DevInfo.Name = "DevInfo"
 	DevInfo.Position = UDim2.new(0, 24, 0, 72)
 	DevInfo.Size = UDim2.new(1, -48, 0, 100)
+
 	DevInfo.BackgroundTransparency = 1
+
 	DevInfo.Text =
 		"Fairwell Heaven\n"
 		.. "Version: " .. tostring(Hub.Version) .. "\n"
 		.. "Features: " .. tostring(Hub:GetFeatureCount())
+
 	DevInfo.TextColor3 = MUTED
 	DevInfo.TextSize = 15
 	DevInfo.Font = Enum.Font.Gotham
 	DevInfo.TextXAlignment = Enum.TextXAlignment.Left
 	DevInfo.TextYAlignment = Enum.TextYAlignment.Top
 	DevInfo.TextTransparency = 1
+
 	DevInfo.Parent = DevPage
 
 	--==================================================
@@ -355,6 +467,10 @@ function MainUI.Start(self, Hub)
 	local DevButton, DevStroke =
 		CreateTab("Dev", 2)
 
+	--==================================================
+	-- TAB SWITCHING
+	--==================================================
+
 	local CurrentTab
 
 	local function SelectTab(Name)
@@ -364,6 +480,9 @@ function MainUI.Start(self, Hub)
 		end
 
 		CurrentTab = Name
+
+		-- Reset scroll when changing tabs
+		Content.CanvasPosition = Vector2.new(0, 0)
 
 		if Name == "Main" then
 
@@ -388,6 +507,7 @@ function MainUI.Start(self, Hub)
 			DevStroke.Transparency = 0
 
 		end
+
 	end
 
 	MainButton.MouseButton1Click:Connect(function()
@@ -401,7 +521,7 @@ function MainUI.Start(self, Hub)
 	SelectTab("Main")
 
 	--==================================================
-	-- STORE REFERENCES
+	-- REFERENCES
 	--==================================================
 
 	self.TitleBar = TitleBar
@@ -426,16 +546,18 @@ function MainUI.Start(self, Hub)
 	self.DevButton = DevButton
 
 	--==================================================
-	-- STATUS UPDATE LOOP
+	-- LIVE STATUS
 	--==================================================
 
-	self.StatusConnection = game:GetService("RunService").Heartbeat:Connect(function()
+	self.StatusConnection = RunService.Heartbeat:Connect(function()
 
 		if not self.Gui or not self.Gui.Parent then
 			return
 		end
 
-		-- Player position
+		--==============================================
+		-- PLAYER POSITION
+		--==============================================
 
 		local Character = Player.Character
 		local Root = Character and Character:FindFirstChild("HumanoidRootPart")
@@ -457,7 +579,9 @@ function MainUI.Start(self, Hub)
 
 		end
 
-		-- Feature counts
+		--==============================================
+		-- FEATURE COUNTS
+		--==============================================
 
 		StatusRows["Loaded Features"].Text =
 			tostring(Hub:GetFeatureCount())
@@ -472,12 +596,10 @@ function MainUI.Start(self, Hub)
 			tostring(EnabledCount)
 
 		--==============================================
-		-- DOORS-ONLY INFORMATION
+		-- DOORS ONLY
 		--==============================================
 
 		if IsDOORS() then
-
-			-- Current Room
 
 			local CurrentRooms =
 				workspace:FindFirstChild("CurrentRooms")
@@ -490,18 +612,30 @@ function MainUI.Start(self, Hub)
 
 					local Number = tonumber(Room.Name)
 
-					if Number and (not LatestRoom or Number > LatestRoom) then
+					if Number and
+						(not LatestRoom or Number > LatestRoom) then
+
 						LatestRoom = Number
 					end
 
 				end
 
 				if LatestRoom then
+
 					StatusRows["Current Room"].Text =
 						string.format("%03d", LatestRoom)
+
+					StatusRows["Current Door"].Text =
+						string.format("%03d", LatestRoom)
+
 				else
+
 					StatusRows["Current Room"].Text =
 						"Unknown"
+
+					StatusRows["Current Door"].Text =
+						"Unknown"
+
 				end
 
 			else
@@ -509,28 +643,15 @@ function MainUI.Start(self, Hub)
 				StatusRows["Current Room"].Text =
 					"Unavailable"
 
-			end
-
-			-- Current Door
-
-			local CurrentRoomValue =
-				StatusRows["Current Room"].Text
-
-			if tonumber(CurrentRoomValue) then
 				StatusRows["Current Door"].Text =
-					CurrentRoomValue
-			else
-				StatusRows["Current Door"].Text =
-					"Unknown"
+					"Unavailable"
+
 			end
 
 		else
 
-			StatusRows["Current Room"].Text =
-				"N/A"
-
-			StatusRows["Current Door"].Text =
-				"N/A"
+			StatusRows["Current Room"].Text = "N/A"
+			StatusRows["Current Door"].Text = "N/A"
 
 		end
 
