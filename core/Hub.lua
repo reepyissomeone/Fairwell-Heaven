@@ -5,7 +5,7 @@
 local Hub = {}
 
 Hub.Name = "Fairwell Heaven"
-Hub.Version = "0.4.0"
+Hub.Version = "0.4.1"
 Hub.Prefix = "[Fairwell Heaven]"
 
 Hub.Features = {}
@@ -129,86 +129,121 @@ function Hub:Notify(title, message, kind, duration)
 		local container = Instance.new("Frame")
 		container.Name = "Container"
 		container.AnchorPoint = Vector2.new(1, 0)
-		container.Position = UDim2.new(1, -14, 0, 14)
-		container.Size = UDim2.new(0, 330, 1, -28)
+		container.Position = UDim2.new(1, -16, 0, 16)
+		container.Size = UDim2.new(0, 350, 1, -32)
 		container.BackgroundTransparency = 1
 		container.Parent = gui
 
+		local constraint = Instance.new("UISizeConstraint")
+		constraint.MinSize = Vector2.new(270, 0)
+		constraint.MaxSize = Vector2.new(430, 0)
+		constraint.Parent = container
+
 		local layout = Instance.new("UIListLayout")
-		layout.Padding = UDim.new(0, 8)
+		layout.Padding = UDim.new(0, 10)
 		layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 		layout.VerticalAlignment = Enum.VerticalAlignment.Top
 		layout.SortOrder = Enum.SortOrder.LayoutOrder
 		layout.Parent = container
-
-		local constraint = Instance.new("UISizeConstraint")
-		constraint.MinSize = Vector2.new(260, 0)
-		constraint.MaxSize = Vector2.new(420, 0)
-		constraint.Parent = container
 	end
 
-	local container = gui.Container
-	local style = GetNotificationStyle(kind)
+	local styles = {
+		INFO = {Color = Color3.fromRGB(70, 175, 255), Icon = "◆"},
+		SUCCESS = {Color = Color3.fromRGB(80, 220, 145), Icon = "✓"},
+		WARNING = {Color = Color3.fromRGB(255, 185, 70), Icon = "!"},
+		ERROR = {Color = Color3.fromRGB(255, 75, 100), Icon = "×"}
+	}
+	local style = styles[string.upper(tostring(kind or "INFO"))] or styles.INFO
 	duration = math.clamp(tonumber(duration) or 4, 1, 15)
 
 	local card = Instance.new("Frame")
-	card.Size = UDim2.new(1, 0, 0, 76)
-	card.BackgroundColor3 = Color3.fromRGB(8, 7, 35)
-	card.BackgroundTransparency = 0.04
+	card.Size = UDim2.new(1, 0, 0, 82)
+	card.BackgroundColor3 = Color3.fromRGB(9, 10, 18)
+	card.BackgroundTransparency = 0.03
 	card.BorderSizePixel = 0
 	card.ClipsDescendants = true
 	card.LayoutOrder = math.floor(os.clock() * 1000)
-	card.Parent = container
+	card.Parent = gui.Container
+
+	local scale = Instance.new("UIScale")
+	scale.Scale = 0.92
+	scale.Parent = card
 
 	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 10)
+	corner.CornerRadius = UDim.new(0, 14)
 	corner.Parent = card
 
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = style.Color
 	stroke.Thickness = 1.5
-	stroke.Transparency = 0.15
+	stroke.Transparency = 0.2
 	stroke.Parent = card
 
+	local glow = Instance.new("Frame")
+	glow.Position = UDim2.new(0, 0, 0, 0)
+	glow.Size = UDim2.new(0, 5, 1, 0)
+	glow.BackgroundColor3 = style.Color
+	glow.BorderSizePixel = 0
+	glow.Parent = card
+
+	local glowCorner = Instance.new("UICorner")
+	glowCorner.CornerRadius = UDim.new(0, 14)
+	glowCorner.Parent = glow
+
 	local icon = Instance.new("TextLabel")
-	icon.Position = UDim2.new(0, 10, 0, 12)
-	icon.Size = UDim2.new(0, 38, 0, 38)
+	icon.Position = UDim2.new(0, 14, 0.5, -21)
+	icon.Size = UDim2.new(0, 42, 0, 42)
 	icon.BackgroundColor3 = style.Color
-	icon.BackgroundTransparency = 0.12
+	icon.BackgroundTransparency = 0.82
 	icon.Text = style.Icon
-	icon.TextColor3 = Color3.fromRGB(255, 255, 255)
+	icon.TextColor3 = style.Color
 	icon.TextSize = 20
-	icon.Font = Enum.Font.GothamBold
+	icon.Font = Enum.Font.GothamBlack
 	icon.Parent = card
 
 	local iconCorner = Instance.new("UICorner")
-	iconCorner.CornerRadius = UDim.new(0, 8)
+	iconCorner.CornerRadius = UDim.new(0, 11)
 	iconCorner.Parent = icon
 
+	local iconStroke = Instance.new("UIStroke")
+	iconStroke.Color = style.Color
+	iconStroke.Transparency = 0.45
+	iconStroke.Parent = icon
+
 	local titleLabel = Instance.new("TextLabel")
-	titleLabel.Position = UDim2.new(0, 58, 0, 9)
-	titleLabel.Size = UDim2.new(1, -90, 0, 20)
+	titleLabel.Position = UDim2.new(0, 68, 0, 12)
+	titleLabel.Size = UDim2.new(1, -105, 0, 19)
 	titleLabel.BackgroundTransparency = 1
-	titleLabel.Text = tostring(title or "Fairwell Heaven")
+	titleLabel.Text = string.upper(tostring(title or "FAIRWELL HEAVEN"))
 	titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	titleLabel.TextSize = 13
+	titleLabel.TextSize = 12
 	titleLabel.Font = Enum.Font.GothamBold
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
 	titleLabel.Parent = card
 
 	local messageLabel = Instance.new("TextLabel")
-	messageLabel.Position = UDim2.new(0, 58, 0, 29)
-	messageLabel.Size = UDim2.new(1, -70, 0, 30)
+	messageLabel.Position = UDim2.new(0, 68, 0, 32)
+	messageLabel.Size = UDim2.new(1, -82, 0, 31)
 	messageLabel.BackgroundTransparency = 1
 	messageLabel.Text = tostring(message or "")
-	messageLabel.TextColor3 = Color3.fromRGB(205, 205, 220)
+	messageLabel.TextColor3 = Color3.fromRGB(190, 195, 210)
 	messageLabel.TextSize = 11
 	messageLabel.Font = Enum.Font.Gotham
 	messageLabel.TextWrapped = true
 	messageLabel.TextXAlignment = Enum.TextXAlignment.Left
 	messageLabel.TextYAlignment = Enum.TextYAlignment.Top
 	messageLabel.Parent = card
+
+	local closeButton = Instance.new("TextButton")
+	closeButton.Position = UDim2.new(1, -29, 0, 7)
+	closeButton.Size = UDim2.new(0, 22, 0, 22)
+	closeButton.BackgroundTransparency = 1
+	closeButton.Text = "×"
+	closeButton.TextColor3 = Color3.fromRGB(115, 120, 135)
+	closeButton.TextSize = 17
+	closeButton.Font = Enum.Font.GothamBold
+	closeButton.Parent = card
 
 	local bar = Instance.new("Frame")
 	bar.AnchorPoint = Vector2.new(0, 1)
@@ -220,41 +255,37 @@ function Hub:Notify(title, message, kind, duration)
 
 	local sound = Instance.new("Sound")
 	sound.Name = "NotificationSound"
-	sound.SoundId = style.Sound
-	sound.Volume = 0.35
+	sound.SoundId = "rbxassetid://6026984224"
+	sound.Volume = 0.28
 	sound.Parent = SoundService
 	pcall(function() sound:Play() end)
-
-	card.Position = UDim2.new(1, 360, 0, 0)
-	TweenService:Create(card, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-		Position = UDim2.new(0, 0, 0, 0)
-	}):Play()
-
-	local closeButton = Instance.new("TextButton")
-	closeButton.Position = UDim2.new(1, -28, 0, 6)
-	closeButton.Size = UDim2.new(0, 22, 0, 22)
-	closeButton.BackgroundTransparency = 1
-	closeButton.Text = "×"
-	closeButton.TextColor3 = Color3.fromRGB(160, 160, 175)
-	closeButton.TextSize = 16
-	closeButton.Font = Enum.Font.GothamBold
-	closeButton.Parent = card
 
 	local closed = false
 	local function close()
 		if closed then return end
 		closed = true
-		local out = TweenService:Create(card, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-			Position = UDim2.new(1, 360, 0, 0)
+		local out = TweenService:Create(card, TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
+			Position = UDim2.new(1, 30, 0, 0),
+			BackgroundTransparency = 1
 		})
+		local shrink = TweenService:Create(scale, TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Scale = 0.9})
 		out:Play()
-		task.delay(0.24, function()
+		shrink:Play()
+		task.delay(0.25, function()
 			if card then card:Destroy() end
 			if sound then sound:Destroy() end
 		end)
 	end
 
 	closeButton.MouseButton1Click:Connect(close)
+
+	card.Position = UDim2.new(1, 30, 0, 0)
+	TweenService:Create(card, TweenInfo.new(0.38, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0, 0, 0, 0)
+	}):Play()
+	TweenService:Create(scale, TweenInfo.new(0.38, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Scale = 1
+	}):Play()
 
 	TweenService:Create(bar, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
 		Size = UDim2.new(0, 0, 0, 3)
@@ -263,7 +294,6 @@ function Hub:Notify(title, message, kind, duration)
 	task.delay(duration, close)
 	return true
 end
-
 function Hub:Prompt(title, message, yesText, noText, duration)
 	local Players = game:GetService("Players")
 	local TweenService = game:GetService("TweenService")
