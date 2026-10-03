@@ -1112,7 +1112,7 @@ function MainUI.Start(self, Hub)
 	ChatMessages.ScrollBarThickness = 3
 	ChatMessages.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	ChatMessages.CanvasSize = UDim2.new(0, 0, 0, 0)
-	ChatMessages.Parent = ChatScroll
+	ChatMessages.Parent = ChatStage
 
 	local ChatCorner = Instance.new("UICorner")
 	ChatCorner.CornerRadius = UDim.new(0, 7)
