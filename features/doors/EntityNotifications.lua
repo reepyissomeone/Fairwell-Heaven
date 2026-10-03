@@ -19,6 +19,35 @@ local EntityNames = {
     grumble="Grumble", giggle="Giggle"
 }
 
+local function NormalizeName(Name)
+    return string.lower(tostring(Name):gsub("[%s_%-%./]", ""))
+end
+
+local function FindEntityName(Object)
+    local Name = NormalizeName(Object.Name)
+
+    -- Exact names.
+    if EntityNames[Name] then
+        return EntityNames[Name]
+    end
+
+    -- Common DOORS variants such as RushMoving / AmbushMoving.
+    for Key, DisplayName in pairs(EntityNames) do
+        if string.find(Name, Key, 1, true) then
+            return DisplayName
+        end
+    end
+
+    return nil
+end
+
+local function IsLever(Object)
+    local Name = NormalizeName(Object.Name)
+    return Name == "lever"
+        or Name == "levers"
+        or string.find(Name, "lever", 1, true) ~= nil
+end
+
 local COOLDOWN = 2
 
 local function Notify(Name)
@@ -32,12 +61,26 @@ local function Notify(Name)
 end
 
 local function Detect(self, Object)
-    local Name = EntityNames[string.lower(Object.Name)]
-    if not Name then return end
-    local Now = os.clock()
-    if self.LastAlert[Name] and Now - self.LastAlert[Name] < COOLDOWN then return end
-    self.LastAlert[Name] = Now
-    Notify(Name)
+    local Name = FindEntityName(Object)
+
+    if Name then
+        local Now = os.clock()
+        if self.LastAlert[Name] and Now - self.LastAlert[Name] < COOLDOWN then
+            return
+        end
+        self.LastAlert[Name] = Now
+        Notify(Name)
+        return
+    end
+
+    if IsLever(Object) then
+        local Now = os.clock()
+        if self.LastAlert.Lever and Now - self.LastAlert.Lever < COOLDOWN then
+            return
+        end
+        self.LastAlert.Lever = Now
+        Notify("Lever")
+    end
 end
 
 function EntityNotifications.Start(self, Hub)
