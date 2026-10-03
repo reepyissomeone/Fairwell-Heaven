@@ -950,15 +950,154 @@ function MainUI.Start(self, Hub)
 	ChatTitle.Font = Enum.Font.GothamBold
 	ChatTitle.TextSize = 16
 
-	local ChatInfo = MakeLabel(ChatScroll, "ChatInfo", "Talk directly with Fairwelladmi inside Fairwell Heaven.", UDim2.new(1, -10, 0, 28), UDim2.new(0, 5, 0, 40))
+	local ChatInfo = MakeLabel(ChatScroll, "ChatInfo", "Talk to Fairwelladmi. He's right here.", UDim2.new(1, -10, 0, 24), UDim2.new(0, 5, 0, 38))
 	ChatInfo.TextColor3 = GREY
 	ChatInfo.TextSize = 10
-	ChatInfo.TextWrapped = true
+
+	local ChatStage = Instance.new("Frame")
+	ChatStage.Name = "FairwellStage"
+	ChatStage.Position = UDim2.new(0, 5, 0, 68)
+	ChatStage.Size = UDim2.new(1, -10, 0, 220)
+	ChatStage.BackgroundColor3 = Color3.fromRGB(4, 3, 30)
+	ChatStage.BorderSizePixel = 0
+	ChatStage.Parent = ChatScroll
+
+	local StageCorner = Instance.new("UICorner")
+	StageCorner.CornerRadius = UDim.new(0, 9)
+	StageCorner.Parent = ChatStage
+
+	local StageStroke = Instance.new("UIStroke")
+	StageStroke.Color = BLUE
+	StageStroke.Transparency = 0.2
+	StageStroke.Parent = ChatStage
+
+	local FairwellSpot = Instance.new("Frame")
+	FairwellSpot.Name = "Fairwell"
+	FairwellSpot.Position = UDim2.new(0, 20, 1, -145)
+	FairwellSpot.Size = UDim2.fromOffset(90, 130)
+	FairwellSpot.BackgroundTransparency = 1
+	FairwellSpot.Parent = ChatStage
+
+	local Head = Instance.new("Frame")
+	Head.Position = UDim2.new(0.5, -25, 0, 0)
+	Head.Size = UDim2.fromOffset(50, 43)
+	Head.BackgroundColor3 = Color3.fromRGB(0, 170, 220)
+	Head.BorderSizePixel = 0
+	Head.Parent = FairwellSpot
+
+	local HeadCorner = Instance.new("UICorner")
+	HeadCorner.CornerRadius = UDim.new(0, 12)
+	HeadCorner.Parent = Head
+
+	local EyeL = Instance.new("Frame")
+	EyeL.Position = UDim2.new(0, 11, 0, 13)
+	EyeL.Size = UDim2.fromOffset(9, 9)
+	EyeL.BackgroundColor3 = Color3.fromRGB(230, 20, 30)
+	EyeL.BorderSizePixel = 0
+	EyeL.Parent = Head
+
+	local EyeR = EyeL:Clone()
+	EyeR.Position = UDim2.new(1, -20, 0, 13)
+	EyeR.Parent = Head
+
+	local Smile = Instance.new("TextLabel")
+	Smile.Position = UDim2.new(0, 8, 0, 22)
+	Smile.Size = UDim2.new(1, -16, 0, 18)
+	Smile.BackgroundTransparency = 1
+	Smile.Text = "⌣"
+	Smile.TextColor3 = Color3.fromRGB(230, 20, 30)
+	Smile.TextSize = 22
+	Smile.Font = Enum.Font.GothamBold
+	Smile.Parent = Head
+
+	local Body = Instance.new("Frame")
+	Body.Position = UDim2.new(0.5, -31, 0, 45)
+	Body.Size = UDim2.fromOffset(62, 38)
+	Body.BackgroundColor3 = Color3.fromRGB(0, 85, 220)
+	Body.BorderSizePixel = 0
+	Body.Parent = FairwellSpot
+
+	local BodyCorner = Instance.new("UICorner")
+	BodyCorner.CornerRadius = UDim.new(0, 7)
+	BodyCorner.Parent = Body
+
+	local Shirt = Instance.new("Frame")
+	Shirt.Position = UDim2.new(0.5, -13, 0, 0)
+	Shirt.Size = UDim2.fromOffset(26, 38)
+	Shirt.BackgroundColor3 = Color3.fromRGB(205, 205, 205)
+	Shirt.BorderSizePixel = 0
+	Shirt.Parent = Body
+
+	for Index = 1, 4 do
+		local Stripe = Instance.new("Frame")
+		Stripe.Position = UDim2.new(0, 0, 0, Index * 8 - 3)
+		Stripe.Size = UDim2.new(1, 0, 0, 2)
+		Stripe.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+		Stripe.BorderSizePixel = 0
+		Stripe.Parent = Shirt
+	end
+
+	local ArmL = Instance.new("Frame")
+	ArmL.Position = UDim2.new(0, -13, 0, 3)
+	ArmL.Size = UDim2.fromOffset(13, 32)
+	ArmL.BackgroundColor3 = Color3.fromRGB(0, 85, 220)
+	ArmL.BorderSizePixel = 0
+	ArmL.Parent = Body
+
+	local ArmR = ArmL:Clone()
+	ArmR.Position = UDim2.new(1, 0, 0, 3)
+	ArmR.Parent = Body
+
+	local LegL = Instance.new("Frame")
+	LegL.Position = UDim2.new(0.5, -27, 0, 83)
+	LegL.Size = UDim2.fromOffset(25, 40)
+	LegL.BackgroundColor3 = Color3.fromRGB(30, 30, 33)
+	LegL.BorderSizePixel = 0
+	LegL.Parent = FairwellSpot
+
+	local LegR = LegL:Clone()
+	LegR.Position = UDim2.new(0.5, 2, 0, 83)
+	LegR.Parent = FairwellSpot
+
+	local Bubble = Instance.new("TextLabel")
+	Bubble.Name = "SpeechBubble"
+	Bubble.Position = UDim2.new(0, 105, 0, 30)
+	Bubble.Size = UDim2.new(1, -120, 0, 72)
+	Bubble.BackgroundColor3 = Color3.fromRGB(245, 245, 250)
+	Bubble.BackgroundTransparency = 0.02
+	Bubble.BorderSizePixel = 0
+	Bubble.Text = "Hey! I'm Fairwell. Talk to me!"
+	Bubble.TextColor3 = Color3.fromRGB(20, 20, 30)
+	Bubble.TextSize = 12
+	Bubble.Font = Enum.Font.GothamBold
+	Bubble.TextWrapped = true
+	Bubble.TextXAlignment = Enum.TextXAlignment.Center
+	Bubble.TextYAlignment = Enum.TextYAlignment.Center
+	Bubble.Parent = ChatStage
+
+	local BubbleCorner = Instance.new("UICorner")
+	BubbleCorner.CornerRadius = UDim.new(0, 14)
+	BubbleCorner.Parent = Bubble
+
+	local BubbleStroke = Instance.new("UIStroke")
+	BubbleStroke.Color = BLUE
+	BubbleStroke.Thickness = 2
+	BubbleStroke.Parent = Bubble
+
+	local BubbleTail = Instance.new("TextLabel")
+	BubbleTail.Position = UDim2.new(0, 88, 0, 67)
+	BubbleTail.Size = UDim2.fromOffset(30, 24)
+	BubbleTail.BackgroundTransparency = 1
+	BubbleTail.Text = "◀"
+	BubbleTail.TextColor3 = Color3.fromRGB(245, 245, 250)
+	BubbleTail.TextSize = 25
+	BubbleTail.Font = Enum.Font.GothamBold
+	BubbleTail.Parent = ChatStage
 
 	local ChatMessages = Instance.new("ScrollingFrame")
 	ChatMessages.Name = "Messages"
-	ChatMessages.Position = UDim2.new(0, 5, 0, 74)
-	ChatMessages.Size = UDim2.new(1, -10, 0, 250)
+	ChatMessages.Position = UDim2.new(0, 5, 0, 298)
+	ChatMessages.Size = UDim2.new(1, -10, 0, 92)
 	ChatMessages.BackgroundColor3 = Color3.fromRGB(4, 3, 30)
 	ChatMessages.BorderSizePixel = 0
 	ChatMessages.ScrollBarThickness = 3
@@ -976,251 +1115,93 @@ function MainUI.Start(self, Hub)
 	ChatStroke.Parent = ChatMessages
 
 	local ChatLayout = Instance.new("UIListLayout")
-	ChatLayout.Padding = UDim.new(0, 5)
+	ChatLayout.Padding = UDim.new(0, 4)
 	ChatLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	ChatLayout.Parent = ChatMessages
 
-	local ChatPadding = Instance.new("UIPadding")
-	ChatPadding.PaddingTop = UDim.new(0, 8)
-	ChatPadding.PaddingBottom = UDim.new(0, 8)
-	ChatPadding.PaddingLeft = UDim.new(0, 8)
-	ChatPadding.PaddingRight = UDim.new(0, 8)
-	ChatPadding.Parent = ChatMessages
-
-	local function MakeFairwellAvatar(parent)
-		local Avatar = Instance.new("Frame")
-		Avatar.Name = "FairwellAvatar"
-		Avatar.Size = UDim2.fromOffset(34, 34)
-		Avatar.BackgroundTransparency = 1
-		Avatar.Parent = parent
-
-		local Head = Instance.new("Frame")
-		Head.Name = "Head"
-		Head.Position = UDim2.new(0.5, -7, 0, 1)
-		Head.Size = UDim2.fromOffset(14, 12)
-		Head.BackgroundColor3 = Color3.fromRGB(0, 170, 220)
-		Head.BorderSizePixel = 0
-		Head.Parent = Avatar
-
-		local HeadCorner = Instance.new("UICorner")
-		HeadCorner.CornerRadius = UDim.new(0, 4)
-		HeadCorner.Parent = Head
-
-		local LeftEye = Instance.new("Frame")
-		LeftEye.Position = UDim2.new(0, 3, 0, 4)
-		LeftEye.Size = UDim2.fromOffset(3, 3)
-		LeftEye.BackgroundColor3 = Color3.fromRGB(230, 20, 30)
-		LeftEye.BorderSizePixel = 0
-		LeftEye.Parent = Head
-
-		local RightEye = LeftEye:Clone()
-		RightEye.Position = UDim2.new(1, -6, 0, 4)
-		RightEye.Parent = Head
-
-		local Smile = Instance.new("TextLabel")
-		Smile.Position = UDim2.new(0, 1, 0, 6)
-		Smile.Size = UDim2.new(1, -2, 0, 7)
-		Smile.BackgroundTransparency = 1
-		Smile.Text = "⌣"
-		Smile.TextColor3 = Color3.fromRGB(230, 20, 30)
-		Smile.TextSize = 10
-		Smile.Font = Enum.Font.GothamBold
-		Smile.Parent = Head
-
-		local Torso = Instance.new("Frame")
-		Torso.Name = "Torso"
-		Torso.Position = UDim2.new(0.5, -9, 0, 13)
-		Torso.Size = UDim2.fromOffset(18, 10)
-		Torso.BackgroundColor3 = Color3.fromRGB(0, 85, 220)
-		Torso.BorderSizePixel = 0
-		Torso.Parent = Avatar
-
-		local Shirt = Instance.new("Frame")
-		Shirt.Position = UDim2.new(0, 5, 0, 0)
-		Shirt.Size = UDim2.fromOffset(8, 10)
-		Shirt.BackgroundColor3 = Color3.fromRGB(205, 205, 205)
-		Shirt.BorderSizePixel = 0
-		Shirt.Parent = Torso
-
-		for Index = 1, 3 do
-			local Stripe = Instance.new("Frame")
-			Stripe.Position = UDim2.new(0, 0, 0, Index * 3 - 1)
-			Stripe.Size = UDim2.new(1, 0, 0, 1)
-			Stripe.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
-			Stripe.BorderSizePixel = 0
-			Stripe.Parent = Shirt
-		end
-
-		local LeftArm = Instance.new("Frame")
-		LeftArm.Position = UDim2.new(0.5, -14, 0, 13)
-		LeftArm.Size = UDim2.fromOffset(5, 10)
-		LeftArm.BackgroundColor3 = Color3.fromRGB(0, 85, 220)
-		LeftArm.BorderSizePixel = 0
-		LeftArm.Parent = Avatar
-
-		local RightArm = LeftArm:Clone()
-		RightArm.Position = UDim2.new(0.5, 9, 0, 13)
-		RightArm.Parent = Avatar
-
-		local LeftLeg = Instance.new("Frame")
-		LeftLeg.Position = UDim2.new(0.5, -8, 0, 23)
-		LeftLeg.Size = UDim2.fromOffset(7, 9)
-		LeftLeg.BackgroundColor3 = Color3.fromRGB(35, 35, 38)
-		LeftLeg.BorderSizePixel = 0
-		LeftLeg.Parent = Avatar
-
-		local RightLeg = LeftLeg:Clone()
-		RightLeg.Position = UDim2.new(0.5, 1, 0, 23)
-		RightLeg.Parent = Avatar
-
-		local LeftShoe = Instance.new("Frame")
-		LeftShoe.Position = UDim2.new(0.5, -8, 0, 31)
-		LeftShoe.Size = UDim2.fromOffset(7, 3)
-		LeftShoe.BackgroundColor3 = Color3.fromRGB(30, 100, 75)
-		LeftShoe.BorderSizePixel = 0
-		LeftShoe.Parent = Avatar
-
-		local RightShoe = LeftShoe:Clone()
-		RightShoe.Position = UDim2.new(0.5, 1, 0, 31)
-		RightShoe.Parent = Avatar
-
-		return Avatar
-	end
-
-	local function AddChatMessage(Sender, Message, SenderColor, IsFairwell)
-		local Row = Instance.new("Frame")
+	local function AddChatMessage(Sender, Message, SenderColor)
+		local Row = Instance.new("TextLabel")
 		Row.Name = "Message"
 		Row.LayoutOrder = math.floor(os.clock() * 1000)
-		Row.Size = UDim2.new(1, -4, 0, 46)
+		Row.Size = UDim2.new(1, -4, 0, 25)
 		Row.AutomaticSize = Enum.AutomaticSize.Y
-		Row.BackgroundColor3 = IsFairwell and Color3.fromRGB(9, 12, 28) or PANEL
-		Row.BackgroundTransparency = 0.08
+		Row.BackgroundColor3 = PANEL
+		Row.BackgroundTransparency = 0.15
 		Row.BorderSizePixel = 0
+		Row.Text = tostring(Sender) .. "  •  " .. tostring(Message)
+		Row.TextColor3 = WHITE
+		Row.TextSize = 10
+		Row.Font = Enum.Font.Gotham
+		Row.TextWrapped = true
+		Row.TextXAlignment = Enum.TextXAlignment.Left
+		Row.TextYAlignment = Enum.TextYAlignment.Center
 		Row.Parent = ChatMessages
 
 		local Corner = Instance.new("UICorner")
-		Corner.CornerRadius = UDim.new(0, 7)
+		Corner.CornerRadius = UDim.new(0, 5)
 		Corner.Parent = Row
 
 		local Stroke = Instance.new("UIStroke")
 		Stroke.Color = SenderColor or BLUE
-		Stroke.Transparency = IsFairwell and 0.25 or 0.55
+		Stroke.Transparency = 0.55
 		Stroke.Parent = Row
-
-		if IsFairwell then
-			local AvatarHolder = Instance.new("Frame")
-			AvatarHolder.Position = UDim2.new(0, 6, 0, 6)
-			AvatarHolder.Size = UDim2.fromOffset(34, 34)
-			AvatarHolder.BackgroundColor3 = Color3.fromRGB(8, 20, 35)
-			AvatarHolder.BackgroundTransparency = 0.15
-			AvatarHolder.BorderSizePixel = 0
-			AvatarHolder.Parent = Row
-
-			local AvatarCorner = Instance.new("UICorner")
-			AvatarCorner.CornerRadius = UDim.new(1, 0)
-			AvatarCorner.Parent = AvatarHolder
-
-			local AvatarStroke = Instance.new("UIStroke")
-			AvatarStroke.Color = BLUE
-			AvatarStroke.Transparency = 0.2
-			AvatarStroke.Parent = AvatarHolder
-
-			MakeFairwellAvatar(AvatarHolder)
-		end
-
-		local TextOffset = IsFairwell and 48 or 10
-
-		local SenderLabel = Instance.new("TextLabel")
-		SenderLabel.Position = UDim2.new(0, TextOffset, 0, 5)
-		SenderLabel.Size = UDim2.new(1, -TextOffset - 10, 0, 16)
-		SenderLabel.BackgroundTransparency = 1
-		SenderLabel.Text = tostring(Sender)
-		SenderLabel.TextColor3 = SenderColor or WHITE
-		SenderLabel.TextSize = 10
-		SenderLabel.Font = Enum.Font.GothamBold
-		SenderLabel.TextXAlignment = Enum.TextXAlignment.Left
-		SenderLabel.Parent = Row
-
-		local MessageLabel = Instance.new("TextLabel")
-		MessageLabel.Position = UDim2.new(0, TextOffset, 0, 20)
-		MessageLabel.Size = UDim2.new(1, -TextOffset - 10, 0, 20)
-		MessageLabel.AutomaticSize = Enum.AutomaticSize.Y
-		MessageLabel.BackgroundTransparency = 1
-		MessageLabel.Text = tostring(Message)
-		MessageLabel.TextColor3 = WHITE
-		MessageLabel.TextSize = 10
-		MessageLabel.Font = Enum.Font.Gotham
-		MessageLabel.TextWrapped = true
-		MessageLabel.TextXAlignment = Enum.TextXAlignment.Left
-		MessageLabel.TextYAlignment = Enum.TextYAlignment.Top
-		MessageLabel.Parent = Row
 
 		task.defer(function()
 			ChatMessages.CanvasPosition = Vector2.new(0, math.max(0, ChatMessages.AbsoluteCanvasSize.Y))
 		end)
-
-		return Row
 	end
 
 	local function FairwellReply(Message)
 		local Text = tostring(Message):lower()
 
-		if Text:find("hello", 1, true)
-			or Text:find("hi", 1, true)
-			or Text:find("hey", 1, true) then
-			return "Hey! Fairwelladmi here. What are we working on?"
-		end
-
-		if Text:find("who are you", 1, true)
-			or Text:find("what are you", 1, true) then
-			return "I'm Fairwell — the little guy inside Fairwell Heaven. I'm here to chat and help with the hub."
-		end
-
-		if Text:find("what can you do", 1, true)
-			or Text:find("help me", 1, true) then
-			return "I can chat with you, explain Fairwell Heaven features, and help you figure out what to try next."
-		end
-
-		if Text:find("doors", 1, true) then
-			return "DOORS detected. I can talk about the hub's room tracking, door tracking, highlights, HUD, and entity notifications."
-		end
-
-		if Text:find("fairwell heaven", 1, true) then
-			return "Fairwell Heaven is my home. Keep improving it and I'll keep getting more useful."
-		end
-
-		if Text:find("thank", 1, true)
-			or Text:find("thanks", 1, true) then
-			return "Anytime. I'm not going anywhere."
-		end
-
-		if Text:find("bye", 1, true)
-			or Text:find("goodbye", 1, true) then
-			return "See you around. I'll be right here in Fairwell Chat."
+		if Text:find("hello", 1, true) or Text:find("hi", 1, true) or Text:find("hey", 1, true) then
+			return "Hey! I'm Fairwell. What are we working on?"
+		elseif Text:find("who are you", 1, true) or Text:find("what are you", 1, true) then
+			return "I'm Fairwelladmi — the little guy living inside Fairwell Heaven."
+		elseif Text:find("doors", 1, true) then
+			return "DOORS? Yep. I know about the hub's room tracking, doors, highlights, HUD, and entity notifications."
+		elseif Text:find("fairwell heaven", 1, true) then
+			return "This is my home. Keep making Fairwell Heaven better."
+		elseif Text:find("thank", 1, true) or Text:find("thanks", 1, true) then
+			return "Anytime!"
 		end
 
 		local Replies = {
 			"Interesting. Tell me more.",
 			"I'm listening.",
-			"Got it. What do you want to do with that?",
+			"Got it. What do you want to do next?",
 			"Yeah, I see what you mean.",
 			"Alright. Let's figure it out together."
 		}
-
-		local Index = (math.floor(os.clock() * 1000) % #Replies) + 1
-		return Replies[Index]
+		return Replies[(math.floor(os.clock() * 1000) % #Replies) + 1]
 	end
 
-	AddChatMessage("FAIRWELL", "Hey. I'm Fairwelladmi. Talk to me.", BLUE, true)
+	local function FairwellSpeak(Text)
+		Bubble.Text = tostring(Text)
+		Bubble.BackgroundTransparency = 0.02
+		task.spawn(function()
+			for Index = 1, 2 do
+				if Bubble.Parent then
+					Bubble.Position = UDim2.new(0, 105, 0, 28)
+					task.wait(0.06)
+					Bubble.Position = UDim2.new(0, 105, 0, 30)
+					task.wait(0.06)
+				end
+			end
+		end)
+	end
+
+	FairwellSpeak("Hey! I'm Fairwell. Talk to me.")
+	AddChatMessage("FAIRWELL", "Hey! I'm Fairwell. Talk to me.", BLUE)
 
 	local ChatInput = Instance.new("TextBox")
 	ChatInput.Name = "Input"
-	ChatInput.Position = UDim2.new(0, 5, 0, 334)
+	ChatInput.Position = UDim2.new(0, 5, 0, 400)
 	ChatInput.Size = UDim2.new(1, -75, 0, 38)
 	ChatInput.BackgroundColor3 = PANEL
 	ChatInput.BorderSizePixel = 0
 	ChatInput.ClearTextOnFocus = false
-	ChatInput.PlaceholderText = "Talk to Fairwell..."
+	ChatInput.PlaceholderText = "Type here..."
 	ChatInput.Text = ""
 	ChatInput.TextColor3 = WHITE
 	ChatInput.PlaceholderColor3 = GREY
@@ -1239,7 +1220,7 @@ function MainUI.Start(self, Hub)
 
 	local SendButton = Instance.new("TextButton")
 	SendButton.Name = "Send"
-	SendButton.Position = UDim2.new(1, -64, 0, 334)
+	SendButton.Position = UDim2.new(1, -64, 0, 400)
 	SendButton.Size = UDim2.new(0, 59, 0, 38)
 	SendButton.BackgroundColor3 = BLUE
 	SendButton.BackgroundTransparency = 0.1
@@ -1260,58 +1241,36 @@ function MainUI.Start(self, Hub)
 		ChatInput.Text = ""
 
 		local Lower = Message:lower()
-
 		if Lower == "/help" then
-			AddChatMessage("FAIRWELL", "/clear • clears chat | /status • hub status | /help • commands | or just talk to me.", BLUE, true)
+			FairwellSpeak("/clear • clears chat | /status • hub status | /help • commands")
+			AddChatMessage("FAIRWELL", "/clear • clears chat | /status • hub status | /help • commands", BLUE)
 			return
-		end
-
-		if Lower == "/clear" then
+		elseif Lower == "/clear" then
 			for _, Child in ipairs(ChatMessages:GetChildren()) do
-				if Child:IsA("Frame") and Child.Name == "Message" then
-					Child:Destroy()
-				end
+				if Child:IsA("TextLabel") and Child.Name == "Message" then Child:Destroy() end
 			end
-			AddChatMessage("FAIRWELL", "Chat cleared. I'm still here.", BLUE, true)
+			FairwellSpeak("Chat cleared. I'm still here.")
+			AddChatMessage("FAIRWELL", "Chat cleared. I'm still here.", BLUE)
+			return
+		elseif Lower == "/status" then
+			local Status = "Hub online • " .. tostring(Hub.Version or "unknown") .. " • " .. tostring(Hub.Game.Name or "Unknown")
+			FairwellSpeak(Status)
+			AddChatMessage("FAIRWELL", Status, BLUE)
 			return
 		end
 
-		if Lower == "/status" then
-			AddChatMessage(
-				"FAIRWELL",
-				"Hub online • " .. tostring(Hub.Version or "unknown") .. " • " .. tostring(Hub.Game.Name or "Unknown"),
-				BLUE,
-				true
-			)
-			return
-		end
-
-		AddChatMessage(
-			Players.LocalPlayer and Players.LocalPlayer.Name or "YOU",
-			Message,
-			Color3.fromRGB(55, 200, 120),
-			false
-		)
-
+		AddChatMessage(Players.LocalPlayer and Players.LocalPlayer.Name or "YOU", Message, Color3.fromRGB(55, 200, 120))
 		task.delay(0.35, function()
-			if not ChatMessages.Parent then
-				return
-			end
-
-			AddChatMessage(
-				"FAIRWELL",
-				FairwellReply(Message),
-				BLUE,
-				true
-			)
+			if not ChatMessages.Parent then return end
+			local Reply = FairwellReply(Message)
+			FairwellSpeak(Reply)
+			AddChatMessage("FAIRWELL", Reply, BLUE)
 		end)
 	end
 
 	SendButton.MouseButton1Click:Connect(SendChat)
 	ChatInput.FocusLost:Connect(function(EnterPressed)
-		if EnterPressed then
-			SendChat()
-		end
+		if EnterPressed then SendChat() end
 	end)
 
 	--==================================================
