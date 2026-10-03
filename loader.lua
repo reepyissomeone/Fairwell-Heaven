@@ -60,9 +60,11 @@ local function LoadModule(path)
 	local success, source =
 		pcall(function()
 
+			local CacheBust = "?fairwell=" .. tostring(math.floor(os.clock() * 1000000))
+
 			return HttpGet(
 				game,
-				BASE_URL .. path
+				BASE_URL .. path .. CacheBust
 			)
 
 		end)
