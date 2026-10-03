@@ -12,6 +12,7 @@ return {
 	"features/doors/RoomTracker.lua",
 	"features/doors/DoorTracker.lua",
 	"features/doors/Highlights.lua",
+	"features/doors/RoomHUD.lua",
 	"features/doors/EntityNotifications.lua",
 
 	-- Testing
