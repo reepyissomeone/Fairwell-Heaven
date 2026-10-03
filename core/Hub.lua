@@ -5,7 +5,7 @@
 local Hub = {}
 
 Hub.Name = "Fairwell Heaven"
-Hub.Version = "0.3.1"
+Hub.Version = "0.4.0"
 Hub.Prefix = "[Fairwell Heaven]"
 
 Hub.Features = {}
@@ -72,6 +72,328 @@ end
 function Hub:ClearLogs()
 	table.clear(self.LogHistory)
 end
+
+
+------------------------------------------------------------
+-- CUSTOM NOTIFICATIONS
+------------------------------------------------------------
+
+local function GetNotificationStyle(kind)
+	kind = string.upper(tostring(kind or "INFO"))
+
+	local styles = {
+		INFO = {
+			Color = Color3.fromRGB(27, 147, 227),
+			Icon = "i",
+			Sound = "rbxassetid://6026984224"
+		},
+		SUCCESS = {
+			Color = Color3.fromRGB(70, 210, 130),
+			Icon = "✓",
+			Sound = "rbxassetid://6026984224"
+		},
+		WARNING = {
+			Color = Color3.fromRGB(255, 175, 55),
+			Icon = "!",
+			Sound = "rbxassetid://6026984224"
+		},
+		ERROR = {
+			Color = Color3.fromRGB(255, 75, 90),
+			Icon = "×",
+			Sound = "rbxassetid://6026984224"
+		}
+	}
+
+	return styles[kind] or styles.INFO
+end
+
+function Hub:Notify(title, message, kind, duration)
+	local Players = game:GetService("Players")
+	local TweenService = game:GetService("TweenService")
+	local SoundService = game:GetService("SoundService")
+	local player = Players.LocalPlayer
+	if not player then return false end
+
+	local playerGui = player:FindFirstChildOfClass("PlayerGui")
+	if not playerGui then return false end
+
+	local gui = playerGui:FindFirstChild("FairwellHeaven_Notifications")
+	if not gui then
+		gui = Instance.new("ScreenGui")
+		gui.Name = "FairwellHeaven_Notifications"
+		gui.ResetOnSpawn = false
+		gui.IgnoreGuiInset = true
+		gui.DisplayOrder = 999999
+		gui.Parent = playerGui
+
+		local container = Instance.new("Frame")
+		container.Name = "Container"
+		container.AnchorPoint = Vector2.new(1, 0)
+		container.Position = UDim2.new(1, -14, 0, 14)
+		container.Size = UDim2.new(0, 330, 1, -28)
+		container.BackgroundTransparency = 1
+		container.Parent = gui
+
+		local layout = Instance.new("UIListLayout")
+		layout.Padding = UDim.new(0, 8)
+		layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+		layout.VerticalAlignment = Enum.VerticalAlignment.Top
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+		layout.Parent = container
+
+		local constraint = Instance.new("UISizeConstraint")
+		constraint.MinSize = Vector2.new(260, 0)
+		constraint.MaxSize = Vector2.new(420, 0)
+		constraint.Parent = container
+	end
+
+	local container = gui.Container
+	local style = GetNotificationStyle(kind)
+	duration = math.clamp(tonumber(duration) or 4, 1, 15)
+
+	local card = Instance.new("Frame")
+	card.Size = UDim2.new(1, 0, 0, 76)
+	card.BackgroundColor3 = Color3.fromRGB(8, 7, 35)
+	card.BackgroundTransparency = 0.04
+	card.BorderSizePixel = 0
+	card.ClipsDescendants = true
+	card.LayoutOrder = math.floor(os.clock() * 1000)
+	card.Parent = container
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = card
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = style.Color
+	stroke.Thickness = 1.5
+	stroke.Transparency = 0.15
+	stroke.Parent = card
+
+	local icon = Instance.new("TextLabel")
+	icon.Position = UDim2.new(0, 10, 0, 12)
+	icon.Size = UDim2.new(0, 38, 0, 38)
+	icon.BackgroundColor3 = style.Color
+	icon.BackgroundTransparency = 0.12
+	icon.Text = style.Icon
+	icon.TextColor3 = Color3.fromRGB(255, 255, 255)
+	icon.TextSize = 20
+	icon.Font = Enum.Font.GothamBold
+	icon.Parent = card
+
+	local iconCorner = Instance.new("UICorner")
+	iconCorner.CornerRadius = UDim.new(0, 8)
+	iconCorner.Parent = icon
+
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Position = UDim2.new(0, 58, 0, 9)
+	titleLabel.Size = UDim2.new(1, -90, 0, 20)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Text = tostring(title or "Fairwell Heaven")
+	titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	titleLabel.TextSize = 13
+	titleLabel.Font = Enum.Font.GothamBold
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
+	titleLabel.Parent = card
+
+	local messageLabel = Instance.new("TextLabel")
+	messageLabel.Position = UDim2.new(0, 58, 0, 29)
+	messageLabel.Size = UDim2.new(1, -70, 0, 30)
+	messageLabel.BackgroundTransparency = 1
+	messageLabel.Text = tostring(message or "")
+	messageLabel.TextColor3 = Color3.fromRGB(205, 205, 220)
+	messageLabel.TextSize = 11
+	messageLabel.Font = Enum.Font.Gotham
+	messageLabel.TextWrapped = true
+	messageLabel.TextXAlignment = Enum.TextXAlignment.Left
+	messageLabel.TextYAlignment = Enum.TextYAlignment.Top
+	messageLabel.Parent = card
+
+	local bar = Instance.new("Frame")
+	bar.AnchorPoint = Vector2.new(0, 1)
+	bar.Position = UDim2.new(0, 0, 1, 0)
+	bar.Size = UDim2.new(1, 0, 0, 3)
+	bar.BackgroundColor3 = style.Color
+	bar.BorderSizePixel = 0
+	bar.Parent = card
+
+	local sound = Instance.new("Sound")
+	sound.Name = "NotificationSound"
+	sound.SoundId = style.Sound
+	sound.Volume = 0.35
+	sound.Parent = SoundService
+	pcall(function() sound:Play() end)
+
+	card.Position = UDim2.new(1, 360, 0, 0)
+	TweenService:Create(card, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0, 0, 0, 0)
+	}):Play()
+
+	local closeButton = Instance.new("TextButton")
+	closeButton.Position = UDim2.new(1, -28, 0, 6)
+	closeButton.Size = UDim2.new(0, 22, 0, 22)
+	closeButton.BackgroundTransparency = 1
+	closeButton.Text = "×"
+	closeButton.TextColor3 = Color3.fromRGB(160, 160, 175)
+	closeButton.TextSize = 16
+	closeButton.Font = Enum.Font.GothamBold
+	closeButton.Parent = card
+
+	local closed = false
+	local function close()
+		if closed then return end
+		closed = true
+		local out = TweenService:Create(card, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = UDim2.new(1, 360, 0, 0)
+		})
+		out:Play()
+		task.delay(0.24, function()
+			if card then card:Destroy() end
+			if sound then sound:Destroy() end
+		end)
+	end
+
+	closeButton.MouseButton1Click:Connect(close)
+
+	TweenService:Create(bar, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
+		Size = UDim2.new(0, 0, 0, 3)
+	}):Play()
+
+	task.delay(duration, close)
+	return true
+end
+
+function Hub:Prompt(title, message, yesText, noText, duration)
+	local Players = game:GetService("Players")
+	local TweenService = game:GetService("TweenService")
+	local SoundService = game:GetService("SoundService")
+	local player = Players.LocalPlayer
+	if not player then return false, false end
+
+	local playerGui = player:FindFirstChildOfClass("PlayerGui")
+	if not playerGui then return false, false end
+
+	local existing = playerGui:FindFirstChild("FairwellHeaven_Prompt")
+	if existing then existing:Destroy() end
+
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "FairwellHeaven_Prompt"
+	gui.ResetOnSpawn = false
+	gui.IgnoreGuiInset = true
+	gui.DisplayOrder = 1000000
+	gui.Parent = playerGui
+
+	local panel = Instance.new("Frame")
+	panel.AnchorPoint = Vector2.new(0.5, 0)
+	panel.Position = UDim2.new(0.5, 0, 0, -130)
+	panel.Size = UDim2.new(0.82, 0, 0, 126)
+	panel.BackgroundColor3 = Color3.fromRGB(8, 7, 35)
+	panel.BorderSizePixel = 0
+	panel.Parent = gui
+
+	local constraint = Instance.new("UISizeConstraint")
+	constraint.MinSize = Vector2.new(260, 126)
+	constraint.MaxSize = Vector2.new(440, 126)
+	constraint.Parent = panel
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = panel
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(27, 147, 227)
+	stroke.Thickness = 2
+	stroke.Parent = panel
+
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Position = UDim2.new(0, 16, 0, 10)
+	titleLabel.Size = UDim2.new(1, -32, 0, 22)
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Text = string.upper(tostring(title or "Fairwell Heaven"))
+	titleLabel.TextColor3 = Color3.fromRGB(27, 147, 227)
+	titleLabel.TextSize = 14
+	titleLabel.Font = Enum.Font.GothamBold
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.Parent = panel
+
+	local messageLabel = Instance.new("TextLabel")
+	messageLabel.Position = UDim2.new(0, 16, 0, 35)
+	messageLabel.Size = UDim2.new(1, -32, 0, 24)
+	messageLabel.BackgroundTransparency = 1
+	messageLabel.Text = tostring(message or "")
+	messageLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	messageLabel.TextSize = 12
+	messageLabel.Font = Enum.Font.Gotham
+	messageLabel.TextXAlignment = Enum.TextXAlignment.Left
+	messageLabel.Parent = panel
+
+	local yes = Instance.new("TextButton")
+	yes.Position = UDim2.new(0, 16, 1, -45)
+	yes.Size = UDim2.new(0.5, -22, 0, 34)
+	yes.BackgroundColor3 = Color3.fromRGB(27, 147, 227)
+	yes.BorderSizePixel = 0
+	yes.Text = string.upper(tostring(yesText or "YES"))
+	yes.TextColor3 = Color3.fromRGB(255, 255, 255)
+	yes.TextSize = 11
+	yes.Font = Enum.Font.GothamBold
+	yes.Parent = panel
+
+	local yesCorner = Instance.new("UICorner")
+	yesCorner.CornerRadius = UDim.new(0, 6)
+	yesCorner.Parent = yes
+
+	local no = Instance.new("TextButton")
+	no.Position = UDim2.new(0.5, 6, 1, -45)
+	no.Size = UDim2.new(0.5, -22, 0, 34)
+	no.BackgroundColor3 = Color3.fromRGB(35, 33, 65)
+	no.BorderSizePixel = 0
+	no.Text = string.upper(tostring(noText or "NO"))
+	no.TextColor3 = Color3.fromRGB(220, 220, 230)
+	no.TextSize = 11
+	no.Font = Enum.Font.GothamBold
+	no.Parent = panel
+
+	local noCorner = Instance.new("UICorner")
+	noCorner.CornerRadius = UDim.new(0, 6)
+	noCorner.Parent = no
+
+	local sound = Instance.new("Sound")
+	sound.Name = "PromptSound"
+	sound.SoundId = "rbxassetid://6026984224"
+	sound.Volume = 0.45
+	sound.Parent = SoundService
+	pcall(function() sound:Play() end)
+
+	local finished, answer = false, false
+	local function finish(value)
+		if finished then return end
+		finished, answer = true, value == true
+		pcall(function() sound:Play() end)
+		TweenService:Create(panel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = UDim2.new(0.5, 0, 0, -130)
+		}):Play()
+		task.delay(0.23, function()
+			if gui then gui:Destroy() end
+			if sound then sound:Destroy() end
+		end)
+	end
+
+	yes.MouseButton1Click:Connect(function() finish(true) end)
+	no.MouseButton1Click:Connect(function() finish(false) end)
+
+	TweenService:Create(panel, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+		Position = UDim2.new(0.5, 0, 0, 18)
+	}):Play()
+
+	task.delay(math.clamp(tonumber(duration) or 15, 3, 30), function()
+		finish(false)
+	end)
+
+	while not finished do task.wait() end
+	return true, answer
+end
+
 
 ------------------------------------------------------------
 -- GAME
