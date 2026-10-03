@@ -1,13 +1,12 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 2.7
+--// Version 2.8
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local MainUI = {
 	Name = "Main UI",
@@ -686,7 +685,7 @@ function MainUI.Start(self, Hub)
 	Version.BackgroundTransparency = 1
 
 	Version.Text =
-		"FAIRWELL HEAVEN • v2.7"
+		"FAIRWELL HEAVEN • v2.8"
 
 	Version.TextColor3 =
 		GREY
@@ -1010,78 +1009,23 @@ function MainUI.Start(self, Hub)
 	FairwellSpot.CurrentCamera = FairwellCamera
 
 	--==================================================
-	-- FAIRWELL 3D MODEL
+	-- FAIRWELL ROBLOX AVATAR
 	--==================================================
-	-- The OBJ you supplied is imported into Roblox as a Model/MeshParts.
-	-- Preferred setup: put the imported model in ReplicatedStorage and name it
-	-- "FairwellModel". You can also set FAIRWELL_MODEL_ASSET_ID below.
+	-- Builds Fairwell directly from the Roblox avatar belonging to
+	-- the account named "fairwelladmi". No OBJ/model upload is required.
 
-	local FAIRWELL_MODEL_ASSET_ID = ""
-
+	local FAIRWELL_USERNAME = "fairwelladmi"
 	local FairwellModel = nil
 
-	local function TryCloneFairwell(Source)
-		if not Source then
+	local function PrepareFairwellModel(Model)
+		if not Model or not Model:IsA("Model") then
 			return nil
 		end
 
-		local Clone = Source:Clone()
+		Model.Name = "Fairwell3D"
+		Model.Parent = FairwellWorld
 
-		if Clone:IsA("Model") then
-			return Clone
-		end
-
-		if Clone:IsA("BasePart") then
-			local Wrapper = Instance.new("Model")
-			Clone.Parent = Wrapper
-			return Wrapper
-		end
-
-		Clone:Destroy()
-		return nil
-	end
-
-	local Sources = {
-		ReplicatedStorage:FindFirstChild("FairwellModel"),
-		ReplicatedStorage:FindFirstChild("fairwelladmi"),
-	}
-
-	for _, Source in ipairs(Sources) do
-		if Source then
-			FairwellModel = TryCloneFairwell(Source)
-			if FairwellModel then
-				break
-			end
-		end
-	end
-
-	if not FairwellModel and FAIRWELL_MODEL_ASSET_ID ~= "" then
-		local AssetId = FAIRWELL_MODEL_ASSET_ID
-		if not AssetId:find("rbxassetid://", 1, true) then
-			AssetId = "rbxassetid://" .. AssetId
-		end
-
-		local Success, Objects = pcall(function()
-			return game:GetObjects(AssetId)
-		end)
-
-		if Success and type(Objects) == "table" then
-			for _, Object in ipairs(Objects) do
-				FairwellModel = TryCloneFairwell(Object)
-				if FairwellModel then
-					break
-				end
-			end
-		end
-	end
-
-	if not FairwellModel then
-		Hub:Log("Fairwell 3D model not found. Import fairwelladmi.obj into Roblox as a Model named FairwellModel.", "WARN")
-	else
-		FairwellModel.Name = "Fairwell3D"
-		FairwellModel.Parent = FairwellWorld
-
-		for _, Descendant in ipairs(FairwellModel:GetDescendants()) do
+		for _, Descendant in ipairs(Model:GetDescendants()) do
 			if Descendant:IsA("BasePart") then
 				Descendant.Anchored = true
 				Descendant.CanCollide = false
@@ -1091,42 +1035,98 @@ function MainUI.Start(self, Hub)
 			end
 		end
 
-		-- Normalize the imported model around its own bounding box so the
-		-- supplied OBJ works regardless of its original Prisma3D coordinates.
-		local BoundingCFrame, BoundingSize = FairwellModel:GetBoundingBox()
-		local Pivot = FairwellModel:GetPivot()
+		-- Normalize the Roblox avatar to the same compact presentation size
+		-- used by the previous Fairwell model.
+		local BoundingCFrame, BoundingSize = Model:GetBoundingBox()
+		local Pivot = Model:GetPivot()
 		local CenterOffset = Pivot:ToObjectSpace(BoundingCFrame)
-		FairwellModel:PivotTo(CFrame.new(0, 0, 0) * CenterOffset:Inverse())
+		Model:PivotTo(CFrame.new(0, 0, 0) * CenterOffset:Inverse())
 
-		local _, NormalizedSize = FairwellModel:GetBoundingBox()
+		local _, NormalizedSize = Model:GetBoundingBox()
 		local TargetHeight = 3.65
+
 		if NormalizedSize.Y > 0 then
-			FairwellModel:ScaleTo(TargetHeight / NormalizedSize.Y)
+			Model:ScaleTo(TargetHeight / NormalizedSize.Y)
 		end
 
-		local _, FinalSize = FairwellModel:GetBoundingBox()
-		local FinalCenter = select(1, FairwellModel:GetBoundingBox())
-		FairwellModel:PivotTo(CFrame.new(0, FinalSize.Y * 0.5 - FinalCenter.Y, 0))
+		local FinalCFrame, FinalSize = Model:GetBoundingBox()
+		local FinalCenter = FinalCFrame.Position
+
+		Model:PivotTo(
+			CFrame.new(
+				0,
+				FinalSize.Y * 0.5 - FinalCenter.Y,
+				0
+			)
+		)
+
+		return Model
 	end
 
-	local FairwellRoot = CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.rad(-8))
-	local FairwellBasePivot = FairwellModel and FairwellModel:GetPivot() or CFrame.new()
+	local function LoadFairwellAvatar()
+		local Success, UserId = pcall(function()
+			return Players:GetUserIdFromNameAsync(FAIRWELL_USERNAME)
+		end)
 
-	local EyeParts = {}
-	local MouthParts = {}
-
-	if FairwellModel then
-		for _, Descendant in ipairs(FairwellModel:GetDescendants()) do
-			if Descendant:IsA("BasePart") then
-				local LowerName = Descendant.Name:lower()
-				if LowerName:find("eye", 1, true) then
-					table.insert(EyeParts, Descendant)
-				elseif LowerName:find("mouth", 1, true)
-					or LowerName:find("smile", 1, true) then
-					table.insert(MouthParts, Descendant)
-				end
-			end
+		if not Success or not UserId then
+			Hub:Log(
+				"Could not resolve Roblox username: " .. FAIRWELL_USERNAME,
+				"WARN"
+			)
+			return nil
 		end
+
+		Hub:Log(
+			"Loading Roblox avatar for " .. FAIRWELL_USERNAME .. " (" .. tostring(UserId) .. ")..."
+		)
+
+		local DescriptionSuccess, Description = pcall(function()
+			return Players:GetHumanoidDescriptionFromUserId(UserId)
+		end)
+
+		if not DescriptionSuccess or not Description then
+			Hub:Log(
+				"Could not load the Roblox avatar description for " .. FAIRWELL_USERNAME,
+				"WARN"
+			)
+			return nil
+		end
+
+		local ModelSuccess, Model = pcall(function()
+			return Players:CreateHumanoidModelFromDescriptionAsync(
+				Description,
+				Enum.HumanoidRigType.R15
+			)
+		end)
+
+		if not ModelSuccess or not Model then
+			-- Try R6 as a fallback for accounts/places where R15 creation fails.
+			ModelSuccess, Model = pcall(function()
+				return Players:CreateHumanoidModelFromDescriptionAsync(
+					Description,
+					Enum.HumanoidRigType.R6
+				)
+			end)
+		end
+
+		if not ModelSuccess or not Model then
+			Hub:Log(
+				"Could not create a character model for " .. FAIRWELL_USERNAME,
+				"WARN"
+			)
+			return nil
+		end
+
+		return PrepareFairwellModel(Model)
+	end
+
+	FairwellModel = LoadFairwellAvatar()
+
+	if not FairwellModel then
+		Hub:Log(
+			"Fairwell avatar could not be loaded. The chat UI will still work.",
+			"WARN"
+		)
 	end
 
 	local Bubble = Instance.new("TextLabel")
@@ -2396,7 +2396,7 @@ function MainUI.Start(self, Hub)
 	end
 
 	Hub:Log(
-		"Main UI v2.7 initialized with imported Fairwell model support."
+		"Main UI v2.8 initialized with the fairwelladmi Roblox avatar."
 	)
 end
 
