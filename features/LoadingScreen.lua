@@ -1,173 +1,239 @@
 --// FAIRWELL HEAVEN
 --// Loading Screen
---// Version 1.1
+--// Version 1.2
 
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 
 local LoadingScreen = {
-    Name = "Loading Screen",
-    Description = "Fairwell Heaven startup loading screen."
+	Name = "Loading Screen",
+	Description = "Fairwell Heaven startup loading screen."
 }
 
 function LoadingScreen.Start(self, Hub)
 
-    print("[Fairwell Heaven] LoadingScreen.Start()")
+	local Player = Players.LocalPlayer
 
-    local Player = Players.LocalPlayer
+	if not Player then
+		warn("[Fairwell Heaven] LocalPlayer not found.")
+		return
+	end
 
-    if not Player then
-        warn("[Fairwell Heaven] LocalPlayer not found.")
-        return
-    end
+	local PlayerGui = Player:WaitForChild("PlayerGui")
 
-    local PlayerGui = Player:WaitForChild("PlayerGui")
+	--==================================================
+	-- REMOVE OLD SCREEN
+	--==================================================
 
-    --==================================================
-    -- REMOVE OLD SCREEN
-    --==================================================
+	local Old = PlayerGui:FindFirstChild("FairwellHeaven_Loading")
 
-    local Old = PlayerGui:FindFirstChild("FairwellHeaven_Loading")
+	if Old then
+		Old:Destroy()
+	end
 
-    if Old then
-        Old:Destroy()
-    end
+	--==================================================
+	-- COLORS
+	--==================================================
 
-    --==================================================
-    -- COLORS
-    --==================================================
+	local OUTLINE_COLOR = Color3.fromRGB(27, 147, 227)
+	local BACKGROUND_COLOR = Color3.fromRGB(6, 4, 43)
+	local TEXT_COLOR = Color3.fromRGB(255, 255, 255)
 
-    -- Outline: #1B93E3
-    local OUTLINE_COLOR = Color3.fromRGB(27, 147, 227)
+	--==================================================
+	-- SCREEN GUI
+	--==================================================
 
-    -- Inside: #06042B
-    local BACKGROUND_COLOR = Color3.fromRGB(6, 4, 43)
+	local Gui = Instance.new("ScreenGui")
 
-    local TEXT_COLOR = Color3.fromRGB(255, 255, 255)
+	Gui.Name = "FairwellHeaven_Loading"
+	Gui.ResetOnSpawn = false
+	Gui.IgnoreGuiInset = true
+	Gui.DisplayOrder = 999999
 
-    --==================================================
-    -- SCREEN GUI
-    --==================================================
+	Gui.Parent = PlayerGui
 
-    local Gui = Instance.new("ScreenGui")
+	--==================================================
+	-- MAIN PANEL
+	--==================================================
 
-    Gui.Name = "FairwellHeaven_Loading"
-    Gui.ResetOnSpawn = false
-    Gui.IgnoreGuiInset = true
-    Gui.DisplayOrder = 999999
+	local Main = Instance.new("Frame")
 
-    Gui.Parent = PlayerGui
+	Main.Name = "Main"
+	Main.AnchorPoint = Vector2.new(0.5, 0.5)
+	Main.Position = UDim2.fromScale(0.5, 0.5)
+	Main.Size = UDim2.fromScale(0.75, 0.5)
 
-    --==================================================
-    -- MAIN PANEL
-    --==================================================
+	Main.BackgroundColor3 = BACKGROUND_COLOR
+	Main.BorderSizePixel = 0
 
-    local Main = Instance.new("Frame")
+	Main.Parent = Gui
 
-    Main.Name = "Main"
+	--==================================================
+	-- OUTLINE
+	--==================================================
 
-    Main.AnchorPoint = Vector2.new(0.5, 0.5)
-    Main.Position = UDim2.fromScale(0.5, 0.5)
+	local Outline = Instance.new("UIStroke")
 
-    Main.Size = UDim2.fromScale(0.75, 0.5)
+	Outline.Name = "Outline"
+	Outline.Color = OUTLINE_COLOR
+	Outline.Thickness = 4
 
-    Main.BackgroundColor3 = BACKGROUND_COLOR
+	Outline.Parent = Main
 
-    Main.BorderSizePixel = 0
+	--==================================================
+	-- LOADING TEXT
+	--==================================================
 
-    Main.Parent = Gui
+	local Text = Instance.new("TextLabel")
 
-    --==================================================
-    -- BLUE OUTLINE
-    --==================================================
+	Text.Name = "Loading"
 
-    local Outline = Instance.new("UIStroke")
+	Text.AnchorPoint = Vector2.new(0.5, 0.5)
+	Text.Position = UDim2.fromScale(0.5, 0.5)
+	Text.Size = UDim2.fromScale(0.8, 0.2)
 
-    Outline.Name = "Outline"
+	Text.BackgroundTransparency = 1
 
-    Outline.Color = OUTLINE_COLOR
+	Text.Text = "LOADING"
+	Text.TextColor3 = TEXT_COLOR
+	Text.TextScaled = true
+	Text.Font = Enum.Font.GothamBold
 
-    Outline.Thickness = 4
+	Text.Parent = Main
 
-    Outline.Parent = Main
+	--==================================================
+	-- ANIMATED DOTS
+	--==================================================
 
-    --==================================================
-    -- LOADING TEXT
-    --==================================================
+	task.spawn(function()
 
-    local Text = Instance.new("TextLabel")
+		local Dots = {
+			"",
+			".",
+			"..",
+			"..."
+		}
 
-    Text.Name = "Loading"
+		local Index = 1
 
-    Text.AnchorPoint = Vector2.new(0.5, 0.5)
-    Text.Position = UDim2.fromScale(0.5, 0.5)
+		while Gui.Parent do
 
-    Text.Size = UDim2.fromScale(0.8, 0.2)
+			Text.Text = "LOADING" .. Dots[Index]
 
-    Text.BackgroundTransparency = 1
+			Index += 1
 
-    Text.Text = "LOADING"
+			if Index > #Dots then
+				Index = 1
+			end
 
-    Text.TextColor3 = TEXT_COLOR
+			task.wait(0.45)
+		end
 
-    Text.TextScaled = true
+	end)
 
-    Text.Font = Enum.Font.GothamBold
+	--==================================================
+	-- STORE REFERENCES
+	--==================================================
 
-    Text.Parent = Main
+	self.Gui = Gui
+	self.Main = Main
+	self.Text = Text
+	self.Outline = Outline
 
-    --==================================================
-    -- LOADING DOT ANIMATION
-    --==================================================
+	self.IsLoading = true
 
-    task.spawn(function()
-
-        local Dots = {
-            "",
-            ".",
-            "..",
-            "..."
-        }
-
-        local Index = 1
-
-        while Gui.Parent do
-
-            Text.Text = "LOADING" .. Dots[Index]
-
-            Index += 1
-
-            if Index > #Dots then
-                Index = 1
-            end
-
-            task.wait(0.45)
-        end
-
-    end)
-
-    --==================================================
-    -- STORE REFERENCES
-    --==================================================
-
-    self.Gui = Gui
-    self.Main = Main
-
-    print("[Fairwell Heaven] Loading UI created successfully.")
+	Hub:Log("Loading screen created.")
 
 end
 
+--======================================================
+-- FINISH LOADING
+--======================================================
+
+function LoadingScreen:Finish(Hub)
+
+	if not self.IsLoading then
+		return
+	end
+
+	if not self.Gui or not self.Gui.Parent then
+		return
+	end
+
+	self.IsLoading = false
+
+	Hub:Log("Main UI ready. Fading loading screen.")
+
+	local FadeInfo = TweenInfo.new(
+		0.6,
+		Enum.EasingStyle.Quad,
+		Enum.EasingDirection.Out
+	)
+
+	-- Fade text
+	if self.Text then
+		TweenService:Create(
+			self.Text,
+			FadeInfo,
+			{
+				TextTransparency = 1
+			}
+		):Play()
+	end
+
+	-- Fade outline
+	if self.Outline then
+		TweenService:Create(
+			self.Outline,
+			FadeInfo,
+			{
+				Transparency = 1
+			}
+		):Play()
+	end
+
+	-- Fade background
+	if self.Main then
+		TweenService:Create(
+			self.Main,
+			FadeInfo,
+			{
+				BackgroundTransparency = 1
+			}
+		):Play()
+	end
+
+	task.wait(0.65)
+
+	if self.Gui then
+		self.Gui:Destroy()
+	end
+
+	self.Gui = nil
+	self.Main = nil
+	self.Text = nil
+	self.Outline = nil
+
+	Hub:Log("Loading screen removed.")
+
+end
+
+--======================================================
+-- STOP
+--======================================================
+
 function LoadingScreen.Stop(self, Hub)
 
-    if not self.Gui then
-        return
-    end
+	self.IsLoading = false
 
-    self.Gui:Destroy()
+	if self.Gui then
+		self.Gui:Destroy()
+	end
 
-    self.Gui = nil
-    self.Main = nil
-
-    print("[Fairwell Heaven] Loading UI removed.")
+	self.Gui = nil
+	self.Main = nil
+	self.Text = nil
+	self.Outline = nil
 
 end
 
