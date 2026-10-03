@@ -31,7 +31,8 @@ local HttpGet =
 		game.HttpGet
 	)
 
-local StarterGui = game:GetService("StarterGui")
+local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
 
 local Compile =
 	loadstring or load
@@ -227,6 +228,160 @@ local function GetRemoteCommit()
 
 end
 
+local function ShowUpdatePrompt(Hub)
+
+	local Player = game:GetService("Players").LocalPlayer
+	if not Player then
+		return false, false
+	end
+
+	local PlayerGui = Player:FindFirstChildOfClass("PlayerGui")
+	if not PlayerGui then
+		return false, false
+	end
+
+	local Existing = PlayerGui:FindFirstChild("FairwellHeaven_UpdatePrompt")
+	if Existing then
+		Existing:Destroy()
+	end
+
+	local Gui = Instance.new("ScreenGui")
+	Gui.Name = "FairwellHeaven_UpdatePrompt"
+	Gui.ResetOnSpawn = false
+	Gui.IgnoreGuiInset = true
+	Gui.DisplayOrder = 1000000
+	Gui.Parent = PlayerGui
+
+	local Panel = Instance.new("Frame")
+	Panel.AnchorPoint = Vector2.new(0.5, 0)
+	Panel.Position = UDim2.new(0.5, 0, 0, -130)
+	Panel.Size = UDim2.new(0.82, 0, 0, 118)
+	Panel.BackgroundColor3 = Color3.fromRGB(8, 7, 35)
+	Panel.BorderSizePixel = 0
+	Panel.Parent = Gui
+
+	local Constraint = Instance.new("UISizeConstraint")
+	Constraint.MinSize = Vector2.new(260, 118)
+	Constraint.MaxSize = Vector2.new(440, 118)
+	Constraint.Parent = Panel
+
+	local Corner = Instance.new("UICorner")
+	Corner.CornerRadius = UDim.new(0, 10)
+	Corner.Parent = Panel
+
+	local Stroke = Instance.new("UIStroke")
+	Stroke.Color = Color3.fromRGB(27, 147, 227)
+	Stroke.Thickness = 2
+	Stroke.Parent = Panel
+
+	local Title = Instance.new("TextLabel")
+	Title.Position = UDim2.new(0, 16, 0, 10)
+	Title.Size = UDim2.new(1, -32, 0, 22)
+	Title.BackgroundTransparency = 1
+	Title.Text = "FAIRWELL HEAVEN"
+	Title.TextColor3 = Color3.fromRGB(27, 147, 227)
+	Title.TextSize = 14
+	Title.Font = Enum.Font.GothamBold
+	Title.TextXAlignment = Enum.TextXAlignment.Left
+	Title.Parent = Panel
+
+	local Message = Instance.new("TextLabel")
+	Message.Position = UDim2.new(0, 16, 0, 34)
+	Message.Size = UDim2.new(1, -32, 0, 24)
+	Message.BackgroundTransparency = 1
+	Message.Text = "A new version is available. Update?"
+	Message.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Message.TextSize = 13
+	Message.Font = Enum.Font.Gotham
+	Message.TextXAlignment = Enum.TextXAlignment.Left
+	Message.Parent = Panel
+
+	local Yes = Instance.new("TextButton")
+	Yes.Position = UDim2.new(0, 16, 1, -45)
+	Yes.Size = UDim2.new(0.5, -22, 0, 34)
+	Yes.BackgroundColor3 = Color3.fromRGB(27, 147, 227)
+	Yes.BorderSizePixel = 0
+	Yes.Text = "YES • UPDATE"
+	Yes.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Yes.TextSize = 11
+	Yes.Font = Enum.Font.GothamBold
+	Yes.Parent = Panel
+
+	local YesCorner = Instance.new("UICorner")
+	YesCorner.CornerRadius = UDim.new(0, 6)
+	YesCorner.Parent = Yes
+
+	local No = Instance.new("TextButton")
+	No.Position = UDim2.new(0.5, 6, 1, -45)
+	No.Size = UDim2.new(0.5, -22, 0, 34)
+	No.BackgroundColor3 = Color3.fromRGB(35, 33, 65)
+	No.BorderSizePixel = 0
+	No.Text = "NO • LATER"
+	No.TextColor3 = Color3.fromRGB(220, 220, 230)
+	No.TextSize = 11
+	No.Font = Enum.Font.GothamBold
+	No.Parent = Panel
+
+	local NoCorner = Instance.new("UICorner")
+	NoCorner.CornerRadius = UDim.new(0, 6)
+	NoCorner.Parent = No
+
+	local Sound = Instance.new("Sound")
+	Sound.Name = "NotificationSound"
+	Sound.SoundId = "rbxassetid://6026984224"
+	Sound.Volume = 0.45
+	Sound.Parent = SoundService
+
+	local Finished = false
+	local ShouldUpdate = false
+
+	local function Finish(Update)
+		if Finished then return end
+		Finished = true
+		ShouldUpdate = Update == true
+
+		pcall(function() Sound:Play() end)
+
+		local Out = TweenService:Create(
+			Panel,
+			TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+			{Position = UDim2.new(0.5, 0, 0, -130)}
+		)
+		Out:Play()
+
+		task.delay(0.22, function()
+			if Gui then Gui:Destroy() end
+			if Sound then Sound:Destroy() end
+		end)
+	end
+
+	Yes.MouseButton1Click:Connect(function()
+		Finish(true)
+	end)
+
+	No.MouseButton1Click:Connect(function()
+		Finish(false)
+	end)
+
+	local In = TweenService:Create(
+		Panel,
+		TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+		{Position = UDim2.new(0.5, 0, 0, 18)}
+	)
+	In:Play()
+	pcall(function() Sound:Play() end)
+
+	task.delay(15, function()
+		Finish(false)
+	end)
+
+	while not Finished do
+		task.wait()
+	end
+
+	return true, ShouldUpdate
+end
+
 local function StartAutoUpdater(Hub)
 
 	local function GetUpdateInterval()
@@ -327,26 +482,11 @@ local function StartAutoUpdater(Hub)
 				RemoteCommit:sub(1, 7)
 			)
 
-			-- Ask before installing the new version.
-			local ShouldUpdate = false
-			local DecisionReceived = false
+			-- Show the custom Fairwell Heaven update notification.
+			local PromptShown, ShouldUpdate = ShowUpdatePrompt(Hub)
 
-			pcall(function()
-				StarterGui:SetCore("SendNotification", {
-					Title = "Fairwell Heaven",
-					Text = "Update?",
-					Duration = 15,
-					Button1 = "Yes",
-					Button2 = "No",
-					Callback = function(Button)
-						DecisionReceived = true
-						ShouldUpdate = Button == "Yes"
-					end
-				})
-			end)
-
-			if not DecisionReceived then
-				Hub:Warn("Update prompt unavailable or unanswered. Keeping current version.")
+			if not PromptShown then
+				Hub:Warn("Custom update prompt unavailable. Keeping current version.")
 				InitialCommit = RemoteCommit
 				continue
 			end
