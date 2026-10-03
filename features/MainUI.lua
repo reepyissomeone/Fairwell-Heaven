@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 3.1
+--// Version 3.2
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
@@ -986,8 +986,8 @@ function MainUI.Start(self, Hub)
 
 	local FairwellSpot = Instance.new("ViewportFrame")
 	FairwellSpot.Name = "Fairwell"
-	FairwellSpot.Position = UDim2.new(0, 12, 1, -164)
-	FairwellSpot.Size = UDim2.fromOffset(105, 150)
+	FairwellSpot.Position = UDim2.new(0, 8, 1, -183)
+	FairwellSpot.Size = UDim2.fromOffset(125, 175)
 	FairwellSpot.BackgroundTransparency = 1
 	FairwellSpot.Ambient = Color3.fromRGB(180, 190, 210)
 	FairwellSpot.LightColor = Color3.fromRGB(255, 255, 255)
@@ -1019,8 +1019,8 @@ function MainUI.Start(self, Hub)
 
 	local FairwellThumbnail = Instance.new("ImageLabel")
 	FairwellThumbnail.Name = "FairwellAvatarThumbnail"
-	FairwellThumbnail.Position = UDim2.new(0, 12, 1, -164)
-	FairwellThumbnail.Size = UDim2.fromOffset(105, 150)
+	FairwellThumbnail.Position = UDim2.new(0, 8, 1, -183)
+	FairwellThumbnail.Size = UDim2.fromOffset(125, 175)
 	FairwellThumbnail.BackgroundTransparency = 1
 	FairwellThumbnail.Image = ""
 	FairwellThumbnail.ScaleType = Enum.ScaleType.Fit
@@ -1187,18 +1187,30 @@ function MainUI.Start(self, Hub)
 		return nil
 	end
 
-	FairwellModel = LoadFairwellAvatar()
+	task.spawn(function()
+		local UserIdSuccess, UserId = pcall(function()
+			return Players:GetUserIdFromNameAsync(FAIRWELL_USERNAME)
+		end)
 
-	if not FairwellModel and not FairwellThumbnail.Visible then
-		Hub:Log(
-			"No Fairwell avatar could be rendered. Check DEV > LIVE RUNTIME LOGS.",
-			"ERROR"
-		)
-	end
+		if UserIdSuccess and UserId then
+			LoadFairwellThumbnail(UserId)
+		else
+			Hub:Log("Could not resolve Fairwell avatar user.", "ERROR")
+		end
+
+		local Model = LoadFairwellAvatar()
+		if Model then
+			FairwellModel = Model
+			FairwellThumbnail.Visible = false
+			Hub:Log("Fairwell 3D avatar is now active.", "SUCCESS")
+		else
+			Hub:Log("Using Fairwell's Roblox avatar thumbnail fallback.", "WARN")
+		end
+	end)
 
 	local Bubble = Instance.new("TextLabel")
 	Bubble.Name = "SpeechBubble"
-	Bubble.Position = UDim2.new(0, 92, 0, 42)
+	Bubble.Position = UDim2.new(0, 138, 0, 42)
 	Bubble.Size = UDim2.new(0, 145, 0, 68)
 	Bubble.BackgroundColor3 = Color3.fromRGB(245, 245, 250)
 	Bubble.BackgroundTransparency = 0.02
@@ -1222,7 +1234,7 @@ function MainUI.Start(self, Hub)
 	BubbleStroke.Parent = Bubble
 
 	local BubbleTail = Instance.new("TextLabel")
-	BubbleTail.Position = UDim2.new(0, 75, 0, 78)
+	BubbleTail.Position = UDim2.new(0, 118, 0, 78)
 	BubbleTail.Size = UDim2.fromOffset(30, 24)
 	BubbleTail.BackgroundTransparency = 1
 	BubbleTail.Text = "◀"
