@@ -1017,8 +1017,10 @@ function MainUI.Start(self, Hub)
 
 	local ClearLogsButton = Instance.new("TextButton")
 	ClearLogsButton.Name = "ClearLogs"
-	ClearLogsButton.Position = UDim2.new(1, -96, 0, -34)
-	ClearLogsButton.Size = UDim2.fromOffset(90, 28)
+	-- Keep the button below the log panel so it does not overlap
+	-- the header or require awkward scrolling/tapping on mobile.
+	ClearLogsButton.Position = UDim2.new(0, 5, 0, 436)
+	ClearLogsButton.Size = UDim2.new(1, -10, 0, 32)
 	ClearLogsButton.BackgroundColor3 = PANEL
 	ClearLogsButton.BorderSizePixel = 0
 	ClearLogsButton.Text = "CLEAR LOGS"
