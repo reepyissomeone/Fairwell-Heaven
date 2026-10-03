@@ -950,7 +950,7 @@ function MainUI.Start(self, Hub)
 	ChatTitle.Font = Enum.Font.GothamBold
 	ChatTitle.TextSize = 16
 
-	local ChatInfo = MakeLabel(ChatScroll, "ChatInfo", "Your Fairwell Heaven command and message console.", UDim2.new(1, -10, 0, 28), UDim2.new(0, 5, 0, 40))
+	local ChatInfo = MakeLabel(ChatScroll, "ChatInfo", "Talk directly with Fairwelladmi inside Fairwell Heaven.", UDim2.new(1, -10, 0, 28), UDim2.new(0, 5, 0, 40))
 	ChatInfo.TextColor3 = GREY
 	ChatInfo.TextSize = 10
 	ChatInfo.TextWrapped = true
