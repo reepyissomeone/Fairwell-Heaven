@@ -1185,9 +1185,71 @@ function MainUI.Start(self, Hub)
 		return Replies[(math.floor(os.clock() * 1000) % #Replies) + 1]
 	end
 
+	local FairwellTalkingUntil = 0
+	local FairwellTalkCycle = 0
+
+	local FairwellAnimationConnection = RunService.RenderStepped:Connect(function()
+		if not ChatStage.Parent then
+			return
+		end
+
+		local Time = os.clock()
+		local Bob = math.sin(Time * 2.4) * 2.2
+		local Sway = math.sin(Time * 1.7) * 1.8
+
+		FairwellSpot.Position = UDim2.new(0, 18 + Sway, 1, -148 + Bob)
+		Head.Rotation = math.sin(Time * 1.7) * 2
+		Body.Rotation = math.sin(Time * 1.7 + 0.4) * 1.2
+
+		local ArmWave = math.sin(Time * 2.1) * 4
+		ArmL.Rotation = -ArmWave - 3
+		ArmR.Rotation = ArmWave + 3
+
+		local LegWalk = math.sin(Time * 1.7) * 1.5
+		LegL.Rotation = LegWalk
+		LegR.Rotation = -LegWalk
+
+		if Time < FairwellTalkingUntil then
+			FairwellTalkCycle += 1
+			local Talking = FairwellTalkCycle % 12
+
+			if Talking < 6 then
+				Smile.Text = "◡"
+			else
+				Smile.Text = "⌣"
+			end
+
+			ArmL.Rotation = -10 - math.sin(Time * 9) * 7
+			ArmR.Rotation = 10 + math.sin(Time * 9) * 7
+			Bubble.Position = UDim2.new(0, 92, 0, 40 + math.sin(Time * 8) * 1.5)
+		else
+			Smile.Text = "⌣"
+			Bubble.Position = UDim2.new(0, 92, 0, 42)
+		end
+	end)
+
+	task.spawn(function()
+		while ChatStage.Parent do
+			task.wait(math.random(25, 45) / 10)
+
+			if not ChatStage.Parent then
+				break
+			end
+
+			EyeL.Size = UDim2.fromOffset(9, 3)
+			EyeR.Size = UDim2.fromOffset(9, 3)
+			task.wait(0.09)
+			EyeL.Size = UDim2.fromOffset(9, 9)
+			EyeR.Size = UDim2.fromOffset(9, 9)
+		end
+	end)
+
 	local function FairwellSpeak(Text)
 		Bubble.Text = tostring(Text)
 		Bubble.BackgroundTransparency = 0.02
+		FairwellTalkingUntil = os.clock() + math.max(1.5, math.min(5, #tostring(Text) * 0.055))
+		FairwellTalkCycle = 0
+
 		task.spawn(function()
 			for Index = 1, 2 do
 				if Bubble.Parent then
@@ -2192,6 +2254,7 @@ function MainUI.Start(self, Hub)
 
 	self.Gui = Gui
 	self.Window = Window
+	self.FairwellAnimationConnection = FairwellAnimationConnection
 
 	--------------------------------------------------
 	-- RESTORE PERSISTENT WINDOW SETTINGS
@@ -2291,6 +2354,11 @@ function MainUI.Stop(self)
 	if self.StatusConnection then
 		self.StatusConnection:Disconnect()
 		self.StatusConnection = nil
+	end
+
+	if self.FairwellAnimationConnection then
+		self.FairwellAnimationConnection:Disconnect()
+		self.FairwellAnimationConnection = nil
 	end
 
 	if self.Gui then
