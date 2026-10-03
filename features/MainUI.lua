@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 2.8
+--// Version 2.9
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
@@ -685,7 +685,7 @@ function MainUI.Start(self, Hub)
 	Version.BackgroundTransparency = 1
 
 	Version.Text =
-		"FAIRWELL HEAVEN • v2.8"
+		"FAIRWELL HEAVEN • v2.9"
 
 	Version.TextColor3 =
 		GREY
@@ -1011,11 +1011,55 @@ function MainUI.Start(self, Hub)
 	--==================================================
 	-- FAIRWELL ROBLOX AVATAR
 	--==================================================
-	-- Builds Fairwell directly from the Roblox avatar belonging to
-	-- the account named "fairwelladmi". No OBJ/model upload is required.
+	-- Uses the real Roblox account appearance for "fairwelladmi".
+	-- Primary path: build the avatar from its HumanoidDescription.
+	-- Fallback path: use Roblox's official avatar thumbnail directly.
 
 	local FAIRWELL_USERNAME = "fairwelladmi"
 	local FairwellModel = nil
+
+	local FairwellThumbnail = Instance.new("ImageLabel")
+	FairwellThumbnail.Name = "FairwellAvatarThumbnail"
+	FairwellThumbnail.Position = UDim2.new(0, 12, 1, -164)
+	FairwellThumbnail.Size = UDim2.fromOffset(105, 150)
+	FairwellThumbnail.BackgroundTransparency = 1
+	FairwellThumbnail.Image = ""
+	FairwellThumbnail.ScaleType = Enum.ScaleType.Fit
+	FairwellThumbnail.Visible = false
+	FairwellThumbnail.Parent = ChatStage
+
+	local FairwellThumbnailCorner = Instance.new("UICorner")
+	FairwellThumbnailCorner.CornerRadius = UDim.new(0, 10)
+	FairwellThumbnailCorner.Parent = FairwellThumbnail
+
+	local FairwellThumbnailStroke = Instance.new("UIStroke")
+	FairwellThumbnailStroke.Color = BLUE
+	FairwellThumbnailStroke.Transparency = 0.25
+	FairwellThumbnailStroke.Parent = FairwellThumbnail
+
+	local function LoadFairwellAvatarThumbnail(UserId)
+		local Success, Content = pcall(function()
+			local Image, IsReady = Players:GetUserThumbnailAsync(
+				UserId,
+				Enum.ThumbnailType.AvatarBust,
+				Enum.ThumbnailSize.Size420x420
+			)
+			return Image, IsReady
+		end)
+
+		if Success and Content then
+			local Image = Content
+			if type(Image) == "string" then
+				FairwellThumbnail.Image = Image
+				FairwellThumbnail.Visible = true
+				Hub:Log("Loaded fairwelladmi avatar thumbnail.", "INFO")
+				return true
+			end
+		end
+
+		Hub:Log("Could not load the fairwelladmi avatar thumbnail.", "WARN")
+		return false
+	end
 
 	local function PrepareFairwellModel(Model)
 		if not Model or not Model:IsA("Model") then
@@ -1035,8 +1079,6 @@ function MainUI.Start(self, Hub)
 			end
 		end
 
-		-- Normalize the Roblox avatar to the same compact presentation size
-		-- used by the previous Fairwell model.
 		local BoundingCFrame, BoundingSize = Model:GetBoundingBox()
 		local Pivot = Model:GetPivot()
 		local CenterOffset = Pivot:ToObjectSpace(BoundingCFrame)
@@ -1069,15 +1111,18 @@ function MainUI.Start(self, Hub)
 		end)
 
 		if not Success or not UserId then
-			Hub:Log(
-				"Could not resolve Roblox username: " .. FAIRWELL_USERNAME,
-				"WARN"
-			)
+			Hub:Log("Could not resolve Roblox username: " .. FAIRWELL_USERNAME, "WARN")
 			return nil
 		end
 
+		-- Start the official Roblox thumbnail fallback immediately.
+		-- This means Fairwell still appears even when character creation
+		-- is unavailable in the current client environment.
+		LoadFairwellAvatarThumbnail(UserId)
+
 		Hub:Log(
-			"Loading Roblox avatar for " .. FAIRWELL_USERNAME .. " (" .. tostring(UserId) .. ")..."
+			"Loading Roblox character appearance for " ..
+			FAIRWELL_USERNAME .. " (" .. tostring(UserId) .. ")..."
 		)
 
 		local DescriptionSuccess, Description = pcall(function()
@@ -1085,10 +1130,7 @@ function MainUI.Start(self, Hub)
 		end)
 
 		if not DescriptionSuccess or not Description then
-			Hub:Log(
-				"Could not load the Roblox avatar description for " .. FAIRWELL_USERNAME,
-				"WARN"
-			)
+			Hub:Log("Roblox character description unavailable; using avatar thumbnail.", "WARN")
 			return nil
 		end
 
@@ -1100,7 +1142,6 @@ function MainUI.Start(self, Hub)
 		end)
 
 		if not ModelSuccess or not Model then
-			-- Try R6 as a fallback for accounts/places where R15 creation fails.
 			ModelSuccess, Model = pcall(function()
 				return Players:CreateHumanoidModelFromDescriptionAsync(
 					Description,
@@ -1110,23 +1151,18 @@ function MainUI.Start(self, Hub)
 		end
 
 		if not ModelSuccess or not Model then
-			Hub:Log(
-				"Could not create a character model for " .. FAIRWELL_USERNAME,
-				"WARN"
-			)
+			Hub:Log("Roblox character model unavailable; using avatar thumbnail.", "WARN")
 			return nil
 		end
 
+		FairwellThumbnail.Visible = false
 		return PrepareFairwellModel(Model)
 	end
 
 	FairwellModel = LoadFairwellAvatar()
 
-	if not FairwellModel then
-		Hub:Log(
-			"Fairwell avatar could not be loaded. The chat UI will still work.",
-			"WARN"
-		)
+	if not FairwellModel and not FairwellThumbnail.Visible then
+		Hub:Log("Fairwell avatar could not be displayed.", "ERROR")
 	end
 
 	local Bubble = Instance.new("TextLabel")
@@ -2396,7 +2432,7 @@ function MainUI.Start(self, Hub)
 	end
 
 	Hub:Log(
-		"Main UI v2.8 initialized with the fairwelladmi Roblox avatar."
+		"Main UI v2.9 initialized with fairwelladmi avatar/character loading."
 	)
 end
 
