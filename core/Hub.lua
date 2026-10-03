@@ -253,6 +253,34 @@ function Hub:Disable(name)
 
 end
 
+function Hub:Shutdown()
+
+	if self._ShuttingDown then
+		return
+	end
+
+	self._ShuttingDown = true
+
+	self:Log("Shutting down...")
+
+	local names = {}
+
+	for name in pairs(self.Enabled) do
+		table.insert(names, name)
+	end
+
+	for _, name in ipairs(names) do
+		self:Disable(name)
+	end
+
+	table.clear(self.Services)
+	table.clear(self.Features)
+	table.clear(self.Enabled)
+
+	self:Log("Shutdown complete.")
+
+end
+
 function Hub:IsEnabled(name)
 
 	return self.Enabled[name] == true
