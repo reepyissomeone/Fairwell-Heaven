@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 3.5
+--// Version 3.6
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
@@ -686,7 +686,7 @@ function MainUI.Start(self, Hub)
 	Version.BackgroundTransparency = 1
 
 	Version.Text =
-		"FAIRWELL HEAVEN • v3.5"
+		"FAIRWELL HEAVEN • v3.6"
 
 	Version.TextColor3 =
 		GREY
@@ -1061,6 +1061,47 @@ AvatarStroke.Parent = AvatarFrame
 	FairwellSpot.CurrentCamera = FairwellCamera
 
 	--==================================================
+	-- FAIRWELL 3D WALL / FLOOR
+	--==================================================
+	-- Real 3D parts inside the ViewportFrame WorldModel.
+	local FairwellWall3D = Instance.new("Part")
+	FairwellWall3D.Name = "FairwellWall3D"
+	FairwellWall3D.Anchored = true
+	FairwellWall3D.CanCollide = false
+	FairwellWall3D.CanTouch = false
+	FairwellWall3D.CanQuery = false
+	FairwellWall3D.Material = Enum.Material.SmoothPlastic
+	FairwellWall3D.Color = Color3.fromRGB(19, 23, 43)
+	FairwellWall3D.Size = Vector3.new(5.5, 5.4, 0.22)
+	FairwellWall3D.CFrame = CFrame.new(0, 2.65, -0.72)
+	FairwellWall3D.Parent = FairwellWorld
+
+	local FairwellWallTrim = Instance.new("Part")
+	FairwellWallTrim.Name = "FairwellWallTrim"
+	FairwellWallTrim.Anchored = true
+	FairwellWallTrim.CanCollide = false
+	FairwellWallTrim.CanTouch = false
+	FairwellWallTrim.CanQuery = false
+	FairwellWallTrim.Material = Enum.Material.SmoothPlastic
+	FairwellWallTrim.Color = Color3.fromRGB(27, 147, 227)
+	FairwellWallTrim.Size = Vector3.new(0.055, 5.0, 0.08)
+	FairwellWallTrim.CFrame = CFrame.new(-2.62, 2.55, -0.58)
+	FairwellWallTrim.Transparency = 0.35
+	FairwellWallTrim.Parent = FairwellWorld
+
+	local FairwellFloor3D = Instance.new("Part")
+	FairwellFloor3D.Name = "FairwellFloor3D"
+	FairwellFloor3D.Anchored = true
+	FairwellFloor3D.CanCollide = false
+	FairwellFloor3D.CanTouch = false
+	FairwellFloor3D.CanQuery = false
+	FairwellFloor3D.Material = Enum.Material.SmoothPlastic
+	FairwellFloor3D.Color = Color3.fromRGB(12, 14, 29)
+	FairwellFloor3D.Size = Vector3.new(5.5, 0.12, 4.0)
+	FairwellFloor3D.CFrame = CFrame.new(0, -0.06, 0.25)
+	FairwellFloor3D.Parent = FairwellWorld
+
+	--==================================================
 	-- FAIRWELL ROBLOX AVATAR
 	--==================================================
 	-- Uses Roblox's direct user-avatar character API first.
@@ -1268,9 +1309,9 @@ AvatarStroke.Parent = AvatarFrame
 			if DescriptionModelSuccess and DescriptionModel then
 				local Prepared = PrepareFairwellModel(DescriptionModel)
 				if Prepared then
-					FairwellThumbnail.Visible = true
+					FairwellThumbnail.Visible = false
 					FairwellSpot.Visible = true
-					Hub:Log("Loaded fairwelladmi through HumanoidDescription behind the guaranteed thumbnail.", "SUCCESS")
+					Hub:Log("Loaded fairwelladmi through HumanoidDescription with wall-lean pose.", "SUCCESS")
 					return Prepared
 				end
 			end
@@ -1300,9 +1341,9 @@ AvatarStroke.Parent = AvatarFrame
 		local Model = LoadFairwellAvatar()
 		if Model then
 			FairwellModel = Model
-			FairwellThumbnail.Visible = true
+			FairwellThumbnail.Visible = false
 			FairwellSpot.Visible = true
-			Hub:Log("Fairwell 3D avatar is active; thumbnail remains visible as the reliable display layer.", "SUCCESS")
+			Hub:Log("Fairwell 3D avatar is active with wall-lean pose.", "SUCCESS")
 		else
 			FairwellThumbnail.Visible = true
 			Hub:Log("3D avatar unavailable; keeping Roblox avatar thumbnail visible.", "WARN")
@@ -1449,12 +1490,25 @@ AvatarStroke.Parent = AvatarFrame
 			return
 		end
 
-		local Bob = math.sin(Time * 2.4) * 0.035
-		local Sway = math.sin(Time * 1.7) * 0.025
-		local Lean = CFrame.new(Sway, Bob, 0)
-			* CFrame.Angles(0, 0, math.rad(-8 + math.sin(Time * 1.3) * 0.8))
+		local Bob = math.sin(Time * 2.2) * 0.018
+		local Sway = math.sin(Time * 1.45) * 0.012
 
-		FairwellModel:PivotTo(FairwellBasePivot * Lean)
+		-- Relaxed wall lean: his back shifts toward the wall while
+		-- his shoulders stay slightly rolled for a natural pose.
+		local BackLean = math.rad(5 + math.sin(Time * 1.25) * 0.35)
+		local SideLean = math.rad(12 + math.sin(Time * 1.1) * 0.7)
+
+		local WallLean = CFrame.new(
+			Sway,
+			Bob,
+			-0.20
+		) * CFrame.Angles(
+			BackLean,
+			0,
+			-math.rad(12) + SideLean * 0.10
+		)
+
+		FairwellModel:PivotTo(FairwellBasePivot * WallLean)
 	end
 
 	local FairwellAnimationConnection = RunService.RenderStepped:Connect(function()
@@ -1475,9 +1529,9 @@ AvatarStroke.Parent = AvatarFrame
 				end
 			end
 
-			Bubble.Position = UDim2.new(0, 92, 0, 40 + math.sin(Time * 8) * 1.5)
+			Bubble.Position = UDim2.new(0, 194, 0, 46 + math.sin(Time * 8) * 1.5)
 		else
-			Bubble.Position = UDim2.new(0, 92, 0, 42)
+			Bubble.Position = UDim2.new(0, 194, 0, 48)
 		end
 	end)
 
@@ -2601,7 +2655,7 @@ AvatarStroke.Parent = AvatarFrame
 	end
 
 	Hub:Log(
-		"Main UI v3.5 initialized with repaired fairwelladmi avatar/character display."
+		"Main UI v3.6 initialized with wall-leaning fairwelladmi avatar/character display."
 	)
 end
 
