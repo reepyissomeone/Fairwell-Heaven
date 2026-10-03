@@ -702,6 +702,33 @@ function MainUI.Start(self, Hub)
 		TitleBar
 
 	--==================================================
+	-- UNLOAD BUTTON
+	--==================================================
+
+	local UnloadButton = Instance.new("TextButton")
+	UnloadButton.Name = "Unload"
+	UnloadButton.Size = UDim2.fromOffset(38, 32)
+	UnloadButton.Position = UDim2.new(1, -88, 0, 8)
+	UnloadButton.BackgroundColor3 = Color3.fromRGB(100, 25, 45)
+	UnloadButton.BackgroundTransparency = 0.15
+	UnloadButton.BorderSizePixel = 0
+	UnloadButton.Text = "×"
+	UnloadButton.TextColor3 = WHITE
+	UnloadButton.TextSize = 20
+	UnloadButton.Font = Enum.Font.GothamBold
+	UnloadButton.ZIndex = 30
+	UnloadButton.Parent = TitleBar
+
+	local UnloadCorner = Instance.new("UICorner")
+	UnloadCorner.CornerRadius = UDim.new(0, 6)
+	UnloadCorner.Parent = UnloadButton
+
+	local UnloadStroke = Instance.new("UIStroke")
+	UnloadStroke.Color = Color3.fromRGB(220, 70, 95)
+	UnloadStroke.Thickness = 1
+	UnloadStroke.Parent = UnloadButton
+
+	--==================================================
 	-- COLLAPSE BUTTON
 	--==================================================
 
@@ -731,6 +758,22 @@ function MainUI.Start(self, Hub)
 
 	ToggleButton.Parent =
 		TitleBar
+
+	UnloadButton.MouseButton1Click:Connect(function()
+		if self.Hub and type(self.Hub.Shutdown) == "function" then
+			self.Hub:Notify(
+				"FAIRWELL HEAVEN",
+				"Unloading hub...",
+				"WARNING",
+				1.5
+			)
+			task.delay(0.15, function()
+				if self.Hub and type(self.Hub.Shutdown) == "function" then
+					self.Hub:Shutdown()
+				end
+			end)
+		end
+	end)
 
 	--==================================================
 	-- DRAG HANDLE
