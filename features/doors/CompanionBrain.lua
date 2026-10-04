@@ -200,6 +200,7 @@ function Brain:OnEntity(name, object)
         Seek = {"Don't stop. Keep moving.", "Danger", "WARNING"},
         Figure = {"Quiet. Don't let it find us.", "Nervous", "WARNING"},
         Screech = {"WHAT WAS THAT?!", "Shocked", "WARNING"},
+        Creak = {"CREAK?!", "Confused", "WARNING"},
         Halt = {"...What is it doing?", "Confused", "WARNING"},
         Eyes = {"Don't look at it.", "Suspicious", "WARNING"},
         Dupe = {"Wait. Something is wrong with this door.", "Confused", "WARNING"},
