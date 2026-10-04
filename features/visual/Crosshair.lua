@@ -11,7 +11,7 @@ local Crosshair = {
 
 function Crosshair.Start(self, Hub)
     local Settings = Hub:GetService("Settings")
-    if Settings and Settings:GetFeatureEnabled(self.Name, false) == false then return end
+    if Settings and Settings:GetFeatureEnabled(self.Name, false) == false then return false end
 
     local Player = Players.LocalPlayer
     if not Player then return end
