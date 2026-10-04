@@ -602,6 +602,33 @@ function Hub:Disable(name)
 end
 
 function Hub:Shutdown()
+    if self._Killed then return end
+    self._Killed = true
+
+    -- Remove every Fairwell-created UI, including UI owned by features.
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    if LocalPlayer then
+        local PlayerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
+        if PlayerGui then
+            local FairwellNames = {
+                FairwellHeaven_MainUI = true,
+                FairwellHeaven_Toggle = true,
+                FairwellHeaven_Companion = true,
+                FairwellHeaven_RoomHUD = true,
+            }
+
+            for _, Gui in ipairs(PlayerGui:GetChildren()) do
+                if FairwellNames[Gui.Name]
+                    or string.sub(Gui.Name, 1, 13) == "FairwellHeaven_"
+                then
+                    pcall(function()
+                        Gui:Destroy()
+                    end)
+                end
+            end
+        end
+    end
 	if self._ShuttingDown then
 		return
 	end
