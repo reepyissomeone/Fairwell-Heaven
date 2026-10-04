@@ -26,7 +26,8 @@ local INFRASTRUCTURE = {
     ["Loading Screen"] = true,
     ["UI Repair"] = true,
     ["Mini Notification Test"] = true,
-    ["Test Feature"] = true
+    ["Test Feature"] = true,
+    ["Developer Diagnostics"] = true
 }
 
 local function new(className, props, parent)
@@ -381,6 +382,180 @@ function MainUI:_CreateFeaturePage(Hub)
 
     self.FeatureList = list
     self.Status = status
+
+    return page
+end
+
+function MainUI:_CreateLogsPage(Hub)
+    local page = self:_CreateSimplePage("DevScroll", "DEV CENTER")
+
+    local status = label(
+        page,
+        "Status",
+        "Runtime diagnostics and developer log.",
+        UDim2.new(1, -10, 0, 42),
+        UDim2.fromOffset(5, 43),
+        10,
+        GREY
+    )
+    status.TextWrapped = true
+
+    local diagnostics = Hub:GetFeature("Developer Diagnostics")
+
+    local reportBox = new("TextBox", {
+        Name = "DiagnosticReport",
+        Position = UDim2.fromOffset(5, 88),
+        Size = UDim2.new(1, -10, 0, 220),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        TextColor3 = WHITE,
+        PlaceholderColor3 = GREY,
+        Text = "",
+        PlaceholderText = "Diagnostic report will appear here.",
+        TextSize = 9,
+        Font = Enum.Font.Code,
+        TextWrapped = false,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Top,
+        ClearTextOnFocus = false,
+        MultiLine = true,
+        Active = true
+    }, page)
+    corner(reportBox, 7)
+    stroke(reportBox, BLUE, 0.45)
+
+    local refresh = new("TextButton", {
+        Name = "RefreshDiagnostics",
+        Position = UDim2.fromOffset(5, 316),
+        Size = UDim2.new(0.48, -7, 0, 40),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        Text = "RUN DIAGNOSTICS",
+        TextColor3 = WHITE,
+        TextSize = 9,
+        Font = Enum.Font.GothamBold,
+        Active = true
+    }, page)
+    corner(refresh, 7)
+    stroke(refresh, GREEN, 0.35)
+
+    local copy = new("TextButton", {
+        Name = "CopyDiagnostics",
+        Position = UDim2.new(0.52, 2, 0, 316),
+        Size = UDim2.new(0.48, -7, 0, 40),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        Text = "COPY REPORT",
+        TextColor3 = WHITE,
+        TextSize = 9,
+        Font = Enum.Font.GothamBold,
+        Active = true
+    }, page)
+    corner(copy, 7)
+    stroke(copy, BLUE, 0.45)
+
+    local logHeader = label(
+        page,
+        "LogHeader",
+        "LIVE LOG",
+        UDim2.new(1, -10, 0, 28),
+        UDim2.fromOffset(5, 369),
+        13,
+        BLUE
+    )
+    logHeader.Font = Enum.Font.GothamBold
+
+    local logBox = new("TextLabel", {
+        Name = "LiveLog",
+        Position = UDim2.fromOffset(5, 403),
+        Size = UDim2.new(1, -10, 0, 320),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        Text = "",
+        TextColor3 = WHITE,
+        TextSize = 9,
+        Font = Enum.Font.Code,
+        TextWrapped = false,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Top
+    }, page)
+    corner(logBox, 7)
+    stroke(logBox, BLUE, 0.55)
+
+    local function buildLogs()
+        local lines = {}
+        local logs = Hub:GetLogs()
+        local startIndex = math.max(1, #logs - 49)
+        for i = startIndex, #logs do
+            local entry = logs[i]
+            table.insert(lines, string.format(
+                "[%s] %s %s",
+                tostring(entry.Timestamp or "??:??:??"),
+                tostring(entry.Level or "INFO"),
+                tostring(entry.Message or "")
+            ))
+        end
+        logBox.Text = table.concat(lines, "\n")
+    end
+
+    local function buildReport()
+        if diagnostics and type(diagnostics.GenerateReport) == "function" then
+            local ok, report = pcall(function()
+                return diagnostics:GenerateReport(Hub)
+            end)
+            if ok then
+                reportBox.Text = tostring(report)
+                return true
+            end
+            reportBox.Text = "Diagnostics failed:\n" .. tostring(report)
+            return false
+        end
+        reportBox.Text = "Developer Diagnostics feature is unavailable."
+        return false
+    end
+
+    refresh.Activated:Connect(function()
+        buildReport()
+        buildLogs()
+    end)
+
+    copy.Activated:Connect(function()
+        if reportBox.Text == "" then
+            buildReport()
+        end
+
+        local clipboard = nil
+        pcall(function()
+            if type(setclipboard) == "function" then
+                clipboard = setclipboard
+            elseif type(toclipboard) == "function" then
+                clipboard = toclipboard
+            end
+        end)
+
+        if clipboard then
+            local ok = pcall(clipboard, reportBox.Text)
+            if ok then
+                Hub:Notify("DEV CENTER", "Diagnostic report copied.", "SUCCESS", 2)
+            else
+                Hub:Notify("DEV CENTER", "Clipboard access failed.", "WARNING", 2)
+            end
+        else
+            reportBox:CaptureFocus()
+            reportBox.SelectionStart = 1
+            reportBox.CursorPosition = #reportBox.Text + 1
+            Hub:Notify("DEV CENTER", "Clipboard unavailable. Select/copy the report manually.", "INFO", 3)
+        end
+    end)
+
+    buildReport()
+    buildLogs()
+
+    self.DevRefresh = function()
+        if page.Parent then
+            buildLogs()
+        end
+    end
 
     return page
 end
@@ -1735,7 +1910,7 @@ function MainUI:Start(Hub)
 
     local pages = {}
     pages.Main = self:_CreateFeaturePage(Hub)
-    pages.Logs = self:_CreateSimplePage("DevScroll", "LOGS")
+    pages.Logs = self:_CreateLogsPage(Hub)
     pages.Chat = self:_CreateChatPage(Hub)
     pages.Visual = self:_CreateVisualPage(Hub)
     pages.Settings = self:_CreateSimplePage("SettingsScroll", "SETTINGS")
@@ -1779,6 +1954,7 @@ function MainUI:Start(Hub)
         while self.Gui == gui and gui.Parent do
             self:_UpdateStatus(Hub)
             self:_BuildFeatureList(Hub, false)
+            if self.DevRefresh then self.DevRefresh() end
             task.wait(0.75)
         end
     end)
