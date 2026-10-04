@@ -34,7 +34,7 @@ Current settings include:
 
 - Feature enable/disable state.
 - Main window position.
-- Main window collapsed state.
+- Main window position (collapse state is runtime-only).
 - Live update-check interval.
 
 ## Structure
