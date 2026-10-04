@@ -60,25 +60,44 @@ end
 
 local COOLDOWN = 2
 
+local function ResolveStandaloneEntity(Object)
+    if not Object or not Object.Parent then return nil, nil end
+
+    -- Prefer the nearest Model that is itself named like the entity.
+    local cursor = Object
+    while cursor and cursor ~= Workspace do
+        if cursor:IsA("Model") then
+            local directName = FindEntityName(cursor)
+            if directName then
+                return directName, cursor
+            end
+        end
+        cursor = cursor.Parent
+    end
+
+    -- Some spawned entities use a generic Model name and put "Rush",
+    -- "Ambush", etc. on a child. Resolve that child back to its Model.
+    local model = Object:IsA("Model") and Object or Object:FindFirstAncestorOfClass("Model")
+    if not model then return nil, nil end
+
+    for _, descendant in ipairs(model:GetDescendants()) do
+        local descendantName = NormalizeName(descendant.Name)
+        local displayName = EntityNames[descendantName]
+        if displayName then
+            if displayName ~= "Figure" and displayName ~= "Dupe" then
+                return displayName, model
+            elseif descendant:IsA("Model") then
+                return displayName, descendant
+            end
+        end
+    end
+
+    return nil, nil
+end
+
 local function DetectStandalone(self, Object)
-    if not Object or not Object.Parent then return end
-
-    local Name = FindEntityName(Object)
-    if not Name then return end
-
-    -- Manually spawned/test entities may not be parented under DOORS'
-    -- Live Entities container. Only accept an actual Model for standalone
-    -- detection so random parts named "Rush" do not trigger Fairwell.
-    local Target = Object
-    if not Target:IsA("Model") then
-        Target = Object:FindFirstAncestorOfClass("Model")
-    end
-    if not Target then return end
-
-    local TargetName = FindEntityName(Target)
-    if TargetName ~= Name then
-        return
-    end
+    local Name, Target = ResolveStandaloneEntity(Object)
+    if not Name or not Target or not Target.Parent then return end
 
     local Now = os.clock()
     if self.LastAlert[Name] and Now - self.LastAlert[Name] < COOLDOWN then
@@ -89,12 +108,10 @@ local function DetectStandalone(self, Object)
     Notify(self.Hub, Name, Target)
 
     task.delay(4, function()
-        if self.Hub and self.LastAlert[Name] == Now then
-            if not Target.Parent then
-                local Brain = self.Hub:GetFeature("Fairwell Companion Brain")
-                if Brain and type(Brain.OnEntityGone) == "function" then
-                    Brain:OnEntityGone(Name)
-                end
+        if self.Hub and self.LastAlert[Name] == Now and not Target.Parent then
+            local Brain = self.Hub:GetFeature("Fairwell Companion Brain")
+            if Brain and type(Brain.OnEntityGone) == "function" then
+                Brain:OnEntityGone(Name)
             end
         end
     end)
