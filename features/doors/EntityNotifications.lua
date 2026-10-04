@@ -95,6 +95,17 @@ local function ResolveStandaloneEntity(Object)
     return nil, nil
 end
 
+local function ScanStandaloneExisting(self)
+    -- Some DOORS entities, especially RushMoving, may already exist in
+    -- Workspace before this feature finishes starting. Scan them once so
+    -- Fairwell does not depend on DescendantAdded firing afterward.
+    for _, Object in ipairs(Workspace:GetDescendants()) do
+        if NormalizeName(Object.Name) == "rushmoving" then
+            DetectStandalone(self, Object)
+        end
+    end
+end
+
 local function DetectStandalone(self, Object)
     local Name, Target = ResolveStandaloneEntity(Object)
     if not Name or not Target or not Target.Parent then return end
@@ -334,6 +345,7 @@ function EntityNotifications.Start(self, Hub)
                 HookLiveEntities(live)
             end
             ScanExisting(self)
+            ScanStandaloneExisting(self)
         end
     end)
 
