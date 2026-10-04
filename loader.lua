@@ -148,15 +148,6 @@ pcall(function()
 	end
 end)
 
-local PreviousRuntime =
-	GlobalEnv.__FAIRWELL_HEAVEN_RUNTIME_ID
-
-local RuntimeId =
-	(tonumber(PreviousRuntime) or 0) + 1
-
-GlobalEnv.__FAIRWELL_HEAVEN_RUNTIME_ID =
-	RuntimeId
-
 local ExistingHub =
 	GlobalEnv.__FAIRWELL_HEAVEN_HUB
 
@@ -181,6 +172,13 @@ if type(ExistingHub) == "table" then
 	end)
 
 end
+
+-- Allocate the new runtime only after the previous Hub has been retired.
+local RuntimeId =
+	(tonumber(GlobalEnv.__FAIRWELL_HEAVEN_RUNTIME_ID) or 0) + 1
+
+GlobalEnv.__FAIRWELL_HEAVEN_RUNTIME_ID =
+	RuntimeId
 
 ------------------------------------------------------------
 -- UPDATE SETTINGS
@@ -451,6 +449,8 @@ print(
 	.. " v"
 	.. tostring(Hub.Version)
 )
+
+Hub._RuntimeId = RuntimeId
 
 GlobalEnv.__FAIRWELL_HEAVEN_HUB = Hub
 
