@@ -20,6 +20,7 @@ return {
     "features/doors/RoomHUD.lua",
     "features/doors/RoomTimer.lua",
     "features/doors/EntityNotifications.lua",
+    "features/doors/CompanionBrain.lua",
 
     -- Visual
     "features/visual/FPSCounter.lua",
