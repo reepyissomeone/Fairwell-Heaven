@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// DOORS Highlights
---// Room-scoped and performance-safe
+--// Room-scoped, capped, and performance-safe
 
 local Workspace = game:GetService("Workspace")
 
@@ -11,6 +11,8 @@ local Highlights = {
     Objects = {},
     CurrentRoom = nil
 }
+
+local MAX_HIGHLIGHTS = 150
 
 local COLORS = {
     door = Color3.fromRGB(27,147,227),
@@ -36,6 +38,14 @@ end
 
 local function Add(self, object)
     if not object or self.Objects[object] then return end
+
+    local HighlightCount = 0
+    for _ in pairs(self.Objects) do
+        HighlightCount += 1
+        if HighlightCount >= MAX_HIGHLIGHTS then
+            return
+        end
+    end
 
     local Kind = GetKind(object)
     if not Kind then return end
