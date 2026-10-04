@@ -124,7 +124,7 @@ end
 function MainUI:_MakePage(name,titleText)
     local page=make("ScrollingFrame",{
         Name=name,
-        Position=UDim2.fromOffset(78,52),
+        Position=UDim2.fromOffset(78,60),
         Size=UDim2.new(1,-86,1,-60),
         BackgroundTransparency=1,
         BorderSizePixel=0,
@@ -641,7 +641,7 @@ end
 function MainUI:_MakeTabs()
     local rail=make("Frame",{
         Name="Navigation",
-        Position=UDim2.fromOffset(6,52),
+        Position=UDim2.fromOffset(6,60),
         Size=UDim2.fromOffset(62,1),
         AutomaticSize=Enum.AutomaticSize.Y,
         BackgroundTransparency=1
@@ -926,19 +926,22 @@ function MainUI:Start(Hub)
 
     local top=make("Frame",{
         Name="TopBar",
-        Size=UDim2.new(1,0,0,44),
+        Size=UDim2.new(1,0,0,52),
         BackgroundColor3=PANEL,
         BorderSizePixel=0,
         Active=true
     },window)
     self.DragHandle=top
-    text(top,"Title","FAIRWELL HEAVEN",UDim2.fromOffset(12,0),UDim2.new(1,-52,1,0),14,WHITE).Font=Enum.Font.GothamBold
+    local title=text(top,"Title","FAIRWELL HEAVEN",UDim2.fromOffset(14,2),UDim2.new(1,-60,0,25),14,WHITE)
+    title.Font=Enum.Font.GothamBold
+    text(top,"Subtitle","your companion hub",UDim2.fromOffset(15,27),UDim2.new(1,-60,0,15),7,GREY)
+    local accent=make("Frame",{Name="Accent",Position=UDim2.fromOffset(0,50),Size=UDim2.new(1,0,0,2),BackgroundColor3=BLUE,BorderSizePixel=0},top)
 
     local close=make("TextButton",{
         Name="Close",
         AnchorPoint=Vector2.new(1,0.5),
         Position=UDim2.new(1,-7,0.5,0),
-        Size=UDim2.fromOffset(34,30),
+        Size=UDim2.fromOffset(34,32),
         BackgroundColor3=Color3.fromRGB(65,20,35),
         BorderSizePixel=0,
         Text="×",
