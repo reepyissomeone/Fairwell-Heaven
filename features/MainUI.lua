@@ -656,54 +656,203 @@ function MainUI:_CreateVisualPage(Hub)
 end
 
 function MainUI:_CreateChatPage(Hub)
-    local page = self:_CreateSimplePage(
-        "FairwellChat",
-        "FAIRWELL CHAT"
-    )
+    local page = self:_CreateSimplePage("FairwellChat", "FAIRWELL CHAT")
 
-    local info = label(
-        page,
-        "Info",
-        "Talk to Fairwell. Type a message and tap SEND.",
-        UDim2.new(1, -10, 0, 30),
-        UDim2.fromOffset(5, 43),
-        10,
-        GREY
-    )
+    label(page, "Info", "Fairwell is here. Talk to him.", UDim2.new(1, -10, 0, 30), UDim2.fromOffset(5, 43), 10, GREY)
+
+    local stage = new("Frame", {
+        Name = "FairwellStage",
+        Position = UDim2.fromOffset(5, 78),
+        Size = UDim2.new(1, -10, 0, 270),
+        BackgroundColor3 = Color3.fromRGB(4, 3, 30),
+        BorderSizePixel = 0,
+        ClipsDescendants = true
+    }, page)
+    corner(stage, 9)
+    stroke(stage, BLUE, 0.2)
+
+    label(stage, "StageHeader", "FAIRWELL", UDim2.fromOffset(12, 8), UDim2.fromOffset(90, 24), 14, WHITE).Font = Enum.Font.GothamBold
+    label(stage, "StageStatus", "● ONLINE", UDim2.fromOffset(94, 10), UDim2.fromOffset(100, 20), 9, GREEN).Font = Enum.Font.GothamBold
+
+    local bubble = new("TextLabel", {
+        Name = "SpeechBubble",
+        Position = UDim2.new(0, 194, 0, 42),
+        Size = UDim2.new(1, -204, 0, 58),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        Text = "",
+        TextColor3 = WHITE,
+        TextSize = 10,
+        Font = Enum.Font.Gotham,
+        TextWrapped = true,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Center
+    }, stage)
+    corner(bubble, 8)
+    stroke(bubble, BLUE, 0.35)
+    new("UIPadding", {
+        PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10),
+        PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6)
+    }, bubble)
 
     local messages = new("ScrollingFrame", {
         Name = "Messages",
-        Position = UDim2.fromOffset(5, 80),
-        Size = UDim2.new(1, -10, 1, -130),
-        BackgroundColor3 = PANEL,
+        Position = UDim2.new(0, 194, 0, 108),
+        Size = UDim2.new(1, -204, 0, 150),
+        BackgroundColor3 = Color3.fromRGB(5, 4, 32),
+        BackgroundTransparency = 0.15,
         BorderSizePixel = 0,
         ScrollBarThickness = 3,
+        ScrollBarImageColor3 = BLUE,
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         CanvasSize = UDim2.new(0, 0, 0, 0)
-    }, page)
+    }, stage)
     corner(messages, 7)
-    stroke(messages, BLUE, 0.55)
-
     new("UIPadding", {
-        PaddingTop = UDim.new(0, 7),
-        PaddingBottom = UDim.new(0, 7),
-        PaddingLeft = UDim.new(0, 7),
-        PaddingRight = UDim.new(0, 7)
+        PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6),
+        PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6)
     }, messages)
+    new("UIListLayout", {Padding = UDim.new(0, 5), SortOrder = Enum.SortOrder.LayoutOrder}, messages)
 
-    new("UIListLayout", {
-        Padding = UDim.new(0, 5),
-        SortOrder = Enum.SortOrder.LayoutOrder
-    }, messages)
+    local avatarFrame = new("Frame", {
+        Name = "AvatarFrame",
+        Position = UDim2.fromOffset(10, 42),
+        Size = UDim2.fromOffset(170, 212),
+        BackgroundColor3 = Color3.fromRGB(7, 8, 24),
+        BackgroundTransparency = 0.12,
+        BorderSizePixel = 0
+    }, stage)
+    corner(avatarFrame, 10)
+    stroke(avatarFrame, BLUE, 0.45)
+
+    local wall = new("Frame", {
+        Name = "FairwellWall",
+        Position = UDim2.fromOffset(8, 60),
+        Size = UDim2.new(0, 7, 0, 150),
+        BackgroundColor3 = Color3.fromRGB(18, 22, 42),
+        BorderSizePixel = 0
+    }, stage)
+    stroke(wall, Color3.fromRGB(35, 110, 150), 0.35)
+
+    local artwork = new("ImageLabel", {
+        Name = "FairwellArtwork",
+        Position = UDim2.fromOffset(10, 44),
+        Size = UDim2.fromOffset(170, 210),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Image = "",
+        ScaleType = Enum.ScaleType.Fit
+    }, stage)
+    corner(artwork, 10)
+
+    label(stage, "AvatarName", "@fairwelladmi • ARTWORK", UDim2.fromOffset(10, 238), UDim2.fromOffset(170, 22), 9, GREY).TextXAlignment = Enum.TextXAlignment.Center
+
+    local base = "https://raw.githubusercontent.com/reepyissomeone/Fairwell-Heaven/main/assets/Fairwell/"
+    local urls = {
+        Silent = base .. "Silent.png",
+        Talking = base .. "talking.png",
+        Thinking = base .. "thinking.png"
+    }
+    local files = {
+        Silent = "FairwellHeaven/assets/Fairwell/Silent.png",
+        Talking = "FairwellHeaven/assets/Fairwell/talking.png",
+        Thinking = "FairwellHeaven/assets/Fairwell/thinking.png"
+    }
+    local images = {}
+
+    local function assetLoader()
+        if type(getcustomasset) == "function" then return getcustomasset end
+        if type(getsynasset) == "function" then return getsynasset end
+        if type(getcustomassetfromfile) == "function" then return getcustomassetfromfile end
+        return nil
+    end
+
+    local function ensureFolder(path)
+        if type(makefolder) ~= "function" then return end
+        local current = ""
+        for part in string.gmatch(path, "[^/]+") do
+            current = current == "" and part or current .. "/" .. part
+            pcall(makefolder, current)
+        end
+    end
+
+    local function loadArtwork(state)
+        local loader = assetLoader()
+        if not loader then
+            Hub:Log("Custom asset loader unavailable; Fairwell artwork cannot display.", "WARN")
+            return
+        end
+        local path, url = files[state], urls[state]
+        local ok, result = pcall(function()
+            ensureFolder("FairwellHeaven/assets/Fairwell")
+            if type(isfile) == "function" and isfile(path) then
+                return loader(path)
+            end
+            if type(writefile) ~= "function" then error("writefile unavailable") end
+            local downloaded = game:HttpGet(url .. "?cache=" .. tostring(math.floor(os.clock() * 1000000)))
+            if type(downloaded) ~= "string" or downloaded == "" then error("download failed") end
+            writefile(path, downloaded)
+            return loader(path)
+        end)
+        if ok and type(result) == "string" and result ~= "" then
+            images[state] = result
+        else
+            Hub:Log("Failed to load Fairwell " .. state .. " artwork.", "WARN")
+        end
+    end
+
+    for _, state in ipairs({"Silent", "Talking", "Thinking"}) do
+        loadArtwork(state)
+    end
+
+    local status = stage:FindFirstChild("StageStatus")
+    local function setArtwork(state)
+        state = images[state] and state or (images.Silent and "Silent" or state)
+        if images[state] then artwork.Image = images[state] end
+        status.Text = state == "Talking" and "● TALKING" or state == "Thinking" and "● THINKING" or "● ONLINE"
+    end
+    setArtwork("Silent")
+
+    local speechId = 0
+    local function speak(text)
+        speechId += 1
+        local id = speechId
+        setArtwork("Talking")
+        bubble.Text = tostring(text)
+        task.delay(math.max(1.5, math.min(5, #tostring(text) * 0.055)), function()
+            if id == speechId and stage.Parent then setArtwork("Silent") end
+        end)
+    end
+
+    local function addMessage(author, text, color)
+        local row = new("TextLabel", {
+            Name = "Message",
+            Size = UDim2.new(1, -4, 0, 30),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            BackgroundTransparency = 1,
+            Text = tostring(author) .. ": " .. tostring(text),
+            TextColor3 = color or WHITE,
+            TextSize = 9,
+            Font = Enum.Font.Gotham,
+            TextWrapped = true,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Center
+        }, messages)
+        task.defer(function()
+            if messages.Parent then
+                messages.CanvasPosition = Vector2.new(0, math.max(0, messages.AbsoluteCanvasSize.Y))
+            end
+        end)
+    end
 
     local input = new("TextBox", {
         Name = "Input",
-        Position = UDim2.new(0, 5, 1, -44),
+        Position = UDim2.fromOffset(5, 356),
         Size = UDim2.new(1, -72, 0, 36),
         BackgroundColor3 = PANEL,
         BorderSizePixel = 0,
         ClearTextOnFocus = false,
-        PlaceholderText = "Type here...",
+        PlaceholderText = "Talk to Fairwell...",
         Text = "",
         TextColor3 = WHITE,
         PlaceholderColor3 = GREY,
@@ -716,7 +865,7 @@ function MainUI:_CreateChatPage(Hub)
 
     local send = new("TextButton", {
         Name = "Send",
-        Position = UDim2.new(1, -62, 1, -44),
+        Position = UDim2.new(1, -62, 0, 356),
         Size = UDim2.fromOffset(57, 36),
         BackgroundColor3 = BLUE,
         BorderSizePixel = 0,
@@ -728,98 +877,65 @@ function MainUI:_CreateChatPage(Hub)
     }, page)
     corner(send, 6)
 
-    local function addMessage(author, message, textColor)
-        local row = new("TextLabel", {
-            Name = "Message",
-            Size = UDim2.new(1, -4, 0, 32),
-            AutomaticSize = Enum.AutomaticSize.Y,
-            BackgroundTransparency = 1,
-            Text = tostring(author) .. ": " .. tostring(message),
-            TextColor3 = textColor or WHITE,
-            TextSize = 9,
-            Font = Enum.Font.Gotham,
-            TextWrapped = true,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextYAlignment = Enum.TextYAlignment.Center
-        }, messages)
-
-        task.defer(function()
-            if messages.Parent then
-                messages.CanvasPosition = Vector2.new(
-                    0,
-                    math.max(0, messages.AbsoluteCanvasSize.Y)
-                )
-            end
-        end)
-    end
-
     local function reply(message)
         local lower = string.lower(message)
         local replies = {
-            hello = "Hello. I was wondering when you'd show up.",
-            hi = "Hi. I'm Fairwell. What's going on?",
-            hey = "Hey. I'm listening.",
-            fairwell = "You called? I'm right here.",
-            doors = "DOORS detected. Keep an eye on that next room.",
-            scary = "Good. It would be boring if everything felt safe.",
-            thanks = "You're welcome.",
-            thank = "You're welcome.",
-            bye = "See you later."
+            {"hello", "Hello. I was wondering when you'd show up."},
+            {"hi", "Hi. I'm Fairwell. What's going on?"},
+            {"hey", "Hey. I'm listening."},
+            {"who are you", "I'm Fairwell. The one sitting in the corner of this UI."},
+            {"fairwell", "You called? I'm right here."},
+            {"help", "Try /help if you want to see the chat commands."},
+            {"doors", "DOORS detected. Keep an eye on that next room."},
+            {"scary", "Good. It would be boring if everything felt safe."},
+            {"thanks", "You're welcome."},
+            {"thank", "You're welcome."},
+            {"bye", "See you later."}
         }
-
-        for key, value in pairs(replies) do
-            if lower == key or string.find(lower, "%f[%a]" .. key .. "%f[%A]") then
-                return value
+        for _, entry in ipairs(replies) do
+            if lower == entry[1] or string.find(lower, "%f[%a]" .. entry[1] .. "%f[%A]") then
+                return entry[2]
             end
         end
-
         return "I heard you. Tell me more."
     end
 
+    speak("Hey! I'm Fairwell. Talk to me.")
+    addMessage("FAIRWELL", "Hey! I'm Fairwell. Talk to me.", BLUE)
+
     local function sendMessage()
         local message = input.Text:gsub("^%s+", ""):gsub("%s+$", "")
-        if message == "" then
-            return
-        end
+        if message == "" then return end
         input.Text = ""
+        local lower = message:lower()
 
-        local lower = string.lower(message)
         if lower == "/help" then
-            addMessage("FAIRWELL", "/clear • clears chat | /status • hub status | /help • commands", BLUE)
-            return
+            local text = "/clear • clears chat | /status • hub status | /help • commands"
+            speak(text); addMessage("FAIRWELL", text, BLUE); return
         elseif lower == "/clear" then
             for _, child in ipairs(messages:GetChildren()) do
-                if child:IsA("TextLabel") and child.Name == "Message" then
-                    child:Destroy()
-                end
+                if child:IsA("TextLabel") and child.Name == "Message" then child:Destroy() end
             end
-            addMessage("FAIRWELL", "Chat cleared. I'm still here.", BLUE)
-            return
+            local text = "Chat cleared. I'm still here."
+            speak(text); addMessage("FAIRWELL", text, BLUE); return
         elseif lower == "/status" then
-            addMessage(
-                "FAIRWELL",
-                "Hub online • " .. tostring(Hub.Version or "unknown") .. " • " .. tostring(Hub.Game.Name or "Unknown"),
-                BLUE
-            )
-            return
+            local text = "Hub online • " .. tostring(Hub.Version or "unknown") .. " • " .. tostring(Hub.Game.Name or "Unknown")
+            speak(text); addMessage("FAIRWELL", text, BLUE); return
         end
 
         addMessage(Players.LocalPlayer and Players.LocalPlayer.Name or "YOU", message, GREEN)
-
+        setArtwork("Thinking")
         task.delay(0.35, function()
-            if not messages.Parent then
-                return
-            end
-            addMessage("FAIRWELL", reply(message), BLUE)
+            if not messages.Parent then return end
+            local response = reply(message)
+            speak(response)
+            addMessage("FAIRWELL", response, BLUE)
         end)
     end
 
-    addMessage("FAIRWELL", "Hey! I'm Fairwell. Talk to me.", BLUE)
     send.Activated:Connect(sendMessage)
     input.FocusLost:Connect(function(enterPressed)
-        if enterPressed then
-            sendMessage()
-        end
+        if enterPressed then sendMessage() end
     end)
 
     return page
