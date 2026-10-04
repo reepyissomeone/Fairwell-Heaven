@@ -1251,23 +1251,32 @@ AvatarStroke.Parent = AvatarFrame
 		Hub:Log("Failed to load Fairwell " .. State .. " artwork: " .. tostring(AssetOrError), "WARN")
 		return false
 	end
-	task.spawn(function()
-		for _, State in ipairs({"Silent", "Talking", "Thinking"}) do
-			DownloadFairwellArtwork(State)
-		end
+	-- Load the artwork before the chat starts so the first message and every
+	-- later chat state can immediately switch images.
+	local FairwellArtworkReady = false
+	for _, State in ipairs({"Silent", "Talking", "Thinking"}) do
+		DownloadFairwellArtwork(State)
+	end
 
-		if FairwellArtworkImages.Silent then
-			SetFairwellArtwork("Silent")
-		else
-			Hub:Log("No Fairwell artwork could be loaded.", "ERROR")
-		end
+	if FairwellArtworkImages.Silent then
+		FairwellArtworkReady = true
+		SetFairwellArtwork("Silent")
+	else
+		Hub:Log("No Fairwell artwork could be loaded.", "ERROR")
+	end
 
-		Hub:Log("Fairwell artwork system initialized.", "SUCCESS")
-			if not FairwellArtworkImages.Talking then Hub:Log("Talking artwork is unavailable.", "WARN") end
-			if not FairwellArtworkImages.Thinking then Hub:Log("Thinking artwork is unavailable.", "WARN") end
-	end)
+	if not FairwellArtworkImages.Talking then
+		Hub:Log("Talking artwork is unavailable; chat will keep the current artwork.", "WARN")
+	end
+	if not FairwellArtworkImages.Thinking then
+		Hub:Log("Thinking artwork is unavailable; chat will keep the current artwork.", "WARN")
+	end
 
-	SetFairwellArtwork("Silent")
+	Hub:Log(
+		"Fairwell artwork system initialized"
+		.. (FairwellArtworkReady and " and chat is ready." or "."),
+		"SUCCESS"
+	)
 
 	local FairwellSpeechId = 0
 
