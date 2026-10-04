@@ -24,6 +24,9 @@ return {
     "features/doors/RoomIntel.lua",
     "features/doors/DoorStatus.lua",
     "features/doors/ThreatMemory.lua",
+    "features/doors/DupeDetector.lua",
+    "features/doors/EntityRadar.lua",
+    "features/doors/JumpscareMute.lua",
     "features/doors/ThoughtAI.lua",
     "features/doors/CompanionBrain.lua",
 
