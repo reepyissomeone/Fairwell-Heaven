@@ -55,7 +55,7 @@ return {
         if MainScroll and not MainScroll:FindFirstChild("Repair_FeaturesSection") then
             local Section = Instance.new("Frame")
             Section.Name = "Repair_FeaturesSection"
-            Section.Position = UDim2.new(0, 5, 0, 430)
+            Section.Position = UDim2.new(0, 5, 0, 5)
             Section.Size = UDim2.new(1, -10, 0, 230)
             Section.BackgroundColor3 = Color3.fromRGB(10, 8, 55)
             Section.BackgroundTransparency = 0.04
