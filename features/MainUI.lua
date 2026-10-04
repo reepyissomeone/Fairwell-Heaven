@@ -795,16 +795,16 @@ function MainUI:_CreateChatPage(Hub)
 
     label(stage, "AvatarName", "@fairwelladmi • ARTWORK", UDim2.fromOffset(10, 238), UDim2.fromOffset(170, 22), 9, GREY).TextXAlignment = Enum.TextXAlignment.Center
 
-    local base = "https://raw.githubusercontent.com/reepyissomeone/Fairwell-Heaven/main/assets/Fairwell/"
+    local base = "https://raw.githubusercontent.com/reepyissomeone/Fairwell-Heaven/main/assets/Fairwell/Companion/"
     local urls = {
         Silent = base .. "Silent.png",
         Talking = base .. "talking.png",
         Thinking = base .. "thinking.png"
     }
     local files = {
-        Silent = "FairwellHeaven/assets/Fairwell/Silent.png",
-        Talking = "FairwellHeaven/assets/Fairwell/talking.png",
-        Thinking = "FairwellHeaven/assets/Fairwell/thinking.png"
+        Silent = "FairwellHeaven/assets/Fairwell/Companion/Silent.png",
+        Talking = "FairwellHeaven/assets/Fairwell/Companion/talking.png",
+        Thinking = "FairwellHeaven/assets/Fairwell/Companion/thinking.png"
     }
     local images = {}
 
@@ -1213,7 +1213,7 @@ function MainUI:_CreateCompanion(Hub)
         ZIndex = 31
     }, bubble)
 
-    local base = "https://raw.githubusercontent.com/reepyissomeone/Fairwell-Heaven/main/assets/Fairwell/"
+    local base = "https://raw.githubusercontent.com/reepyissomeone/Fairwell-Heaven/main/assets/Fairwell/Companion/"
     local urls = {
         Idle = base .. "Idle.png",
         ALERT = base .. "ALERT.png",
@@ -1230,19 +1230,19 @@ function MainUI:_CreateCompanion(Hub)
         Silent = base .. "Silent.png"
     }
     local files = {
-        Idle = "FairwellHeaven/assets/Fairwell/Idle.png",
-        ALERT = "FairwellHeaven/assets/Fairwell/ALERT.png",
-        Ctalking = "FairwellHeaven/assets/Fairwell/Ctalking.png",
-        Cthinking = "FairwellHeaven/assets/Fairwell/Cthinking.png",
-        Yippe = "FairwellHeaven/assets/Fairwell/Yippe.png",
-        uhoh = "FairwellHeaven/assets/Fairwell/uhoh.png",
-        Tapped = "FairwellHeaven/assets/Fairwell/Tapped.png",
-        Scared = "FairwellHeaven/assets/Fairwell/Scared.png",
-        confused = "FairwellHeaven/assets/Fairwell/confused.png",
-        nervous = "FairwellHeaven/assets/Fairwell/nervous.png",
-        talking = "FairwellHeaven/assets/Fairwell/talking.png",
-        thinking = "FairwellHeaven/assets/Fairwell/thinking.png",
-        Silent = "FairwellHeaven/assets/Fairwell/Silent.png"
+        Idle = "FairwellHeaven/assets/Fairwell/Companion/Idle.png",
+        ALERT = "FairwellHeaven/assets/Fairwell/Companion/ALERT.png",
+        Ctalking = "FairwellHeaven/assets/Fairwell/Companion/Ctalking.png",
+        Cthinking = "FairwellHeaven/assets/Fairwell/Companion/Cthinking.png",
+        Yippe = "FairwellHeaven/assets/Fairwell/Companion/Yippe.png",
+        uhoh = "FairwellHeaven/assets/Fairwell/Companion/uhoh.png",
+        Tapped = "FairwellHeaven/assets/Fairwell/Companion/Tapped.png",
+        Scared = "FairwellHeaven/assets/Fairwell/Companion/Scared.png",
+        confused = "FairwellHeaven/assets/Fairwell/Companion/confused.png",
+        nervous = "FairwellHeaven/assets/Fairwell/Companion/nervous.png",
+        talking = "FairwellHeaven/assets/Fairwell/Companion/talking.png",
+        thinking = "FairwellHeaven/assets/Fairwell/Companion/thinking.png",
+        Silent = "FairwellHeaven/assets/Fairwell/Companion/Silent.png"
     }
     local images = {}
 
