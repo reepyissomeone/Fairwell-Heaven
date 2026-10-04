@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 3.8
+--// Version 3.9
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
@@ -686,7 +686,7 @@ function MainUI.Start(self, Hub)
 	Version.BackgroundTransparency = 1
 
 	Version.Text =
-		"FAIRWELL HEAVEN • v3.6"
+		"FAIRWELL HEAVEN • v3.9"
 
 	Version.TextColor3 =
 		GREY
@@ -1157,6 +1157,19 @@ AvatarStroke.Parent = AvatarFrame
 		end
 
 		Model.Name = "Fairwell3D"
+
+		-- The Roblox avatar can contain an executable Animate LocalScript.
+		-- A ViewportFrame/WorldModel does not need it; Fairwell Heaven drives
+		-- the display pose itself with RenderStepped below. Remove embedded
+		-- scripts so FairwellWorld.Fairwell3D.Animate cannot throw errors.
+		for _, Descendant in ipairs(Model:GetDescendants()) do
+			if Descendant:IsA("Script")
+				or Descendant:IsA("LocalScript")
+				or Descendant:IsA("ModuleScript") then
+				Descendant:Destroy()
+			end
+		end
+
 		Model.Parent = FairwellWorld
 
 		for _, Descendant in ipairs(Model:GetDescendants()) do
@@ -2660,7 +2673,7 @@ AvatarStroke.Parent = AvatarFrame
 	end
 
 	Hub:Log(
-		"Main UI v3.8 initialized with 3D fairwelladmi avatar plus transparent thumbnail fallback."
+		"Main UI v3.9 initialized with 3D fairwelladmi avatar plus transparent thumbnail fallback."
 	)
 end
 
