@@ -85,6 +85,10 @@ function Settings:Load()
 			end)
 
 			if DecodeSuccess and type(Loaded) == "table" then
+				-- Window collapse is runtime-only; never restore or persist it.
+				if type(Loaded.Window) == "table" then
+					Loaded.Window.Collapsed = nil
+				end
 				self.Data = MergeDefaults(Loaded, self.Defaults)
 			else
 				warn("[Fairwell Heaven] Settings file is invalid. Using defaults.")
@@ -137,6 +141,11 @@ end
 function Settings:Set(Key, Value, SaveImmediately)
 	if not self.Data then
 		self:Load()
+	end
+
+	if Key == "Window" and type(Value) == "table" then
+		Value = DeepCopy(Value)
+		Value.Collapsed = nil
 	end
 
 	self.Data[Key] = Value
