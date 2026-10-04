@@ -22,16 +22,17 @@ local EntityNames = {
 -- assets/Fairwell/Companion/
 -- Do not use the older Fairwell reaction sprites here.
 local EntitySprites = {
+    -- New face sprites currently in assets/Fairwell/Companion/
     Rush = "Scared",
     Ambush = "nervous",
     Seek = "Scared",
     Halt = "confused",
-    Screech = "Silent",
-    Eyes = "Silent",
-    Figure = "thinking",
+    Screech = "Tapped",
+    Eyes = "confused",
+    Figure = "nervous",
     Dupe = "confused",
     Grumble = "nervous",
-    Giggle = "talking"
+    Giggle = "confused"
 }
 
 local function NormalizeName(Name)
