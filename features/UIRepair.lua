@@ -35,14 +35,14 @@ return {
             return false
         end
 
-        window.Size = UDim2.fromScale(0.92, 0.78)
+        window.Size = UDim2.fromScale(0.72, 0.72)
 
         local constraint = window:FindFirstChild("MobileSize")
         if not constraint then
             constraint = Instance.new("UISizeConstraint")
             constraint.Name = "MobileSize"
-            constraint.MinSize = Vector2.new(300, 390)
-            constraint.MaxSize = Vector2.new(900, 720)
+            constraint.MinSize = Vector2.new(260, 330)
+            constraint.MaxSize = Vector2.new(700, 620)
             constraint.Parent = window
         end
 
