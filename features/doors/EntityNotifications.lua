@@ -15,7 +15,7 @@ local EntityNotifications = {
 local EntityNames = {
     rush="Rush", ambush="Ambush", seek="Seek", halt="Halt",
     screech="Screech", eyes="Eyes", figure="Figure", dupe="Dupe",
-    grumble="Grumble", giggle="Giggle"
+    grumble="Grumble", giggle="Giggle", sally="Sally"
 }
 
 local EntitySprites = {
@@ -28,7 +28,8 @@ local EntitySprites = {
     Figure = "nervous",
     Dupe = "confused",
     Grumble = "nervous",
-    Giggle = "confused"
+    Giggle = "confused",
+    Sally = "surpised"
 }
 
 local function NormalizeName(Name)
