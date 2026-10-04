@@ -1297,6 +1297,7 @@ function MainUI:SetVisible(visible)
     self.Hidden = not visible
 
     if self.Gui and self.Gui.Parent then
+        self.Gui:SetAttribute("FairwellHidden", not visible)
         self.Gui.Enabled = visible
     end
 
