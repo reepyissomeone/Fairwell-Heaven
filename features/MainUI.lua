@@ -594,7 +594,12 @@ function MainUI.Start(self, Hub)
 		UDim2.fromScale(0.5, 0.5)
 
 	Window.Size =
-		UDim2.fromScale(0.55, 0.32)
+		UDim2.fromScale(0.92, 0.78)
+
+	local WindowConstraint = Instance.new("UISizeConstraint")
+	WindowConstraint.MinSize = Vector2.new(320, 400)
+	WindowConstraint.MaxSize = Vector2.new(900, 720)
+	WindowConstraint.Parent = Window
 
 	Window.BackgroundColor3 =
 		BACKGROUND
@@ -934,6 +939,181 @@ function MainUI.Start(self, Hub)
 		Content
 
 	self:CreateStatus(MainScroll)
+
+	--==================================================
+	-- LIVE FEATURE PANEL
+	--==================================================
+	-- This is intentionally built directly on the MAIN page.
+	-- The old UI only defined feature toggles on SETTINGS and
+	-- accidentally never instantiated them, leaving users with
+	-- an apparently empty feature area.
+
+	local FeaturePanel = Instance.new("Frame")
+	FeaturePanel.Name = "FeaturePanel"
+	FeaturePanel.Position = UDim2.new(
+		0, 5,
+		0, self.Status.Size.Y.Offset + 12
+	)
+	FeaturePanel.Size = UDim2.new(1, -10, 0, 0)
+	FeaturePanel.AutomaticSize = Enum.AutomaticSize.Y
+	FeaturePanel.BackgroundTransparency = 1
+	FeaturePanel.Parent = MainScroll
+
+	local FeatureTitle = MakeLabel(
+		FeaturePanel,
+		"FeatureTitle",
+		"FEATURES",
+		UDim2.new(1, -10, 0, 28),
+		UDim2.new(0, 5, 0, 0)
+	)
+	FeatureTitle.TextColor3 = BLUE
+	FeatureTitle.Font = Enum.Font.GothamBold
+	FeatureTitle.TextSize = 16
+
+	local FeatureInfo = MakeLabel(
+		FeaturePanel,
+		"FeatureInfo",
+		"Tap a feature to enable or disable it.",
+		UDim2.new(1, -10, 0, 20),
+		UDim2.new(0, 5, 0, 28)
+	)
+	FeatureInfo.TextColor3 = GREY
+	FeatureInfo.TextSize = 10
+
+	local FeatureList = Instance.new("Frame")
+	FeatureList.Name = "FeatureList"
+	FeatureList.Position = UDim2.new(0, 0, 0, 54)
+	FeatureList.Size = UDim2.new(1, 0, 0, 0)
+	FeatureList.AutomaticSize = Enum.AutomaticSize.Y
+	FeatureList.BackgroundTransparency = 1
+	FeatureList.Parent = FeaturePanel
+
+	local FeatureLayout = Instance.new("UIListLayout")
+	FeatureLayout.Padding = UDim.new(0, 7)
+	FeatureLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	FeatureLayout.Parent = FeatureList
+
+	local function IsInfrastructure(Name)
+		return Name == "Main UI"
+			or Name == "Loading Screen"
+			or Name == "UI Repair"
+			or Name == "Mini Notification Test"
+			or Name == "Test Feature"
+	end
+
+	local function AddFeatureButton(Info, Order)
+		if IsInfrastructure(Info.Name) then
+			return
+		end
+
+		local Button = Instance.new("TextButton")
+		Button.Name = "Feature_" .. Info.Name:gsub("[^%w_]", "_")
+		Button.Size = UDim2.new(1, 0, 0, 48)
+		Button.BackgroundColor3 = PANEL
+		Button.BorderSizePixel = 0
+		Button.AutoButtonColor = true
+		Button.Text = ""
+		Button.LayoutOrder = Order
+		Button:SetAttribute("FeatureName", Info.Name)
+		Button.Parent = FeatureList
+
+		local Corner = Instance.new("UICorner")
+		Corner.CornerRadius = UDim.new(0, 7)
+		Corner.Parent = Button
+
+		local Stroke = Instance.new("UIStroke")
+		Stroke.Color = BLUE
+		Stroke.Thickness = 1
+		Stroke.Transparency = 0.25
+		Stroke.Parent = Button
+
+		local NameLabel = Instance.new("TextLabel")
+		NameLabel.Position = UDim2.new(0, 12, 0, 5)
+		NameLabel.Size = UDim2.new(1, -105, 0, 19)
+		NameLabel.BackgroundTransparency = 1
+		NameLabel.Text = Info.Name
+		NameLabel.TextColor3 = WHITE
+		NameLabel.TextSize = 12
+		NameLabel.Font = Enum.Font.GothamBold
+		NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+		NameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+		NameLabel.Parent = Button
+
+		local Description = Instance.new("TextLabel")
+		Description.Position = UDim2.new(0, 12, 0, 25)
+		Description.Size = UDim2.new(1, -105, 0, 17)
+		Description.BackgroundTransparency = 1
+		Description.Text = tostring(Info.Feature.Description or "No description")
+		Description.TextColor3 = GREY
+		Description.TextSize = 9
+		Description.Font = Enum.Font.Gotham
+		Description.TextXAlignment = Enum.TextXAlignment.Left
+		Description.TextTruncate = Enum.TextTruncate.AtEnd
+		Description.Parent = Button
+
+		local State = Instance.new("TextLabel")
+		State.AnchorPoint = Vector2.new(1, 0.5)
+		State.Position = UDim2.new(1, -12, 0.5, 0)
+		State.Size = UDim2.fromOffset(72, 28)
+		State.BackgroundColor3 = Color3.fromRGB(35, 33, 65)
+		State.BorderSizePixel = 0
+		State.TextColor3 = GREY
+		State.TextSize = 10
+		State.Font = Enum.Font.GothamBold
+		State.Parent = Button
+
+		local StateCorner = Instance.new("UICorner")
+		StateCorner.CornerRadius = UDim.new(0, 6)
+		StateCorner.Parent = State
+
+		local function Refresh()
+			local Enabled = Hub:IsEnabled(Info.Name)
+			State.Text = Enabled and "ON" or "OFF"
+			State.TextColor3 = Enabled and WHITE or GREY
+			State.BackgroundColor3 = Enabled
+				and Color3.fromRGB(27, 110, 165)
+				or Color3.fromRGB(35, 33, 65)
+			Stroke.Transparency = Enabled and 0 or 0.25
+		end
+
+		Refresh()
+
+		Button.Activated:Connect(function()
+			if Hub:IsEnabled(Info.Name) then
+				Hub:Disable(Info.Name)
+			else
+				Hub:Enable(Info.Name)
+			end
+			Refresh()
+		end)
+
+		return Button
+	end
+
+	local function RefreshFeaturePanel()
+		for _, Child in ipairs(FeatureList:GetChildren()) do
+			if Child:IsA("TextButton") then
+				Child:Destroy()
+			end
+		end
+
+		local Features = Hub:GetFeatures()
+		table.sort(Features, function(A, B)
+			return A.Name < B.Name
+		end)
+
+		local Order = 0
+		for _, Info in ipairs(Features) do
+			if not IsInfrastructure(Info.Name) then
+				Order += 1
+				AddFeatureButton(Info, Order)
+			end
+		end
+	end
+
+	RefreshFeaturePanel()
+	self.FeatureList = FeatureList
+	self.RefreshFeaturePanel = RefreshFeaturePanel
 
 	--==================================================
 	-- FAIRWELL CHAT PAGE
@@ -2568,20 +2748,69 @@ VisualInfo.TextSize = 10
 		return Button
 	end
 
+	--==================================================
+	-- FEATURE TOGGLES
+	--==================================================
+	-- Keep a complete feature list here as a second, settings-oriented
+	-- control surface. The previous version defined MakeToggle but never
+	-- called it.
+
+	local Infrastructure = {
+		["Main UI"] = true,
+		["Loading Screen"] = true,
+		["UI Repair"] = true,
+		["Mini Notification Test"] = true,
+		["Test Feature"] = true
+	}
+
+	local FeatureY = 122
+	local FeatureOrder = {}
+
+	for _, Info in ipairs(Hub:GetFeatures()) do
+		if not Infrastructure[Info.Name] then
+			table.insert(FeatureOrder, Info)
+		end
+	end
+
+	table.sort(FeatureOrder, function(A, B)
+		return A.Name < B.Name
+	end)
+
+	for _, Info in ipairs(FeatureOrder) do
+		MakeToggle(
+			Info.Name,
+			Info.Name,
+			FeatureY,
+			Hub:IsEnabled(Info.Name)
+		)
+		FeatureY += 44
+	end
+
+	local FeatureHint = MakeLabel(
+		SettingsScroll,
+		"FeatureHint",
+		"All feature toggles are listed above. DOORS-only features require DOORS.",
+		UDim2.new(1, -10, 0, 30),
+		UDim2.new(0, 5, 0, FeatureY)
+	)
+	FeatureHint.TextColor3 = GREY
+	FeatureHint.TextSize = 9
+	FeatureHint.TextWrapped = true
+
 	local IntervalLabel =
 		MakeLabel(
 			SettingsScroll,
 			"IntervalLabel",
 			"Update Check Interval (seconds)",
 			UDim2.new(1, -10, 0, 24),
-			UDim2.new(0, 5, 0, 48)
+			UDim2.new(0, 5, 0, FeatureY + 38)
 		)
 
 	local IntervalBox =
 		Instance.new("TextBox")
 
 	IntervalBox.Position =
-		UDim2.new(0, 5, 0, 74)
+		UDim2.new(0, 5, 0, FeatureY + 64)
 
 	IntervalBox.Size =
 		UDim2.new(1, -10, 0, 38)
@@ -2639,7 +2868,7 @@ VisualInfo.TextSize = 10
 		Instance.new("TextButton")
 
 	ResetButton.Position =
-		UDim2.new(0, 5, 0, 122)
+		UDim2.new(0, 5, 0, FeatureY + 112)
 
 	ResetButton.Size =
 		UDim2.new(1, -10, 0, 38)
