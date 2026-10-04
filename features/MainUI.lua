@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 3.9
+--// Version 4.0
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
@@ -686,7 +686,7 @@ function MainUI.Start(self, Hub)
 	Version.BackgroundTransparency = 1
 
 	Version.Text =
-		"FAIRWELL HEAVEN • v3.9"
+		"FAIRWELL HEAVEN • v4.0"
 
 	Version.TextColor3 =
 		GREY
@@ -1102,48 +1102,38 @@ AvatarStroke.Parent = AvatarFrame
 	FairwellFloor3D.Parent = FairwellWorld
 
 	--==================================================
-	-- FAIRWELL ROBLOX AVATAR
+	-- FAIRWELL ARTWORK
 	--==================================================
-	-- Uses Roblox's direct user-avatar character API first.
-	-- HumanoidDescription and thumbnail are fallbacks.
+	-- Fairwell is rendered entirely from the supplied artwork assets.
+	-- No Roblox avatar model, ViewportFrame, Animate script, or 3D avatar API is used.
 
-	local FAIRWELL_USERNAME = "fairwelladmi"
-	local FairwellModel = nil
-	local Fairwell3DActive = false
+	local FairwellArtwork = Instance.new("ImageLabel")
+	FairwellArtwork.Name = "FairwellArtwork"
+	FairwellArtwork.Position = UDim2.new(0, 10, 0, 52)
+	FairwellArtwork.Size = UDim2.fromOffset(170, 210)
+	FairwellArtwork.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	FairwellArtwork.BackgroundTransparency = 0
+	FairwellArtwork.BorderSizePixel = 0
+	FairwellArtwork.Image = ""
+	FairwellArtwork.ScaleType = Enum.ScaleType.Fit
+	FairwellArtwork.ZIndex = 4
+	FairwellArtwork.Parent = ChatStage
 
-	-- Animation state is initialized before the asynchronous avatar loader runs.
-	-- This prevents RenderStepped from touching nil state while the avatar loads.
-	local FairwellBasePivot = CFrame.new()
-	local MouthParts = {}
-	local EyeParts = {}
+	local FairwellArtworkCorner = Instance.new("UICorner")
+	FairwellArtworkCorner.CornerRadius = UDim.new(0, 10)
+	FairwellArtworkCorner.Parent = FairwellArtwork
 
-	local FairwellThumbnail = Instance.new("ImageLabel")
-	FairwellThumbnail.Name = "FairwellAvatarThumbnail"
-	FairwellThumbnail.Position = UDim2.new(0, 10, 0, 52)
-	FairwellThumbnail.Size = UDim2.fromOffset(170, 210)
-	FairwellThumbnail.BackgroundColor3 = Color3.fromRGB(7, 8, 24)
-	FairwellThumbnail.BackgroundTransparency = 0
-	FairwellThumbnail.Image = ""
-	FairwellThumbnail.ScaleType = Enum.ScaleType.Fit
-	FairwellThumbnail.Visible = true
-	FairwellThumbnail.ZIndex = 2
-	FairwellThumbnail.Parent = ChatStage
-
-	local FairwellThumbnailCorner = Instance.new("UICorner")
-	FairwellThumbnailCorner.CornerRadius = UDim.new(0, 10)
-	FairwellThumbnailCorner.Parent = FairwellThumbnail
-
-	local FairwellThumbnailStroke = Instance.new("UIStroke")
-	FairwellThumbnailStroke.Color = BLUE
-	FairwellThumbnailStroke.Transparency = 0.25
-	FairwellThumbnailStroke.Parent = FairwellThumbnail
+	local FairwellArtworkStroke = Instance.new("UIStroke")
+	FairwellArtworkStroke.Color = BLUE
+	FairwellArtworkStroke.Transparency = 0.25
+	FairwellArtworkStroke.Parent = FairwellArtwork
 
 	local AvatarName = Instance.new("TextLabel")
 	AvatarName.Name = "AvatarName"
 	AvatarName.Position = UDim2.new(0, 10, 0, 238)
 	AvatarName.Size = UDim2.fromOffset(170, 22)
 	AvatarName.BackgroundTransparency = 1
-	AvatarName.Text = "@fairwelladmi"
+	AvatarName.Text = "@fairwelladmi • ARTWORK"
 	AvatarName.TextColor3 = GREY
 	AvatarName.TextSize = 9
 	AvatarName.Font = Enum.Font.GothamBold
@@ -1151,442 +1141,98 @@ AvatarStroke.Parent = AvatarFrame
 	AvatarName.ZIndex = 12
 	AvatarName.Parent = ChatStage
 
-	local function PrepareFairwellModel(Model)
-		if not Model or not Model:IsA("Model") then
-			return nil
-		end
+	local FAIRWELL_ASSET_BASE = "https://raw.githubusercontent.com/reepyissomeone/Fairwell-Heaven/main/assets/Fairwell/"
+	local FairwellArtworkUrls = {
+		Silent = FAIRWELL_ASSET_BASE .. "Silent.png",
+		Talking = FAIRWELL_ASSET_BASE .. "talking.png",
+		Thinking = FAIRWELL_ASSET_BASE .. "thinking.png"
+	}
 
-		Model.Name = "Fairwell3D"
+	local FairwellArtworkFiles = {
+		Silent = "FairwellHeaven/assets/Fairwell/Silent.png",
+		Talking = "FairwellHeaven/assets/Fairwell/talking.png",
+		Thinking = "FairwellHeaven/assets/Fairwell/thinking.png"
+	}
 
-		-- The Roblox avatar can contain an executable Animate LocalScript.
-		-- A ViewportFrame/WorldModel does not need it; Fairwell Heaven drives
-		-- the display pose itself with RenderStepped below. Remove embedded
-		-- scripts so FairwellWorld.Fairwell3D.Animate cannot throw errors.
-		for _, Descendant in ipairs(Model:GetDescendants()) do
-			if Descendant:IsA("Script")
-				or Descendant:IsA("LocalScript")
-				or Descendant:IsA("ModuleScript") then
-				Descendant:Destroy()
-			end
-		end
+	local FairwellArtworkImages = {}
 
-		Model.Parent = FairwellWorld
-
-		for _, Descendant in ipairs(Model:GetDescendants()) do
-			if Descendant:IsA("BasePart") then
-				Descendant.Anchored = true
-				Descendant.CanCollide = false
-				Descendant.CanTouch = false
-				Descendant.CanQuery = false
-			end
-		end
-
-		local BoundingCFrame, BoundingSize = Model:GetBoundingBox()
-		if BoundingSize.Y <= 0 then
-			return nil
-		end
-
-		local Pivot = Model:GetPivot()
-		local CenterOffset = Pivot:ToObjectSpace(BoundingCFrame)
-		Model:PivotTo(CFrame.new(0, 0, 0) * CenterOffset:Inverse())
-
-		local _, NormalizedSize = Model:GetBoundingBox()
-		local TargetHeight = 3.65
-
-		if NormalizedSize.Y > 0 then
-			Model:ScaleTo(TargetHeight / NormalizedSize.Y)
-		end
-
-		-- Cache facial parts now; cache the final pivot only after the model has been placed. 
-		MouthParts = {}
-		EyeParts = {}
-
-		for _, Descendant in ipairs(Model:GetDescendants()) do
-			if Descendant:IsA("BasePart") then
-				local Name = string.lower(Descendant.Name)
-				if string.find(Name, "mouth", 1, true) or string.find(Name, "lip", 1, true) then
-					table.insert(MouthParts, Descendant)
-				end
-				if string.find(Name, "eye", 1, true) then
-					table.insert(EyeParts, Descendant)
-				end
-			end
-		end
-
-		local FinalCFrame, FinalSize = Model:GetBoundingBox()
-		local FinalCenter = FinalCFrame.Position
-
-		Model:PivotTo(CFrame.new(
-			0,
-			FinalSize.Y * 0.5 - FinalCenter.Y,
-			0
-		))
-
-		-- IMPORTANT: animation must start from the final centered pivot.
-		FairwellBasePivot = Model:GetPivot()
-
-		local CameraDistance = math.max(6, FinalSize.Y * 2.35)
-		local CameraHeight = math.max(1.35, FinalSize.Y * 0.52)
-
-		FairwellCamera.FieldOfView = 30
-		FairwellCamera.CFrame = CFrame.lookAt(
-			Vector3.new(0, CameraHeight, CameraDistance),
-			Vector3.new(0, FinalSize.Y * 0.52, 0)
-		)
-
-		return Model
-	end
-
-	local function LoadFairwellThumbnail(UserId)
-		local ThumbnailUrl = "rbxthumb://type=AvatarBust&id=" .. tostring(UserId) .. "&w=420&h=420"
-		FairwellThumbnail.Image = ThumbnailUrl
-		FairwellThumbnail.Visible = true
-
-		task.spawn(function()
-			local ok, err = pcall(function()
-				ContentProvider:PreloadAsync({FairwellThumbnail})
-			end)
-			if ok then
-				Hub:Log("Fairwell avatar thumbnail is ready.", "INFO")
-			else
-				Hub:Log("Avatar thumbnail preload failed: " .. tostring(err), "WARN")
-			end
-		end)
-
-		task.spawn(function()
-			local Success, Image, IsReady = pcall(function()
-				return Players:GetUserThumbnailAsync(UserId, Enum.ThumbnailType.AvatarBust, Enum.ThumbnailSize.Size420x420)
-			end)
-			if Success and type(Image) == "string" and Image ~= "" then
-				FairwellThumbnail.Image = Image
-				FairwellThumbnail.Visible = true
-				Hub:Log("Loaded official fairwelladmi avatar thumbnail" .. (IsReady and " (ready)." or " (waiting)."), "INFO")
-			else
-				Hub:Log("Using direct Roblox thumbnail URL fallback.", "WARN")
-			end
-		end)
-		return true
-	end
-	local function LoadFairwellAvatar()
-		local UserIdSuccess, UserId = pcall(function()
-			return Players:GetUserIdFromNameAsync(FAIRWELL_USERNAME)
-		end)
-
-		if not UserIdSuccess or not UserId then
-			Hub:Log(
-				"Could not resolve " .. FAIRWELL_USERNAME ..
-			": " .. tostring(UserId),
-				"ERROR"
-			)
-			return nil
-		end
-
-		Hub:Log(
-			"Resolved " .. FAIRWELL_USERNAME ..
-			" (UserId " .. tostring(UserId) .. ").",
-			"INFO"
-		)
-
-		-- PRIMARY: Roblox directly builds this user's current avatar.
-		local ModelSuccess, Model = pcall(function()
-			return Players:CreateHumanoidModelFromUserIdAsync(UserId)
-		end)
-
-		if ModelSuccess and Model and Model:IsA("Model") then
-			local Prepared = PrepareFairwellModel(Model)
-			if Prepared then
-				Fairwell3DActive = true
-				FairwellThumbnail.Visible = true
-				FairwellSpot.Visible = true
-				Hub:Log("Loaded the actual 3D fairwelladmi Roblox avatar over the fallback thumbnail.", "SUCCESS")
-				return Prepared
-			end
-		end
-
-		Hub:Log(
-			"Direct avatar creation failed: " .. tostring(Model),
-			"WARN"
-		)
-
-		-- SECONDARY: explicit HumanoidDescription path.
-		local DescriptionSuccess, Description = pcall(function()
-			return Players:GetHumanoidDescriptionFromUserIdAsync(UserId)
-		end)
-
-		if DescriptionSuccess and Description then
-			local DescriptionModelSuccess, DescriptionModel = pcall(function()
-				return Players:CreateHumanoidModelFromDescriptionAsync(
-					Description,
-					Enum.HumanoidRigType.R15
-				)
-			end)
-
-			if DescriptionModelSuccess and DescriptionModel then
-				local Prepared = PrepareFairwellModel(DescriptionModel)
-				if Prepared then
-					Fairwell3DActive = true
-					FairwellThumbnail.Visible = true
-					FairwellSpot.Visible = true
-					Hub:Log("Loaded fairwelladmi through HumanoidDescription over the fallback thumbnail.", "SUCCESS")
-					return Prepared
-				end
-			end
-		else
-			Hub:Log(
-				"HumanoidDescription failed: " .. tostring(Description),
-				"WARN"
-			)
-		end
-
-		-- FINAL: official Roblox avatar thumbnail.
-		LoadFairwellThumbnail(UserId)
+	local function GetCustomAssetLoader()
+		if type(getcustomasset) == "function" then return getcustomasset end
+		if type(getsynasset) == "function" then return getsynasset end
 		return nil
 	end
 
-	task.spawn(function()
-		local UserIdSuccess, UserId = pcall(function()
-			return Players:GetUserIdFromNameAsync(FAIRWELL_USERNAME)
+	local function SetFairwellArtwork(State)
+		State = State == "Talking" and "Talking" or State == "Thinking" and "Thinking" or "Silent"
+		local Image = FairwellArtworkImages[State]
+		if Image and Image ~= "" then FairwellArtwork.Image = Image end
+		StageStatus.Text = State == "Talking" and "● TALKING" or State == "Thinking" and "● THINKING" or "● ONLINE"
+	end
+
+	local function DownloadFairwellArtwork(State)
+		local FilePath = FairwellArtworkFiles[State]
+		local Url = FairwellArtworkUrls[State]
+		local AssetLoader = GetCustomAssetLoader()
+
+		if not FilePath or not Url or not AssetLoader then
+			Hub:Log("Custom asset loading is unavailable; Fairwell artwork cannot be mounted.", "WARN")
+			return false
+		end
+
+		local Success, Asset = pcall(function()
+			if type(isfile) == "function" and isfile(FilePath) then
+				return AssetLoader(FilePath)
+			end
+
+			if type(makefolder) == "function" then
+				pcall(makefolder, "FairwellHeaven")
+				pcall(makefolder, "FairwellHeaven/assets")
+				pcall(makefolder, "FairwellHeaven/assets/Fairwell")
+			end
+
+			if type(writefile) ~= "function" then
+				error("writefile is unavailable")
+			end
+
+			local Data = game:HttpGet(Url .. "?cache=" .. tostring(math.floor(os.clock() * 1000000)))
+			writefile(FilePath, Data)
+			return AssetLoader(FilePath)
 		end)
 
-		if UserIdSuccess and UserId then
-			LoadFairwellThumbnail(UserId)
-		else
-			Hub:Log("Could not resolve Fairwell avatar user.", "ERROR")
+		if Success and type(Asset) == "string" and Asset ~= "" then
+			FairwellArtworkImages[State] = Asset
+			return true
 		end
 
-		local Model = LoadFairwellAvatar()
-		if Model then
-			FairwellModel = Model
-			Fairwell3DActive = true
-			FairwellThumbnail.Visible = true
-			FairwellSpot.Visible = true
-			Hub:Log("Fairwell 3D avatar is active; thumbnail remains as a transparent fallback.", "SUCCESS")
-		else
-			Fairwell3DActive = false
-			FairwellThumbnail.Visible = true
-			Hub:Log("3D avatar unavailable; keeping Roblox avatar thumbnail visible.", "WARN")
-		end
-	end)
-
-	local Bubble = Instance.new("TextLabel")
-	Bubble.Name = "SpeechBubble"
-	Bubble.Position = UDim2.new(0, 194, 0, 48)
-	Bubble.Size = UDim2.new(0, 170, 0, 58)
-	Bubble.ZIndex = 12
-	Bubble.BackgroundColor3 = Color3.fromRGB(245, 245, 250)
-	Bubble.BackgroundTransparency = 0.02
-	Bubble.BorderSizePixel = 0
-	Bubble.Text = "Hey! I'm Fairwell. Talk to me!"
-	Bubble.TextColor3 = Color3.fromRGB(20, 20, 30)
-	Bubble.TextSize = 12
-	Bubble.Font = Enum.Font.GothamBold
-	Bubble.TextWrapped = true
-	Bubble.TextXAlignment = Enum.TextXAlignment.Center
-	Bubble.TextYAlignment = Enum.TextYAlignment.Center
-	Bubble.Parent = ChatStage
-
-	local BubbleCorner = Instance.new("UICorner")
-	BubbleCorner.CornerRadius = UDim.new(0, 14)
-	BubbleCorner.Parent = Bubble
-
-	local BubbleStroke = Instance.new("UIStroke")
-	BubbleStroke.Color = BLUE
-	BubbleStroke.Thickness = 2
-	BubbleStroke.Parent = Bubble
-
-	local BubbleTail = Instance.new("TextLabel")
-	BubbleTail.Position = UDim2.new(0, 174, 0, 78)
-	BubbleTail.Size = UDim2.fromOffset(28, 22)
-	BubbleTail.ZIndex = 12
-	BubbleTail.BackgroundTransparency = 1
-	BubbleTail.Text = "◀"
-	BubbleTail.TextColor3 = Color3.fromRGB(245, 245, 250)
-	BubbleTail.TextSize = 25
-	BubbleTail.Font = Enum.Font.GothamBold
-	BubbleTail.Parent = ChatStage
-
-	local ChatDivider = Instance.new("Frame")
-	ChatDivider.Name = "ChatDivider"
-	ChatDivider.Position = UDim2.new(0.34, 0, 0, 10)
-	ChatDivider.Size = UDim2.new(0, 1, 0, 256)
-	ChatDivider.ZIndex = 4
-	ChatDivider.BackgroundColor3 = BLUE
-	ChatDivider.BackgroundTransparency = 0.65
-	ChatDivider.BorderSizePixel = 0
-	ChatDivider.Parent = ChatStage
-
-	local ChatMessages = Instance.new("ScrollingFrame")
-	ChatMessages.Name = "Messages"
-	ChatMessages.Position = UDim2.new(0.36, 5, 0, 8)
-	ChatMessages.Size = UDim2.new(0.64, -10, 0, 260)
-	ChatMessages.ZIndex = 5
-	ChatMessages.BackgroundColor3 = Color3.fromRGB(4, 3, 30)
-	ChatMessages.BorderSizePixel = 0
-	ChatMessages.ScrollBarThickness = 3
-	ChatMessages.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	ChatMessages.CanvasSize = UDim2.new(0, 0, 0, 0)
-	ChatMessages.Parent = ChatStage
-
-	local ChatCorner = Instance.new("UICorner")
-	ChatCorner.CornerRadius = UDim.new(0, 7)
-	ChatCorner.Parent = ChatMessages
-
-	local ChatStroke = Instance.new("UIStroke")
-	ChatStroke.Color = BLUE
-	ChatStroke.Transparency = 0.25
-	ChatStroke.Parent = ChatMessages
-
-	local ChatLayout = Instance.new("UIListLayout")
-	ChatLayout.Padding = UDim.new(0, 4)
-	ChatLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	ChatLayout.Parent = ChatMessages
-
-	local function AddChatMessage(Sender, Message, SenderColor)
-		local Row = Instance.new("TextLabel")
-		Row.Name = "Message"
-		Row.LayoutOrder = math.floor(os.clock() * 1000)
-		Row.Size = UDim2.new(1, -4, 0, 25)
-		Row.AutomaticSize = Enum.AutomaticSize.Y
-		Row.BackgroundColor3 = PANEL
-		Row.BackgroundTransparency = 0.15
-		Row.BorderSizePixel = 0
-		Row.Text = tostring(Sender) .. "  •  " .. tostring(Message)
-		Row.TextColor3 = WHITE
-		Row.TextSize = 10
-		Row.Font = Enum.Font.Gotham
-		Row.TextWrapped = true
-		Row.TextXAlignment = Enum.TextXAlignment.Left
-		Row.TextYAlignment = Enum.TextYAlignment.Center
-		Row.ZIndex = 6
-		Row.Parent = ChatMessages
-
-		local Corner = Instance.new("UICorner")
-		Corner.CornerRadius = UDim.new(0, 5)
-		Corner.Parent = Row
-
-		local Stroke = Instance.new("UIStroke")
-		Stroke.Color = SenderColor or BLUE
-		Stroke.Transparency = 0.55
-		Stroke.Parent = Row
-
-		task.defer(function()
-			ChatMessages.CanvasPosition = Vector2.new(0, math.max(0, ChatMessages.AbsoluteCanvasSize.Y))
-		end)
+		Hub:Log("Failed to load Fairwell " .. State .. " artwork: " .. tostring(Asset), "WARN")
+		return false
 	end
 
-	local function FairwellReply(Message)
-		local Text = tostring(Message):lower()
-
-		if Text:find("hello", 1, true) or Text:find("hi", 1, true) or Text:find("hey", 1, true) then
-			return "Hey! I'm Fairwell. What are we working on?"
-		elseif Text:find("who are you", 1, true) or Text:find("what are you", 1, true) then
-			return "I'm Fairwelladmi — the little guy living inside Fairwell Heaven."
-		elseif Text:find("doors", 1, true) then
-			return "DOORS? Yep. I know about the hub's room tracking, doors, highlights, HUD, and entity notifications."
-		elseif Text:find("fairwell heaven", 1, true) then
-			return "This is my home. Keep making Fairwell Heaven better."
-		elseif Text:find("thank", 1, true) or Text:find("thanks", 1, true) then
-			return "Anytime!"
-		end
-
-		local Replies = {
-			"Interesting. Tell me more.",
-			"I'm listening.",
-			"Got it. What do you want to do next?",
-			"Yeah, I see what you mean.",
-			"Alright. Let's figure it out together."
-		}
-		return Replies[(math.floor(os.clock() * 1000) % #Replies) + 1]
-	end
-
-	local FairwellTalkingUntil = 0
-	local FairwellTalkCycle = 0
-	local FairwellBlinkUntil = 0
-
-	local function SetFairwellPose(Time)
-		if not FairwellModel then
-			return
-		end
-
-		local Bob = math.sin(Time * 2.2) * 0.018
-		local Sway = math.sin(Time * 1.45) * 0.012
-
-		-- Relaxed wall lean: his back shifts toward the wall while
-		-- his shoulders stay slightly rolled for a natural pose.
-		local BackLean = math.rad(5 + math.sin(Time * 1.25) * 0.35)
-		local SideLean = math.rad(12 + math.sin(Time * 1.1) * 0.7)
-
-		local WallLean = CFrame.new(
-			Sway,
-			Bob,
-			-0.20
-		) * CFrame.Angles(
-			BackLean,
-			0,
-			-math.rad(12) + SideLean * 0.10
-		)
-
-		FairwellModel:PivotTo(FairwellBasePivot * WallLean)
-	end
-
-	local FairwellAnimationConnection = RunService.RenderStepped:Connect(function()
-		if not ChatStage.Parent then
-			return
-		end
-
-		local Time = os.clock()
-		SetFairwellPose(Time)
-
-		if Time < FairwellTalkingUntil then
-			FairwellTalkCycle += 1
-			local Talking = FairwellTalkCycle % 12
-
-			for _, Part in ipairs(MouthParts) do
-				if Part:IsA("BasePart") then
-					Part.Transparency = Talking < 6 and 0 or math.min(0.35, Part.Transparency)
-				end
-			end
-
-			Bubble.Position = UDim2.new(0, 194, 0, 46 + math.sin(Time * 8) * 1.5)
-		else
-			Bubble.Position = UDim2.new(0, 194, 0, 48)
-		end
-	end)
-
-	-- Blink support is automatic for imported models whose eye meshes/parts
-	-- contain "Eye" in their names. The supplied model can therefore animate
-	-- without requiring its geometry to be rebuilt.
 	task.spawn(function()
-		while ChatStage.Parent do
-			task.wait(math.random(25, 45) / 10)
-
-			if not ChatStage.Parent then
-				break
-			end
-
-			for _, Eye in ipairs(EyeParts) do
-				if Eye:IsA("BasePart") then
-					Eye:SetAttribute("FairwellOriginalTransparency", Eye.Transparency)
-					Eye.Transparency = 1
-				end
-			end
-
-			task.wait(0.09)
-
-			for _, Eye in ipairs(EyeParts) do
-				if Eye:IsA("BasePart") then
-					local Original = Eye:GetAttribute("FairwellOriginalTransparency")
-					Eye.Transparency = typeof(Original) == "number" and Original or 0
-				end
-			end
+		for _, State in ipairs({"Silent", "Talking", "Thinking"}) do
+			DownloadFairwellArtwork(State)
 		end
+
+		if FairwellArtworkImages.Silent then
+			SetFairwellArtwork("Silent")
+		else
+			Hub:Log("No Fairwell artwork could be loaded.", "ERROR")
+		end
+
+		Hub:Log("Fairwell artwork system initialized.", "SUCCESS")
 	end)
+
+	SetFairwellArtwork("Silent")
+
+	local FairwellSpeechId = 0
 
 	local function FairwellSpeak(Text)
+		FairwellSpeechId += 1
+		local ThisSpeech = FairwellSpeechId
+		SetFairwellArtwork("Talking")
 		Bubble.Text = tostring(Text)
 		Bubble.BackgroundTransparency = 0.02
-		FairwellTalkingUntil = os.clock() + math.max(1.5, math.min(5, #tostring(Text) * 0.055))
-		FairwellTalkCycle = 0
+		local Duration = math.max(1.5, math.min(5, #tostring(Text) * 0.055))
 
 		task.spawn(function()
 			for Index = 1, 2 do
@@ -1598,8 +1244,13 @@ AvatarStroke.Parent = AvatarFrame
 				end
 			end
 		end)
-	end
 
+		task.delay(Duration, function()
+			if ThisSpeech == FairwellSpeechId and ChatStage.Parent then
+				SetFairwellArtwork("Silent")
+			end
+		end)
+	end
 	FairwellSpeak("Hey! I'm Fairwell. Talk to me.")
 	AddChatMessage("FAIRWELL", "Hey! I'm Fairwell. Talk to me.", BLUE)
 
@@ -1669,6 +1320,7 @@ AvatarStroke.Parent = AvatarFrame
 		end
 
 		AddChatMessage(Players.LocalPlayer and Players.LocalPlayer.Name or "YOU", Message, Color3.fromRGB(55, 200, 120))
+		SetFairwellArtwork("Thinking")
 		task.delay(0.35, function()
 			if not ChatMessages.Parent then return end
 			local Reply = FairwellReply(Message)
@@ -2618,7 +2270,7 @@ AvatarStroke.Parent = AvatarFrame
 
 	self.Gui = Gui
 	self.Window = Window
-	self.FairwellAnimationConnection = FairwellAnimationConnection
+	self.FairwellAnimationConnection = nil
 
 	--------------------------------------------------
 	-- RESTORE PERSISTENT WINDOW SETTINGS
@@ -2673,7 +2325,7 @@ AvatarStroke.Parent = AvatarFrame
 	end
 
 	Hub:Log(
-		"Main UI v3.9 initialized with 3D fairwelladmi avatar plus transparent thumbnail fallback."
+		"Main UI v4.0 initialized with Fairwell artwork assets."
 	)
 end
 
