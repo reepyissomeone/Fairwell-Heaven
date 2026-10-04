@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Loading Screen
---// Version 3.0
+--// Version 3.1
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -25,12 +25,6 @@ function LoadingScreen.Start(self, Hub)
 
 	local PlayerGui = Player:WaitForChild("PlayerGui")
 
-	local Old = PlayerGui:FindFirstChild("FairwellHeaven_Main")
-
-	if Old then
-		Old:Destroy()
-	end
-
 	--==================================================
 	-- SCREEN GUI
 	--==================================================
@@ -43,6 +37,8 @@ function LoadingScreen.Start(self, Hub)
 	Gui.DisplayOrder = 1000000
 
 	Gui.Parent = PlayerGui
+
+	self.IsLoading = true
 
 	--==================================================
 	-- LOADING WINDOW
@@ -129,8 +125,6 @@ function LoadingScreen.Start(self, Hub)
 	self.Window = Window
 	self.Text = Text
 	self.Outline = Outline
-
-	self.IsLoading = true
 
 	Hub:Log("Loading screen created.")
 
