@@ -1184,7 +1184,8 @@ function MainUI:_CreateCompanion(Hub)
         Ctalking = base .. "Ctalking.png",
         Cthinking = base .. "Cthinking.png",
         Yippe = base .. "Yippe.png",
-        uhoh = base .. "uhoh.png"
+        uhoh = base .. "uhoh.png",
+        Tapped = base .. "Tapped.png"
     }
     local files = {
         Idle = "FairwellHeaven/assets/Fairwell/Idle.png",
@@ -1192,7 +1193,8 @@ function MainUI:_CreateCompanion(Hub)
         Ctalking = "FairwellHeaven/assets/Fairwell/Ctalking.png",
         Cthinking = "FairwellHeaven/assets/Fairwell/Cthinking.png",
         Yippe = "FairwellHeaven/assets/Fairwell/Yippe.png",
-        uhoh = "FairwellHeaven/assets/Fairwell/uhoh.png"
+        uhoh = "FairwellHeaven/assets/Fairwell/uhoh.png",
+        Tapped = "FairwellHeaven/assets/Fairwell/Tapped.png"
     }
     local images = {}
 
@@ -1243,7 +1245,7 @@ function MainUI:_CreateCompanion(Hub)
     -- Asset downloads happen in the background so the main window can
     -- render immediately even when GitHub/custom-asset APIs are slow.
     task.spawn(function()
-        for _, state in ipairs({"Idle", "ALERT", "Ctalking", "Cthinking", "Yippe", "uhoh"}) do
+        for _, state in ipairs({"Idle", "ALERT", "Ctalking", "Cthinking", "Yippe", "uhoh", "Tapped"}) do
             loadAsset(state)
         end
     end)
@@ -1317,8 +1319,10 @@ function MainUI:_CreateCompanion(Hub)
     self.CompanionSetState = setState
     self.CompanionNotify = showNotification
     self.CompanionTap = function()
-        -- Reserved for Fairwell tap artwork/action.
-        -- Intentionally does not change main menu visibility.
+        if not self.CompanionEnabled then
+            return
+        end
+        setState("Tapped", 1.5)
     end
 
     -- Tapping Fairwell does NOT open the main menu.
