@@ -20,7 +20,7 @@ return {
         end
 
         Gui.Enabled = true
-        Gui.DisplayOrder = 1000000
+        Gui.DisplayOrder = 1000002
 
         local MiniBack = PlayerGui:FindFirstChild("FairwellMiniNotificationBack")
         local MiniFront = PlayerGui:FindFirstChild("FairwellMiniNotificationFront")
