@@ -68,7 +68,7 @@ function DoorTracker.Start(self, Hub)
     Hub:Log("DOORS Door Tracker started.")
 end
 
-function DoorTracker.Stop(self)
+function DoorTracker.Stop(self, Hub)
     if self.RoomConnection then self.RoomConnection:Disconnect(); self.RoomConnection=nil end
     if self.DescendantConnection then self.DescendantConnection:Disconnect(); self.DescendantConnection=nil end
     self.CurrentDoor = nil
