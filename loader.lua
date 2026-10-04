@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main Loader
---// Current bootstrap: v3.8
+--// Current bootstrap: v3.9
 --// Client-Side
 
 local BASE_URL =
@@ -663,6 +663,9 @@ end
 ------------------------------------------------------------
 -- STARTUP
 ------------------------------------------------------------
+
+-- Start the updater only after the complete feature stack and loading transition exist.
+StartAutoUpdater(Hub)
 
 print(
 	"[Fairwell Heaven] Startup complete."
