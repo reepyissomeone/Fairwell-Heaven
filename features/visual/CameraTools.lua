@@ -9,6 +9,7 @@ local Workspace = game:GetService("Workspace")
 local CameraTools = {
     Name = "VISUAL Camera Tools",
     Description = "Local FOV, camera shake reduction, and camera-bob reduction tools.",
+    Game = "DOORS",
     Connection = nil,
     OriginalFOV = nil
 }
