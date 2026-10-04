@@ -6,10 +6,11 @@ app.use(express.json({ limit: "16kb" }));
 
 const PORT = Number(process.env.PORT || 8787);
 const ADMIN_KEY = process.env.DEV_LAB_ADMIN_KEY || "";
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || "";
+const GITHUB_REPO = process.env.GITHUB_REPO || "reepyissomeone/Fairwell-Heaven";
 
-if (!ADMIN_KEY) {
-  console.warn("Dev Bridge: DEV_LAB_ADMIN_KEY is not configured.");
-}
+if (!ADMIN_KEY) console.warn("Dev Bridge: DEV_LAB_ADMIN_KEY is not configured.");
+if (!GITHUB_TOKEN) console.warn("Dev Bridge: GITHUB_TOKEN is not configured.");
 
 let passwordHash = "";
 const sessions = new Map();
@@ -80,23 +81,83 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+async function createGitHubIssue({ featureName, description, target, hubVersion, timestamp }) {
+  if (!GITHUB_TOKEN) {
+    return { configured: false };
+  }
+
+  const response = await fetch(
+    `https://api.github.com/repos/${GITHUB_REPO}/issues`,
+    {
+      method: "POST",
+      headers: {
+        "Accept": "application/vnd.github+json",
+        "Authorization": `Bearer ${GITHUB_TOKEN}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Content-Type": "application/json",
+        "User-Agent": "Fairwell-Dev-Bridge"
+      },
+      body: JSON.stringify({
+        title: `[Fairwell Dev] ${featureName}`,
+        body: [
+          "## Fairwell Dev request",
+          "",
+          `**Target:** ${target}`,
+          `**Hub version:** ${hubVersion}`,
+          `**Submitted:** ${timestamp}`,
+          "",
+          "### Description",
+          description,
+          "",
+          "---",
+          "This issue was created automatically by the private Fairwell Dev Bridge.",
+          "Do not merge or deploy changes from this request automatically."
+        ].join("\n")
+      })
+    }
+  );
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const message = typeof data.message === "string" ? data.message : "GitHub request failed.";
+    throw new Error(`GitHub API ${response.status}: ${message}`);
+  }
+
+  return {
+    configured: true,
+    issueNumber: data.number,
+    issueUrl: data.html_url
+  };
+}
+
 app.get("/health", (_req, res) => {
-  res.json({ ok: true, service: "Fairwell Dev Bridge" });
+  res.json({
+    ok: true,
+    service: "Fairwell Dev Bridge",
+    githubConfigured: Boolean(GITHUB_TOKEN)
+  });
 });
 
 // Called only by the private Fairwell Dev Bot.
-// Generates a new password, invalidates the old one, and returns the new
-// password once so the bot can deliver it privately to the owner.
-app.post("/admin/generate-password", requireAdmin, (_req, res) => {
-  const password = crypto.randomBytes(18).toString("base64url");
+// The bot chooses the password and sends it here over the admin-protected route.
+// Only a hash is kept by the backend.
+app.post("/admin/set-password", requireAdmin, (req, res) => {
+  const password = req.body?.password;
+
+  if (typeof password !== "string" || password.length < 12 || password.length > 256) {
+    return res.status(400).json({
+      error: "Password must be between 12 and 256 characters."
+    });
+  }
 
   passwordHash = hashPassword(password);
   sessions.clear();
+  attempts.clear();
 
   res.json({
-    password,
-    expiresIn: 0,
-    message: "New Dev Lab password generated. It is shown only once."
+    ok: true,
+    message: "Dev Lab password updated. Existing sessions were invalidated."
   });
 });
 
@@ -108,7 +169,7 @@ app.post("/auth", (req, res) => {
   }
 
   if (!passwordHash) {
-    return res.status(503).json({ error: "No Dev Lab password has been generated yet." });
+    return res.status(503).json({ error: "No Dev Lab password has been set yet." });
   }
 
   const password = req.body?.password;
@@ -125,7 +186,7 @@ app.post("/auth", (req, res) => {
   res.json({ token, expiresIn: SESSION_MS / 1000 });
 });
 
-app.post("/request", requireSession, (req, res) => {
+app.post("/request", requireSession, async (req, res) => {
   const body = req.body;
 
   if (!body || typeof body !== "object") {
@@ -134,6 +195,8 @@ app.post("/request", requireSession, (req, res) => {
 
   const featureName = String(body.FeatureName || "").trim();
   const description = String(body.Description || "").trim();
+  const target = String(body.Target || "GLOBAL").trim().slice(0, 80) || "GLOBAL";
+  const hubVersion = String(body.HubVersion || "unknown").trim().slice(0, 40) || "unknown";
 
   if (!featureName || !description) {
     return res.status(400).json({ error: "FeatureName and Description are required." });
@@ -143,16 +206,50 @@ app.post("/request", requireSession, (req, res) => {
     return res.status(413).json({ error: "Request is too large." });
   }
 
+  const timestamp = new Date().toISOString();
+
   console.log(JSON.stringify({
     type: "feature-request",
     featureName,
     description,
-    target: String(body.Target || "GLOBAL").slice(0, 80),
-    hubVersion: String(body.HubVersion || "unknown").slice(0, 40),
-    timestamp: new Date().toISOString()
+    target,
+    hubVersion,
+    timestamp
   }));
 
-  res.status(202).json({ accepted: true, message: "Feature request accepted by the Dev Bridge." });
+  try {
+    const github = await createGitHubIssue({
+      featureName,
+      description,
+      target,
+      hubVersion,
+      timestamp
+    });
+
+    if (!github.configured) {
+      return res.status(202).json({
+        accepted: true,
+        github: false,
+        message: "Feature request accepted by the Dev Bridge. GitHub is not configured yet."
+      });
+    }
+
+    return res.status(202).json({
+      accepted: true,
+      github: true,
+      issueNumber: github.issueNumber,
+      issueUrl: github.issueUrl,
+      message: "Feature request accepted and added to GitHub."
+    });
+  } catch (error) {
+    console.error("GitHub issue creation failed:", error);
+
+    return res.status(502).json({
+      accepted: false,
+      github: false,
+      error: "The request was authenticated, but GitHub could not accept it."
+    });
+  }
 });
 
 app.listen(PORT, "0.0.0.0", () => {
