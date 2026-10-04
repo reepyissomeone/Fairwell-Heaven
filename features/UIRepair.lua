@@ -16,7 +16,7 @@ return {
         local Gui = PlayerGui:WaitForChild("FairwellHeaven_MainUI", 8)
         if not Gui then
             Hub:Log("UI Repair: Main UI was not created in time.", "WARN")
-            return
+            return false
         end
 
         Gui.Enabled = true
