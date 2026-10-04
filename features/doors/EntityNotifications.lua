@@ -95,37 +95,63 @@ local function ResolveStandaloneEntity(Object)
     return nil, nil
 end
 
-local function ScanStandaloneExisting(self)
-    -- Some DOORS entities, especially RushMoving, may already exist in
-    -- Workspace before this feature finishes starting. Scan them once so
-    -- Fairwell does not depend on DescendantAdded firing afterward.
-    for _, Object in ipairs(Workspace:GetDescendants()) do
-        if NormalizeName(Object.Name) == "rushmoving" then
-            DetectStandalone(self, Object)
-        end
-    end
-end
-
 local function DetectStandalone(self, Object)
+    if not Object or not Object.Parent then return end
+
     local Name, Target = ResolveStandaloneEntity(Object)
     if not Name or not Target or not Target.Parent then return end
+
+    -- Only announce the entity once. DescendantAdded can fire many times
+    -- while the same entity model is being assembled.
+    self.DetectedObjects = self.DetectedObjects or {}
+    if self.DetectedObjects[Target] then
+        return
+    end
 
     local Now = os.clock()
     if self.LastAlert[Name] and Now - self.LastAlert[Name] < COOLDOWN then
         return
     end
 
+    self.DetectedObjects[Target] = true
     self.LastAlert[Name] = Now
     Notify(self.Hub, Name, Target)
 
     task.delay(4, function()
-        if self.Hub and self.LastAlert[Name] == Now and not Target.Parent then
+        if not self.Hub then return end
+
+        if not Target.Parent then
+            self.DetectedObjects[Target] = nil
+
             local Brain = self.Hub:GetFeature("Fairwell Companion Brain")
             if Brain and type(Brain.OnEntityGone) == "function" then
                 Brain:OnEntityGone(Name)
             end
         end
     end)
+end
+
+local function ScanStandaloneExisting(self)
+    -- Scan actual entity roots already present in Workspace. This is
+    -- especially important for DOORS RushMoving, which can exist before
+    -- Fairwell finishes starting.
+    local seen = {}
+
+    for _, Object in ipairs(Workspace:GetDescendants()) do
+        local Name = NormalizeName(Object.Name)
+
+        if Name == "rushmoving"
+            or EntityNames[Name]
+            or Name == "figure"
+            or Name == "dupe"
+        then
+            local EntityName, Target = ResolveStandaloneEntity(Object)
+            if EntityName and Target and not seen[Target] then
+                seen[Target] = true
+                DetectStandalone(self, Target)
+            end
+        end
+    end
 end
 
 local function IsInStairwell(Object)
@@ -290,6 +316,7 @@ function EntityNotifications.Start(self, Hub)
     self.Hub = Hub
     self.Connections = {}
     self.HookedLiveContainers = {}
+    self.DetectedObjects = {}
 
     local function HookLiveEntities(LiveEntities)
         if not LiveEntities or self.HookedLiveContainers[LiveEntities] then
@@ -328,14 +355,20 @@ function EntityNotifications.Start(self, Hub)
             end)
         end
 
-        -- Also handle manually spawned/test entities that bypass Live Entities.
-        -- Defer one tick so a newly-created Model has time to receive its
-        -- descendants before we inspect it.
-        task.defer(function()
-            if self.Hub == Hub then
-                DetectStandalone(self, Object)
-            end
-        end)
+        -- Handle direct Workspace entities such as RushMoving.
+        -- Only inspect likely entity roots to avoid scanning every Part.
+        local normalized = NormalizeName(Object.Name)
+        if normalized == "rushmoving"
+            or EntityNames[normalized]
+            or normalized == "figure"
+            or normalized == "dupe"
+        then
+            task.defer(function()
+                if self.Hub == Hub then
+                    DetectStandalone(self, Object)
+                end
+            end)
+        end
     end))
 
     task.defer(function()
@@ -358,6 +391,7 @@ function EntityNotifications.Stop(self)
     end
     self.Connections = {}
     table.clear(self.LastAlert)
+    self.DetectedObjects = {}
     self.Hub = nil
 end
 
