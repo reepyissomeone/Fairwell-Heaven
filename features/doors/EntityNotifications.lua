@@ -60,33 +60,11 @@ end
 local COOLDOWN = 2
 
 local function Notify(Hub, Name)
+    -- Entity detection is intentionally silent.
+    -- Fairwell's Companion Brain handles the actual reaction/hint.
     local Brain = Hub and Hub:GetFeature("Fairwell Companion Brain")
     if Brain and type(Brain.OnEntity) == "function" then
         Brain:OnEntity(Name)
-        return
-    end
-
-    local MainUI = Hub and Hub:GetFeature("Main UI")
-    local Sprite = EntitySprites[Name]
-
-    if MainUI and type(MainUI.CompanionNotify) == "function" then
-        MainUI.CompanionNotify(
-            "FAIRWELL",
-            Name .. " detected!",
-            "WARNING",
-            4,
-            Sprite
-        )
-        return
-    end
-
-    if Hub and type(Hub.Notify) == "function" then
-        Hub:Notify(
-            "DOORS • ENTITY DETECTED",
-            Name .. " detected!",
-            "WARNING",
-            4
-        )
     end
 end
 
