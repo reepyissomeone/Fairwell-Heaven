@@ -12,7 +12,7 @@ local TweenService = game:GetService("TweenService")
 local MainUI = {
 	Name = "Main UI",
 	Description = "Fairwell Heaven main interface.",
-	TargetSize = UDim2.fromScale(0.72, 0.78)
+	TargetSize = UDim2.fromScale(0.92, 0.78)
 }
 
 local BLUE = Color3.fromRGB(27, 147, 227)
@@ -573,7 +573,7 @@ function MainUI.Start(self, Hub)
 	Gui.IgnoreGuiInset = true
 	Gui.DisplayOrder = 999999
 
-	Gui.Enabled = false
+	Gui.Enabled = true
 
 	Gui.Parent =
 		PlayerGui
@@ -748,7 +748,7 @@ function MainUI.Start(self, Hub)
 	ToggleButton.Parent =
 		TitleBar
 
-	UnloadButton.MouseButton1Click:Connect(function()
+	UnloadButton.Activated:Connect(function()
 		if self.Hub and type(self.Hub.Shutdown) == "function" then
 			self.Hub:Notify(
 				"FAIRWELL HEAVEN",
@@ -860,8 +860,8 @@ function MainUI.Start(self, Hub)
 
 	local ChatTab = Instance.new("TextButton")
 	ChatTab.Name = "FairwellChatTab"
-	ChatTab.Position = UDim2.new(1/2, 0, 0, 0)
-	ChatTab.Size = UDim2.new(1/4, 0, 1, 0)
+	ChatTab.Position = UDim2.new(2/5, 0, 0, 0)
+	ChatTab.Size = UDim2.new(1/5, 0, 1, 0)
 	ChatTab.BackgroundTransparency = 1
 	ChatTab.Text = "FAIRWELL CHAT"
 	ChatTab.TextColor3 = GREY
@@ -1881,7 +1881,7 @@ AvatarStroke.Parent = AvatarFrame
 		end)
 	end
 
-	SendButton.MouseButton1Click:Connect(SendChat)
+	SendButton.Activated:Connect(SendChat)
 	ChatInput.FocusLost:Connect(function(EnterPressed)
 		if EnterPressed then SendChat() end
 	end)
@@ -2013,7 +2013,7 @@ AvatarStroke.Parent = AvatarFrame
 		ButtonStroke.Transparency = 0.25
 		ButtonStroke.Parent = Button
 
-		Button.MouseButton1Click:Connect(function()
+		Button.Activated:Connect(function()
 			if self.Hub and self.Hub.Notify then
 				self.Hub:Notify(
 					"DEV TEST • " .. Data[1],
@@ -2042,7 +2042,7 @@ AvatarStroke.Parent = AvatarFrame
 	TestAllCorner.CornerRadius = UDim.new(0, 4)
 	TestAllCorner.Parent = TestAllButton
 
-	TestAllButton.MouseButton1Click:Connect(function()
+	TestAllButton.Activated:Connect(function()
 		if not self.Hub or not self.Hub.Notify then
 			return
 		end
@@ -2274,14 +2274,14 @@ AvatarStroke.Parent = AvatarFrame
 		end)
 	end
 
-	ClearInfoButton.MouseButton1Click:Connect(function()
+	ClearInfoButton.Activated:Connect(function()
 		if self.Hub and self.Hub.ClearLogs then
 			self.Hub:ClearLogs("INFO")
 			RefreshDevLogs()
 		end
 	end)
 
-	ClearLogsButton.MouseButton1Click:Connect(function()
+	ClearLogsButton.Activated:Connect(function()
 		if self.Hub and self.Hub.ClearLogs then
 			self.Hub:ClearLogs()
 			RefreshDevLogs()
@@ -2365,7 +2365,7 @@ VisualInfo.TextSize = 10
 
 		Refresh()
 
-		Button.MouseButton1Click:Connect(function()
+		Button.Activated:Connect(function()
 			local Enabled = DefaultEnabled
 			if VisualSettingsService then
 				Enabled = VisualSettingsService:GetFeatureEnabled(FeatureName, DefaultEnabled)
@@ -2418,11 +2418,11 @@ VisualInfo.TextSize = 10
 		["DOORS Room HUD"] = true
 	}
 
-	EnableAllVisuals.MouseButton1Click:Connect(function()
+	EnableAllVisuals.Activated:Connect(function()
 		for Name in pairs(VisualFeatureDefaults) do SaveVisualFeature(Name, true) end
 	end)
 
-	DisableAllVisuals.MouseButton1Click:Connect(function()
+	DisableAllVisuals.Activated:Connect(function()
 		for Name in pairs(VisualFeatureDefaults) do SaveVisualFeature(Name, false) end
 	end)
 
@@ -2544,7 +2544,7 @@ VisualInfo.TextSize = 10
 
 		Refresh()
 
-		Button.MouseButton1Click:Connect(function()
+		Button.Activated:Connect(function()
 			local Enabled = true
 
 			if SettingsService then
@@ -2652,7 +2652,7 @@ VisualInfo.TextSize = 10
 	ResetStroke.Thickness = 1
 	ResetStroke.Parent = ResetButton
 
-	ResetButton.MouseButton1Click:Connect(function()
+	ResetButton.Activated:Connect(function()
 		if not SettingsService then
 			return
 		end
@@ -2699,7 +2699,7 @@ VisualInfo.TextSize = 10
 	-- TAB SWITCHING
 	--==================================================
 
-	MainTab.MouseButton1Click:Connect(function()
+	MainTab.Activated:Connect(function()
 		MainScroll.Visible = true
 		DevScroll.Visible = false
 		ChatScroll.Visible = false
@@ -2713,7 +2713,7 @@ VisualInfo.TextSize = 10
 		SettingsTab.TextColor3 = GREY
 	end)
 
-	DevTab.MouseButton1Click:Connect(function()
+	DevTab.Activated:Connect(function()
 		MainScroll.Visible = false
 		DevScroll.Visible = true
 		ChatScroll.Visible = false
@@ -2727,7 +2727,7 @@ VisualInfo.TextSize = 10
 		SettingsTab.TextColor3 = GREY
 	end)
 
-	ChatTab.MouseButton1Click:Connect(function()
+	ChatTab.Activated:Connect(function()
 		MainScroll.Visible = false
 		DevScroll.Visible = false
 		ChatScroll.Visible = true
@@ -2741,7 +2741,7 @@ VisualInfo.TextSize = 10
 		SettingsTab.TextColor3 = GREY
 	end)
 
-	VisualTab.MouseButton1Click:Connect(function()
+	VisualTab.Activated:Connect(function()
 		MainScroll.Visible = false
 		DevScroll.Visible = false
 		ChatScroll.Visible = false
@@ -2755,7 +2755,7 @@ VisualInfo.TextSize = 10
 		SettingsTab.TextColor3 = GREY
 	end)
 
-	SettingsTab.MouseButton1Click:Connect(function()
+	SettingsTab.Activated:Connect(function()
 		MainScroll.Visible = false
 		DevScroll.Visible = false
 		ChatScroll.Visible = false
@@ -2859,7 +2859,7 @@ VisualInfo.TextSize = 10
 	self.ExpandedPosition =
 		UDim2.fromScale(0.5, 0.5)
 
-	ToggleButton.MouseButton1Click:Connect(function()
+	ToggleButton.Activated:Connect(function()
 		if self.Collapsed then
 			self.Collapsed = false
 			SetNormalNotificationsVisible(true)
