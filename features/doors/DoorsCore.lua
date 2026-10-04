@@ -71,34 +71,46 @@ end
 
 function Doors:GetCurrentRoom()
     local CurrentRooms = workspace:FindFirstChild("CurrentRooms")
-    if not CurrentRooms then return nil end
+    if not CurrentRooms or not self.Root then return nil end
 
-    if self.Root then
-        local BestRoom, BestDistance
-        for _, Room in ipairs(CurrentRooms:GetChildren()) do
-            if tonumber(Room.Name) then
-                local Center = self:GetRoomCenter(Room)
-                if Center then
-                    local Distance = (self.Root.Position - Center).Magnitude
-                    if not BestDistance or Distance < BestDistance then
-                        BestDistance = Distance
-                        BestRoom = Room
+    local BestRoom
+    local BestScore = math.huge
+
+    for _, Room in ipairs(CurrentRooms:GetChildren()) do
+        if tonumber(Room.Name) then
+            local Center = self:GetRoomCenter(Room)
+            if Center then
+                local Distance = (self.Root.Position - Center).Magnitude
+
+                -- Prefer the room whose physical bounds contain the player.
+                local Inside = false
+                if Room:IsA("Model") then
+                    local ok, boxCFrame, boxSize = pcall(function()
+                        return Room:GetBoundingBox()
+                    end)
+                    if ok and boxCFrame and boxSize then
+                        local localPos = boxCFrame:PointToObjectSpace(self.Root.Position)
+                        local half = boxSize * 0.5
+                        Inside = math.abs(localPos.X) <= half.X
+                            and math.abs(localPos.Y) <= half.Y + 8
+                            and math.abs(localPos.Z) <= half.Z
                     end
+                end
+
+                local Score = Distance
+                if Inside then
+                    Score -= 1000
+                end
+
+                if Score < BestScore then
+                    BestScore = Score
+                    BestRoom = Room
                 end
             end
         end
-        if BestRoom then return BestRoom end
     end
 
-    local HighestRoom, HighestNumber
-    for _, Room in ipairs(CurrentRooms:GetChildren()) do
-        local Number = tonumber(Room.Name)
-        if Number and (not HighestNumber or Number > HighestNumber) then
-            HighestNumber = Number
-            HighestRoom = Room
-        end
-    end
-    return HighestRoom
+    return BestRoom
 end
 
 function Doors:UpdatePlayer()
