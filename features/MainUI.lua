@@ -1221,7 +1221,13 @@ function MainUI:_CreateCompanion(Hub)
         Cthinking = base .. "Cthinking.png",
         Yippe = base .. "Yippe.png",
         uhoh = base .. "uhoh.png",
-        Tapped = base .. "Tapped.png"
+        Tapped = base .. "Tapped.png",
+        Scared = base .. "Scared.png",
+        confused = base .. "confused.png",
+        nervous = base .. "nervous.png",
+        talking = base .. "talking.png",
+        thinking = base .. "thinking.png",
+        Silent = base .. "Silent.png"
     }
     local files = {
         Idle = "FairwellHeaven/assets/Fairwell/Idle.png",
@@ -1230,7 +1236,13 @@ function MainUI:_CreateCompanion(Hub)
         Cthinking = "FairwellHeaven/assets/Fairwell/Cthinking.png",
         Yippe = "FairwellHeaven/assets/Fairwell/Yippe.png",
         uhoh = "FairwellHeaven/assets/Fairwell/uhoh.png",
-        Tapped = "FairwellHeaven/assets/Fairwell/Tapped.png"
+        Tapped = "FairwellHeaven/assets/Fairwell/Tapped.png",
+        Scared = "FairwellHeaven/assets/Fairwell/Scared.png",
+        confused = "FairwellHeaven/assets/Fairwell/confused.png",
+        nervous = "FairwellHeaven/assets/Fairwell/nervous.png",
+        talking = "FairwellHeaven/assets/Fairwell/talking.png",
+        thinking = "FairwellHeaven/assets/Fairwell/thinking.png",
+        Silent = "FairwellHeaven/assets/Fairwell/Silent.png"
     }
     local images = {}
 
@@ -1281,7 +1293,7 @@ function MainUI:_CreateCompanion(Hub)
     -- Asset downloads happen in the background so the main window can
     -- render immediately even when GitHub/custom-asset APIs are slow.
     task.spawn(function()
-        for _, state in ipairs({"Idle", "ALERT", "Ctalking", "Cthinking", "Yippe", "uhoh", "Tapped"}) do
+        for _, state in ipairs({"Idle", "ALERT", "Ctalking", "Cthinking", "Yippe", "uhoh", "Tapped", "Scared", "confused", "nervous", "talking", "thinking", "Silent"}) do
             loadAsset(state)
         end
     end)
@@ -1310,25 +1322,29 @@ function MainUI:_CreateCompanion(Hub)
 
     setState("Idle")
 
-    local function showNotification(noticeTitle, message, kind, duration)
+    local function showNotification(noticeTitle, message, kind, duration, forcedState)
         if not gui.Parent or not self.Hidden or self.CompanionEnabled ~= true then
             return
         end
 
         local normalized = string.upper(tostring(kind or "INFO"))
-        local state = "Cthinking"
+        local state = tostring(forcedState or "")
         local accent = BLUE
 
-        if normalized == "SUCCESS" then
+        if state == "" then
+            state = "Cthinking"
+        end
+
+        if forcedState == nil and normalized == "SUCCESS" then
             state = "Yippe"
             accent = GREEN
-        elseif normalized == "WARNING" then
+        elseif forcedState == nil and normalized == "WARNING" then
             state = "ALERT"
             accent = Color3.fromRGB(255, 185, 70)
-        elseif normalized == "ERROR" then
+        elseif forcedState == nil and normalized == "ERROR" then
             state = "uhoh"
             accent = RED
-        elseif normalized == "INFO" then
+        elseif forcedState == nil and normalized == "INFO" then
             state = "Ctalking"
         end
 
