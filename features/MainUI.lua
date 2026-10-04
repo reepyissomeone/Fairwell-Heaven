@@ -1378,6 +1378,11 @@ AvatarStroke.Parent = AvatarFrame
 	MiniFrontGui.Enabled = true
 	MiniFrontGui.Parent = PlayerGui
 
+	-- Keep layer references on the feature object so Stop() can always
+	-- destroy them. They were previously local-only and leaked on unload.
+	self.MiniBackGui = MiniBackGui
+	self.MiniFrontGui = MiniFrontGui
+
 	local MiniBackRoot = Instance.new("Frame")
 	MiniBackRoot.Name = "FairwellBodyLayer"
 	MiniBackRoot.AnchorPoint = Vector2.new(0.5, 1)
@@ -3076,12 +3081,12 @@ function MainUI.Stop(self)
 		self.MiniPositionConnection = nil
 	end
 
-	if MiniBackGui and MiniBackGui.Parent then
-		MiniBackGui:Destroy()
+	if self.MiniBackGui and self.MiniBackGui.Parent then
+		self.MiniBackGui:Destroy()
 	end
 
-	if MiniFrontGui and MiniFrontGui.Parent then
-		MiniFrontGui:Destroy()
+	if self.MiniFrontGui and self.MiniFrontGui.Parent then
+		self.MiniFrontGui:Destroy()
 	end
 
 	if self.DragConnection then
@@ -3095,8 +3100,8 @@ function MainUI.Stop(self)
 		self.Gui = nil
 	end
 
-	MiniBackGui = nil
-	MiniFrontGui = nil
+	self.MiniBackGui = nil
+	self.MiniFrontGui = nil
 
 	self.Status = nil
 	self.Hub = nil
