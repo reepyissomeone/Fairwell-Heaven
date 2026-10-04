@@ -50,7 +50,7 @@ function RoomHUD.Start(self, Hub)
     local Frame = Instance.new("Frame")
     Frame.Name = "Info"
     Frame.Position = UDim2.new(0, 14, 0, 14)
-    Frame.Size = UDim2.fromOffset(210, 58)
+    Frame.Size = UDim2.fromOffset(220, 82)
     Frame.BackgroundColor3 = Color3.fromRGB(6,4,43)
     Frame.BackgroundTransparency = 0.2
     Frame.BorderSizePixel = 0
@@ -63,6 +63,7 @@ function RoomHUD.Start(self, Hub)
 
     self.RoomLabel = Label(Frame, "Room", "ROOM: --", UDim2.new(0,10,0,4), UDim2.new(1,-20,0,22))
     self.DoorLabel = Label(Frame, "Door", "DOOR: --", UDim2.new(0,10,0,28), UDim2.new(1,-20,0,22))
+    self.ThreatLabel = Label(Frame, "Threat", "THREAT: CLEAR", UDim2.new(0,10,0,52), UDim2.new(1,-20,0,22))
     self.Gui = Gui
 
     self.Connection = RunService.Heartbeat:Connect(function()
@@ -73,6 +74,19 @@ function RoomHUD.Start(self, Hub)
         local RoomNumber = Doors and Doors:GetRoomNumber(Room)
         self.RoomLabel.Text = "ROOM: " .. tostring(RoomNumber or "--")
         self.DoorLabel.Text = "DOOR: " .. (Door and "FOUND" or "SEARCHING")
+
+        local Brain = Hub:GetFeature("Fairwell Companion Brain")
+        local threat = "CLEAR"
+        if Brain and type(Brain.ActiveEntity) == "table" then
+            for entity, active in pairs(Brain.ActiveEntity) do
+                if active then
+                    threat = string.upper(tostring(entity))
+                    break
+                end
+            end
+        end
+        self.ThreatLabel.Text = "THREAT: " .. threat
+        self.ThreatLabel.TextColor3 = threat == "CLEAR" and Color3.fromRGB(255,255,255) or Color3.fromRGB(255,185,70)
     end)
 
     Hub:Log("DOORS Room HUD started.")
