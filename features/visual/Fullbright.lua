@@ -2,6 +2,7 @@
 --// Visual: Fullbright
 
 local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
 
 local Fullbright = {
     Name = "VISUAL Fullbright",
@@ -40,10 +41,8 @@ function Fullbright.Start(self, Hub)
     end
 
     Apply()
-    self.Connection = Lighting.Changed:Connect(function()
-        if self.Connection then
-            Apply()
-        end
+    self.Connection = RunService.Heartbeat:Connect(function()
+        Apply()
     end)
 
     Hub:Log("Visual Fullbright started.")
