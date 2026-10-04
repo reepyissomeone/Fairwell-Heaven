@@ -16,6 +16,7 @@ return {
 	"features/doors/EntityNotifications.lua",
 
 	-- Testing
-	"features/TestFeature.lua"
+	"features/TestFeature.lua",
+	"features/MiniNotificationTest.lua"
 
 }
