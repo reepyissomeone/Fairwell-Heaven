@@ -353,10 +353,10 @@ return {
 
             for _, Child in ipairs(SettingsScroll:GetChildren()) do
                 if Child:IsA("GuiButton") then
-                    local Name = Child.Name
-                    if Name == "Repair_DOORS Highlights"
-                        or Name == "Repair_DOORS Entity Notifications"
-                        or Name == "Repair_DOORS Room HUD" then
+                    local FeatureName = Child:GetAttribute("FeatureName")
+                    if FeatureName == "DOORS Highlights"
+                        or FeatureName == "DOORS Entity Notifications"
+                        or FeatureName == "DOORS Room HUD" then
                         Child.Visible = Hub:IsDOORS()
                     end
                 end
