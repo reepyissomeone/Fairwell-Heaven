@@ -14,6 +14,10 @@ Hub.Services = {}
 Hub.LogHistory = {}
 Hub.MaxLogHistory = 200
 
+-- Fires whenever Hub:Notify creates a notification.
+-- MainUI uses this to let Fairwell speak while the window is minimized.
+Hub.NotificationEvent = Instance.new("BindableEvent")
+
 Hub.Game = {
 	Name = "Unknown",
 	IsDOORS = false,
@@ -169,6 +173,12 @@ function Hub:Notify(title, message, kind, duration)
 	}
 	local style = styles[string.upper(tostring(kind or "INFO"))] or styles.INFO
 	duration = math.clamp(tonumber(duration) or 4, 1, 15)
+
+	-- Notify listeners before building the visible notification card.
+	-- This keeps Fairwell's minimized speech system independent of the card UI.
+	if self.NotificationEvent then
+		self.NotificationEvent:Fire(title, message, kind, duration)
+	end
 
 	local card = Instance.new("Frame")
 	card.Size = UDim2.new(1, 0, 0, 82)
