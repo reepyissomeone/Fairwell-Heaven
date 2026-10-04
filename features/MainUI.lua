@@ -564,158 +564,103 @@ end
 
 function MainUI:_CreateDevLabPage(Hub)
     local page = self:_CreateSimplePage("DevLabScroll", "PRIVATE DEV LAB")
-
     local lab = Hub:GetFeature("Fairwell Dev Lab")
 
-    local status = label(
-        page,
-        "AccessStatus",
-        "Checking private access...",
-        UDim2.new(1, -10, 0, 42),
-        UDim2.fromOffset(5, 43),
-        10,
-        GREY
-    )
+    local status = label(page, "AccessStatus", "🔒 Enter your private Dev Lab password.", UDim2.new(1,-10,0,42), UDim2.fromOffset(5,43), 10, GREY)
     status.TextWrapped = true
 
-    local featureName = new("TextBox", {
-        Name = "FeatureName",
-        Position = UDim2.fromOffset(5, 92),
-        Size = UDim2.new(1, -10, 0, 38),
-        BackgroundColor3 = PANEL,
-        BorderSizePixel = 0,
-        Text = "",
-        PlaceholderText = "Feature name",
-        TextColor3 = WHITE,
-        PlaceholderColor3 = GREY,
-        TextSize = 10,
-        Font = Enum.Font.Gotham
+    local password = new("TextBox", {
+        Name = "Password", Position = UDim2.fromOffset(5,92), Size = UDim2.new(1,-10,0,38),
+        BackgroundColor3 = PANEL, BorderSizePixel = 0, Text = "", PlaceholderText = "Dev Lab password",
+        TextColor3 = WHITE, PlaceholderColor3 = GREY, TextSize = 10, Font = Enum.Font.Gotham,
+        ClearTextOnFocus = false
     }, page)
-    corner(featureName, 7)
-    stroke(featureName, BLUE, 0.45)
+    password.TextEditable = true
+    corner(password,7); stroke(password,BLUE,0.45)
+
+    local unlock = new("TextButton", {
+        Name = "Unlock", Position = UDim2.fromOffset(5,137), Size = UDim2.new(1,-10,0,42),
+        BackgroundColor3 = BLUE, BorderSizePixel = 0, Text = "UNLOCK DEV LAB",
+        TextColor3 = WHITE, TextSize = 11, Font = Enum.Font.GothamBold, Active = true
+    }, page)
+    corner(unlock,7)
+
+    local featureName = new("TextBox", {
+        Name = "FeatureName", Position = UDim2.fromOffset(5,190), Size = UDim2.new(1,-10,0,38),
+        BackgroundColor3 = PANEL, BorderSizePixel = 0, Text = "", PlaceholderText = "Feature name",
+        TextColor3 = WHITE, PlaceholderColor3 = GREY, TextSize = 10, Font = Enum.Font.Gotham, Active = false
+    }, page)
+    corner(featureName,7); stroke(featureName,BLUE,0.45)
 
     local target = new("TextBox", {
-        Name = "Target",
-        Position = UDim2.fromOffset(5, 137),
-        Size = UDim2.new(1, -10, 0, 38),
-        BackgroundColor3 = PANEL,
-        BorderSizePixel = 0,
-        Text = "DOORS",
-        PlaceholderText = "Target game",
-        TextColor3 = WHITE,
-        PlaceholderColor3 = GREY,
-        TextSize = 10,
-        Font = Enum.Font.Gotham
+        Name = "Target", Position = UDim2.fromOffset(5,235), Size = UDim2.new(1,-10,0,38),
+        BackgroundColor3 = PANEL, BorderSizePixel = 0, Text = "DOORS", PlaceholderText = "Target game",
+        TextColor3 = WHITE, PlaceholderColor3 = GREY, TextSize = 10, Font = Enum.Font.Gotham, Active = false
     }, page)
-    corner(target, 7)
-    stroke(target, BLUE, 0.45)
+    corner(target,7); stroke(target,BLUE,0.45)
 
     local prompt = new("TextBox", {
-        Name = "Prompt",
-        Position = UDim2.fromOffset(5, 182),
-        Size = UDim2.new(1, -10, 0, 180),
-        BackgroundColor3 = PANEL,
-        BorderSizePixel = 0,
-        Text = "",
-        PlaceholderText = "Describe the feature you want Fairwell's development AI to build...",
-        TextColor3 = WHITE,
-        PlaceholderColor3 = GREY,
-        TextSize = 10,
-        Font = Enum.Font.Gotham,
-        TextWrapped = true,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Top,
-        ClearTextOnFocus = false,
-        MultiLine = true
+        Name = "Prompt", Position = UDim2.fromOffset(5,280), Size = UDim2.new(1,-10,0,150),
+        BackgroundColor3 = PANEL, BorderSizePixel = 0, Text = "",
+        PlaceholderText = "Describe the feature you want built...", TextColor3 = WHITE,
+        PlaceholderColor3 = GREY, TextSize = 10, Font = Enum.Font.Gotham, TextWrapped = true,
+        TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top,
+        ClearTextOnFocus = false, MultiLine = true, Active = false
     }, page)
-    corner(prompt, 7)
-    stroke(prompt, BLUE, 0.45)
+    corner(prompt,7); stroke(prompt,BLUE,0.45)
 
     local send = new("TextButton", {
-        Name = "SendRequest",
-        Position = UDim2.fromOffset(5, 372),
-        Size = UDim2.new(1, -10, 0, 46),
-        BackgroundColor3 = BLUE,
-        BorderSizePixel = 0,
-        Text = "SEND TO DEV BRIDGE",
-        TextColor3 = WHITE,
-        TextSize = 11,
-        Font = Enum.Font.GothamBold,
-        Active = true
+        Name = "SendRequest", Position = UDim2.fromOffset(5,440), Size = UDim2.new(1,-10,0,46),
+        BackgroundColor3 = BLUE, BorderSizePixel = 0, Text = "SEND TO DEV BRIDGE",
+        TextColor3 = WHITE, TextSize = 11, Font = Enum.Font.GothamBold, Active = false
     }, page)
-    corner(send, 7)
+    corner(send,7)
 
-    local result = label(
-        page,
-        "Result",
-        "Requests will appear here.",
-        UDim2.new(1, -10, 0, 90),
-        UDim2.fromOffset(5, 430),
-        10,
-        GREY
-    )
-    result.TextWrapped = true
-    result.TextYAlignment = Enum.TextYAlignment.Top
+    local result = label(page, "Result", "Unlock the lab to send requests.", UDim2.new(1,-10,0,80), UDim2.fromOffset(5,498), 10, GREY)
+    result.TextWrapped = true; result.TextYAlignment = Enum.TextYAlignment.Top
 
-    local function refreshAccess()
-        if lab and type(lab.GetStatus) == "function" then
-            local ok, message = lab:GetStatus()
-            status.Text = ok and ("🔒 " .. tostring(message)) or ("🔒 PRIVATE • " .. tostring(message))
-            status.TextColor3 = ok and GREEN or RED
-            send.Active = ok
-            send.AutoButtonColor = ok
-            return ok
-        end
-
-        status.Text = "Private Dev Lab module unavailable."
-        status.TextColor3 = RED
-        send.Active = false
-        return false
+    local unlocked = false
+    local function setLocked(allowed)
+        unlocked = allowed == true
+        for _, box in ipairs({featureName,target,prompt}) do box.Active = unlocked end
+        send.Active = unlocked
+        send.AutoButtonColor = unlocked
+        unlock.Text = unlocked and "DEV LAB UNLOCKED" or "UNLOCK DEV LAB"
+        status.TextColor3 = unlocked and GREEN or GREY
     end
 
-    send.Activated:Connect(function()
-        if not lab or type(lab.Submit) ~= "function" then
-            result.Text = "Dev bridge module unavailable."
-            return
+    unlock.Activated:Connect(function()
+        if not lab or type(lab.Authenticate) ~= "function" then
+            status.Text = "Authentication module unavailable."; status.TextColor3 = RED; return
         end
-
-        local name = featureName.Text:gsub("^%s+", ""):gsub("%s+$", "")
-        local gameTarget = target.Text:gsub("^%s+", ""):gsub("%s+$", "")
-        local requestText = prompt.Text:gsub("^%s+", ""):gsub("%s+$", "")
-
-        if name == "" or requestText == "" then
-            result.Text = "Enter a feature name and description first."
-            result.TextColor3 = RED
-            return
-        end
-
-        send.Text = "SENDING..."
-        send.Active = false
-
-        local ok, message = lab:Submit({
-            FeatureName = name,
-            Description = requestText,
-            Target = gameTarget ~= "" and gameTarget or "GLOBAL",
-            HubVersion = tostring(Hub.Version or "unknown")
-        })
-
-        send.Text = "SEND TO DEV BRIDGE"
-        send.Active = true
-        result.Text = tostring(message)
-        result.TextColor3 = ok and GREEN or RED
+        unlock.Text = "CHECKING..."
+        unlock.Active = false
+        local ok, message = lab:Authenticate(password.Text)
+        status.Text = (ok and "🔓 " or "🔒 ") .. tostring(message)
+        status.TextColor3 = ok and GREEN or RED
+        result.Text = ok and "You can now create a feature request." or "Access denied."
+        setLocked(ok)
+        unlock.Active = true
     end)
 
-    refreshAccess()
-
-    self.DevLabRefresh = function()
-        if page.Parent then
-            refreshAccess()
+    send.Activated:Connect(function()
+        if not unlocked or not lab or type(lab.Submit) ~= "function" then return end
+        local name = featureName.Text:gsub("^%s+",""):gsub("%s+$","")
+        local gameTarget = target.Text:gsub("^%s+",""):gsub("%s+$","")
+        local requestText = prompt.Text:gsub("^%s+",""):gsub("%s+$","")
+        if name == "" or requestText == "" then
+            result.Text = "Enter a feature name and description first."; result.TextColor3 = RED; return
         end
-    end
+        send.Text = "SENDING..."; send.Active = false
+        local ok, message = lab:Submit({FeatureName=name, Description=requestText, Target=gameTarget ~= "" and gameTarget or "GLOBAL", HubVersion=tostring(Hub.Version or "unknown")})
+        send.Text = "SEND TO DEV BRIDGE"; send.Active = unlocked
+        result.Text = tostring(message); result.TextColor3 = ok and GREEN or RED
+    end)
 
+    setLocked(false)
+    self.DevLabRefresh = function() end
     return page
 end
-
 function MainUI:_CreateSimplePage(name, titleText)
     local page = new("ScrollingFrame", {
         Name = name,
