@@ -18,6 +18,19 @@ local EntityNames = {
     grumble="Grumble", giggle="Giggle"
 }
 
+local EntitySprites = {
+    Rush = "ALERT",
+    Ambush = "Scared",
+    Seek = "nervous",
+    Halt = "confused",
+    Screech = "Tapped",
+    Eyes = "Silent",
+    Figure = "thinking",
+    Dupe = "confused",
+    Grumble = "Scared",
+    Giggle = "talking"
+}
+
 local function NormalizeName(Name)
     return string.lower(tostring(Name):gsub("[%s_%-%./]", ""))
 end
@@ -61,6 +74,20 @@ end
 local COOLDOWN = 2
 
 local function Notify(Hub, Name)
+    local MainUI = Hub and Hub:GetFeature("Main UI")
+    local Sprite = EntitySprites[Name]
+
+    if MainUI and type(MainUI.CompanionNotify) == "function" then
+        MainUI.CompanionNotify(
+            "FAIRWELL",
+            Name .. " detected!",
+            "WARNING",
+            4,
+            Sprite
+        )
+        return
+    end
+
     if Hub and type(Hub.Notify) == "function" then
         Hub:Notify(
             "DOORS • ENTITY DETECTED",
