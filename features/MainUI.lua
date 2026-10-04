@@ -1461,14 +1461,7 @@ function MainUI:Start(Hub)
     toggleHint.TextXAlignment = Enum.TextXAlignment.Center
 
     toggle.Activated:Connect(function()
-        self.CompanionEnabled = not self.CompanionEnabled
-
-        if self.CompanionGui and self.CompanionGui.Parent then
-            self.CompanionGui.Enabled = self.CompanionEnabled and self.Hidden
-        end
-
-        toggle.Text = self.CompanionEnabled and "FW" or "OFF"
-        toggleHint.Text = self.CompanionEnabled and "MENU" or "OFF"
+        self:SetVisible(self.Hidden)
     end)
 
     self.ToggleGui = toggleGui
