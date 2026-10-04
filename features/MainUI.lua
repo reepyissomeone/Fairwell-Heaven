@@ -567,23 +567,31 @@ end
 function MainUI:_CreateVisualPage(Hub)
     local page = self:_CreateSimplePage(
         "VisualScroll",
-        "VISUAL FEATURES"
+        "FAIRWELL VISUALS"
     )
 
     label(
         page,
         "Info",
-        "Visual features are shown here when available.",
+        "Only visual/overlay features appear here.",
         UDim2.new(1, -10, 0, 30),
         UDim2.fromOffset(5, 43),
         10,
         GREY
     )
 
-    -- Visual page uses the same authoritative feature objects.
+    local VISUAL_FEATURES = {
+        ["VISUAL FPS Counter"] = true,
+        ["VISUAL Clock"] = true,
+        ["VISUAL Crosshair"] = true,
+        ["VISUAL Performance HUD"] = true,
+        ["VISUAL DOORS Item Labels"] = true,
+        ["VISUAL DOORS Entity Markers"] = true,
+    }
+
     local y = 80
     for _, info in ipairs(self:_GetFeatureList(Hub)) do
-        if tostring(info.Name):find("VISUAL") or tostring(info.Name):find("DOORS") then
+        if VISUAL_FEATURES[info.Name] then
             local button = new("TextButton", {
                 Name = "Visual_" .. safeFeatureName(info.Name),
                 Position = UDim2.fromOffset(5, y),
@@ -633,6 +641,188 @@ function MainUI:_CreateVisualPage(Hub)
             y += 48
         end
     end
+
+    if y == 80 then
+        label(
+            page,
+            "Empty",
+            "No visual features are registered.",
+            UDim2.new(1, -10, 0, 50),
+            UDim2.fromOffset(5, 80),
+            10,
+            GREY
+        ).TextXAlignment = Enum.TextXAlignment.Center
+    end
+end
+
+function MainUI:_CreateChatPage(Hub)
+    local page = self:_CreateSimplePage(
+        "FairwellChat",
+        "FAIRWELL CHAT"
+    )
+
+    local info = label(
+        page,
+        "Info",
+        "Talk to Fairwell. Type a message and tap SEND.",
+        UDim2.new(1, -10, 0, 30),
+        UDim2.fromOffset(5, 43),
+        10,
+        GREY
+    )
+
+    local messages = new("ScrollingFrame", {
+        Name = "Messages",
+        Position = UDim2.fromOffset(5, 80),
+        Size = UDim2.new(1, -10, 1, -130),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        ScrollBarThickness = 3,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        CanvasSize = UDim2.new(0, 0, 0, 0)
+    }, page)
+    corner(messages, 7)
+    stroke(messages, BLUE, 0.55)
+
+    new("UIPadding", {
+        PaddingTop = UDim.new(0, 7),
+        PaddingBottom = UDim.new(0, 7),
+        PaddingLeft = UDim.new(0, 7),
+        PaddingRight = UDim.new(0, 7)
+    }, messages)
+
+    new("UIListLayout", {
+        Padding = UDim.new(0, 5),
+        SortOrder = Enum.SortOrder.LayoutOrder
+    }, messages)
+
+    local input = new("TextBox", {
+        Name = "Input",
+        Position = UDim2.new(0, 5, 1, -44),
+        Size = UDim2.new(1, -72, 0, 36),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        ClearTextOnFocus = false,
+        PlaceholderText = "Type here...",
+        Text = "",
+        TextColor3 = WHITE,
+        PlaceholderColor3 = GREY,
+        TextSize = 10,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left
+    }, page)
+    corner(input, 6)
+    stroke(input, BLUE, 0.45)
+
+    local send = new("TextButton", {
+        Name = "Send",
+        Position = UDim2.new(1, -62, 1, -44),
+        Size = UDim2.fromOffset(57, 36),
+        BackgroundColor3 = BLUE,
+        BorderSizePixel = 0,
+        Text = "SEND",
+        TextColor3 = WHITE,
+        TextSize = 9,
+        Font = Enum.Font.GothamBold,
+        Active = true
+    }, page)
+    corner(send, 6)
+
+    local function addMessage(author, message, textColor)
+        local row = new("TextLabel", {
+            Name = "Message",
+            Size = UDim2.new(1, -4, 0, 32),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            BackgroundTransparency = 1,
+            Text = tostring(author) .. ": " .. tostring(message),
+            TextColor3 = textColor or WHITE,
+            TextSize = 9,
+            Font = Enum.Font.Gotham,
+            TextWrapped = true,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Center
+        }, messages)
+
+        task.defer(function()
+            if messages.Parent then
+                messages.CanvasPosition = Vector2.new(
+                    0,
+                    math.max(0, messages.AbsoluteCanvasSize.Y)
+                )
+            end
+        end)
+    end
+
+    local function reply(message)
+        local lower = string.lower(message)
+        local replies = {
+            hello = "Hello. I was wondering when you'd show up.",
+            hi = "Hi. I'm Fairwell. What's going on?",
+            hey = "Hey. I'm listening.",
+            fairwell = "You called? I'm right here.",
+            doors = "DOORS detected. Keep an eye on that next room.",
+            scary = "Good. It would be boring if everything felt safe.",
+            thanks = "You're welcome.",
+            thank = "You're welcome.",
+            bye = "See you later."
+        }
+
+        for key, value in pairs(replies) do
+            if lower == key or string.find(lower, "%f[%a]" .. key .. "%f[%A]") then
+                return value
+            end
+        end
+
+        return "I heard you. Tell me more."
+    end
+
+    local function sendMessage()
+        local message = input.Text:gsub("^%s+", ""):gsub("%s+$", "")
+        if message == "" then
+            return
+        end
+        input.Text = ""
+
+        local lower = string.lower(message)
+        if lower == "/help" then
+            addMessage("FAIRWELL", "/clear • clears chat | /status • hub status | /help • commands", BLUE)
+            return
+        elseif lower == "/clear" then
+            for _, child in ipairs(messages:GetChildren()) do
+                if child:IsA("TextLabel") and child.Name == "Message" then
+                    child:Destroy()
+                end
+            end
+            addMessage("FAIRWELL", "Chat cleared. I'm still here.", BLUE)
+            return
+        elseif lower == "/status" then
+            addMessage(
+                "FAIRWELL",
+                "Hub online • " .. tostring(Hub.Version or "unknown") .. " • " .. tostring(Hub.Game.Name or "Unknown"),
+                BLUE
+            )
+            return
+        end
+
+        addMessage(Players.LocalPlayer and Players.LocalPlayer.Name or "YOU", message, GREEN)
+
+        task.delay(0.35, function()
+            if not messages.Parent then
+                return
+            end
+            addMessage("FAIRWELL", reply(message), BLUE)
+        end)
+    end
+
+    addMessage("FAIRWELL", "Hey! I'm Fairwell. Talk to me.", BLUE)
+    send.Activated:Connect(sendMessage)
+    input.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            sendMessage()
+        end
+    end)
+
+    return page
 end
 
 function MainUI:_Switch(pageName)
@@ -826,7 +1016,7 @@ function MainUI:Start(Hub)
     local pages = {}
     pages.Main = self:_CreateFeaturePage(Hub)
     pages.Logs = self:_CreateSimplePage("DevScroll", "LOGS")
-    pages.Chat = self:_CreateSimplePage("ChatScroll", "FAIRWELL CHAT")
+    pages.Chat = self:_CreateChatPage(Hub)
     pages.Visual = self:_CreateVisualPage(Hub)
     pages.Settings = self:_CreateSimplePage("SettingsScroll", "SETTINGS")
 
