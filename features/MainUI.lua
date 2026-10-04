@@ -1597,7 +1597,7 @@ function MainUI:Start(Hub)
     -- remain tappable while the rest of the top bar can be dragged.
     local dragSurface = new("TextButton", {
         Name = "DragSurface",
-        Size = UDim2.new(1, -42, 1, 0),
+        Size = UDim2.new(1, -82, 1, 0),
         Position = UDim2.fromOffset(0, 0),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
@@ -1632,6 +1632,31 @@ function MainUI:Start(Hub)
         Font = Enum.Font.GothamBold
     }, top)
     corner(close, 7)
+
+    local unload = new("TextButton", {
+        Name = "Unload",
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -42, 0.5, 0),
+        Size = UDim2.fromOffset(58, 26),
+        BackgroundColor3 = RED,
+        BorderSizePixel = 0,
+        Text = "UNLOAD",
+        TextColor3 = WHITE,
+        TextSize = 8,
+        Font = Enum.Font.GothamBold,
+        Active = true,
+        ZIndex = 3
+    }, top)
+    corner(unload, 7)
+
+    unload.Activated:Connect(function()
+        local runtimeHub = self.Hub or Hub
+        if runtimeHub and type(runtimeHub.Shutdown) == "function" then
+            runtimeHub:Shutdown()
+        end
+    end)
+
+    self.UnloadButton = unload
 
     local content = new("Frame", {
         Name = "Content",
@@ -1726,6 +1751,7 @@ function MainUI:Stop()
         self.ToggleButton:Destroy()
     end
     self.ToggleButton = nil
+    self.UnloadButton = nil
 
     self.DragHandle = nil
     self.Hidden = false
