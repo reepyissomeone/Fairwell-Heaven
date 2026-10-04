@@ -704,7 +704,7 @@ function MainUI:_CreateTabs()
     local definitions = {
         {"MainTab", "MAIN", 1},
         {"DevTab", "LOGS", 2},
-        {"DevLabTab", "LAB", 3},
+        {"GameTab", "GAME", 3},
         {"FairwellChatTab", "CHAT", 4},
         {"VisualTab", "VISUAL", 5},
         {"SettingsTab", "SETTINGS", 6}
@@ -2014,7 +2014,7 @@ function MainUI:Start(Hub)
     local pages = {}
     pages.Main = self:_CreateFeaturePage(Hub)
     pages.Logs = self:_CreateLogsPage(Hub)
-    pages.DevLab = self:_CreateDevLabPage(Hub)
+    pages.Game = self:_CreateGamePage(Hub)
     pages.Chat = self:_CreateChatPage(Hub)
     pages.Visual = self:_CreateVisualPage(Hub)
     pages.Settings = self:_CreateSimplePage("SettingsScroll", "SETTINGS")
@@ -2036,8 +2036,8 @@ function MainUI:Start(Hub)
     self.Tabs.DevTab.Activated:Connect(function()
         self:_Switch("Logs")
     end)
-    self.Tabs.DevLabTab.Activated:Connect(function()
-        self:_Switch("DevLab")
+    self.Tabs.GameTab.Activated:Connect(function()
+        self:_Switch("Game")
     end)
     self.Tabs.FairwellChatTab.Activated:Connect(function()
         self:_Switch("Chat")
@@ -2062,7 +2062,6 @@ function MainUI:Start(Hub)
             self:_UpdateStatus(Hub)
             self:_BuildFeatureList(Hub, false)
             if self.DevRefresh then self.DevRefresh() end
-            if self.DevLabRefresh then self.DevLabRefresh() end
             task.wait(0.75)
         end
     end)
