@@ -2521,6 +2521,7 @@ VisualInfo.TextSize = 10
 		Button.Font = Enum.Font.Gotham
 		Button.TextXAlignment = Enum.TextXAlignment.Left
 		Button.ZIndex = 2
+		Button:SetAttribute("FeatureName", FeatureName)
 		Button.Parent = SettingsScroll
 
 		local Stroke = Instance.new("UIStroke")
@@ -2665,6 +2666,18 @@ VisualInfo.TextSize = 10
 		SettingsService:Reset()
 
 		IntervalBox.Text = "120"
+
+		-- Reset runtime state as well as persisted state. Previously a feature
+		-- enabled before Reset could remain active until the next reload.
+		for _, Info in ipairs(Hub:GetFeatures()) do
+			if Info.Name ~= "Main UI"
+				and Info.Name ~= "Loading Screen"
+				and Info.Name ~= "UI Repair"
+				and Info.Name ~= "Mini Notification Test"
+				and Info.Name ~= "Test Feature" then
+				Hub:Disable(Info.Name)
+			end
+		end
 
 		Hub:Log("Settings reset to defaults.")
 
