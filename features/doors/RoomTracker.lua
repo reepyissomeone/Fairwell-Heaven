@@ -82,7 +82,7 @@ local function AnalyzeRoom(Room)
 			Counts.dupe += 1
 		end
 
-nd
+	end
 
 	if Counts.dupe >= 2 then
 		return "There are a lot of doors in here... something feels off."
