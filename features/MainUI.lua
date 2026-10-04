@@ -923,18 +923,28 @@ end
 
 function MainUI:SetVisible(visible)
     visible = (visible == true)
+
+    -- Re-bind to the actual menu ScreenGui. This prevents the FW button
+    -- from controlling a stale/duplicate GUI instance after reloads.
+    local player = Players.LocalPlayer
+    local pg = player and player:FindFirstChild("PlayerGui")
+    if pg then
+        local liveGui = pg:FindFirstChild("FairwellHeaven_MainUI")
+        if liveGui and liveGui:IsA("ScreenGui") then
+            self.Gui = liveGui
+        end
+    end
+
     self.MenuVisible = visible
     self.Hidden = not visible
 
-    -- Only the actual Fairwell menu is toggled here.
-    -- The FW control itself always remains available.
-    if self.Gui then
+    if self.Gui and self.Gui.Parent then
         self.Gui.Enabled = visible
     end
 
     if self.ToggleButton and self.ToggleButton.Parent then
         self.ToggleButton.Visible = true
-        self.ToggleButton.Text = visible and "FW" or "FW"
+        self.ToggleButton.Text = "FW"
         self.ToggleButton.BackgroundColor3 = visible and PANEL2 or PANEL
         local indicator = self.ToggleIndicator
         if indicator then
@@ -959,9 +969,14 @@ function MainUI:Start(Hub)
     if not player then return false end
     local pg=player:WaitForChild("PlayerGui")
 
+    -- Remove every stale instance, not just the first matching child.
+    -- This keeps the FW button and menu bound to the same GUI after reloads.
     for _,name in ipairs({"FairwellHeaven_MainUI","FairwellHeaven_Toggle","FairwellHeaven_Companion"}) do
-        local old=pg:FindFirstChild(name)
-        if old then old:Destroy() end
+        for _,old in ipairs(pg:GetChildren()) do
+            if old.Name == name then
+                old:Destroy()
+            end
+        end
     end
 
     self.Hub=Hub
@@ -1073,13 +1088,21 @@ function MainUI:Start(Hub)
     text(toggle,"Hint","TOGGLE",
         UDim2.new(0,0,1,-12),UDim2.new(1,0,0,10),6,GREY).TextXAlignment=Enum.TextXAlignment.Center
 
-    tap(toggle,function()
-        -- Flip the stored menu state. Do not derive it from Gui.Enabled,
-        -- because the GUI may briefly be disabled during reloads.
-        self:SetVisible(not self.MenuVisible)
-    end)
     self.ToggleGui=toggleGui
     self.ToggleButton=toggle
+
+    -- Start from the actual ScreenGui state, then keep both controls synced.
+    self:SetVisible(self.Gui and self.Gui.Enabled ~= false)
+
+    tap(toggle,function()
+        local current = false
+        if self.Gui and self.Gui.Parent then
+            current = self.Gui.Enabled
+        else
+            current = self.MenuVisible == true
+        end
+        self:SetVisible(not current)
+    end)
 
     task.spawn(function() pcall(function() self:_CreateCompanion(Hub) end) end)
 
