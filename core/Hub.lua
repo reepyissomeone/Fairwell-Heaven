@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Core Hub
---// Version 0.3.1
+--// Version 0.4.2
 
 local Hub = {}
 
@@ -567,6 +567,20 @@ function Hub:Shutdown()
 	end
 
 	self._ShuttingDown = true
+
+	-- Invalidate any background updater or runtime loops owned by this Hub.
+	-- The next loader run will allocate the next runtime id.
+	pcall(function()
+		local Env = _G
+		if type(getgenv) == "function" then
+			Env = getgenv()
+		end
+		local CurrentId = tonumber(Env.__FAIRWELL_HEAVEN_RUNTIME_ID)
+		if CurrentId then
+			Env.__FAIRWELL_HEAVEN_RUNTIME_ID = CurrentId + 1
+		end
+	end)
+
 	self:Log("Shutting down...")
 
 	local names = {}
