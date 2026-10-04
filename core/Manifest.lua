@@ -11,6 +11,7 @@ return {
     -- DOORS
     "features/doors/DoorsCore.lua",
     "features/doors/RoomTracker.lua",
+    "features/doors/RoomHistory.lua",
     "features/doors/DoorTracker.lua",
     "features/doors/Highlights.lua",
     "features/doors/AdvancedESP.lua",
