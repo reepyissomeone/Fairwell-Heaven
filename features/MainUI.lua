@@ -1364,11 +1364,12 @@ function MainUI:_CreateCompanion(Hub)
 
     setState("Idle")
 
-    local function showNotification(noticeTitle, message, kind, duration, forcedState)
-        if not gui.Parent or not self.Hidden or self.CompanionEnabled ~= true then
-            return
-        end
+    -- Companion dialogue is persistent and queued.
+    -- A message stays visible until the player taps Fairwell.
+    local dialogueQueue = {}
+    local dialogueShowing = false
 
+    local function resolveDialogue(noticeTitle, message, kind, forcedState)
         local normalized = string.upper(tostring(kind or "INFO"))
         local state = tostring(forcedState or "")
         local accent = BLUE
@@ -1390,20 +1391,43 @@ function MainUI:_CreateCompanion(Hub)
             state = "Ctalking"
         end
 
-        duration = math.clamp(tonumber(duration) or 4, 1, 15)
-        setState(state, math.min(duration, 3))
+        return {
+            title = string.upper(tostring(noticeTitle or "FAIRWELL")),
+            message = tostring(message or ""),
+            state = state,
+            accent = accent
+        }
+    end
 
-        title.Text = string.upper(tostring(noticeTitle or "FAIRWELL"))
-        title.TextColor3 = accent
+    local function showNextDialogue()
+        if dialogueShowing or #dialogueQueue == 0 then return end
+        if not gui.Parent or not self.Hidden or self.CompanionEnabled ~= true then
+            return
+        end
+
+        local entry = table.remove(dialogueQueue, 1)
+        dialogueShowing = true
+
+        setState(entry.state)
+
+        title.Text = entry.title
+        title.TextColor3 = entry.accent
         title.Visible = true
-        bubble.Text = tostring(message or "")
+        bubble.Text = entry.message
         bubble.Visible = true
+    end
 
-        task.delay(duration, function()
-            if not bubble.Parent then return end
-            bubble.Visible = false
-            title.Visible = false
-        end)
+    local function showNotification(noticeTitle, message, kind, duration, forcedState)
+        if not gui.Parent or not self.Hidden or self.CompanionEnabled ~= true then
+            return
+        end
+
+        table.insert(
+            dialogueQueue,
+            resolveDialogue(noticeTitle, message, kind, forcedState)
+        )
+
+        showNextDialogue()
     end
 
     self.CompanionGui = gui
@@ -1416,6 +1440,19 @@ function MainUI:_CreateCompanion(Hub)
         if not self.CompanionEnabled then
             return
         end
+
+        -- A tap dismisses the current dialogue first. If more dialogue is
+        -- queued, the next message appears immediately. Tapping while no
+        -- dialogue is showing keeps the normal companion interaction.
+        if dialogueShowing then
+            dialogueShowing = false
+            bubble.Visible = false
+            title.Visible = false
+            setState("Tapped", 1.5)
+            showNextDialogue()
+            return
+        end
+
         setState("Tapped", 1.5)
         local Brain = self.Hub and self.Hub:GetFeature("Fairwell Companion Brain")
         if Brain and type(Brain.OnTap) == "function" then
