@@ -86,10 +86,7 @@ local function IsInStairwell(Object)
 end
 
 local function Notify(Hub, Name, Object)
-    -- Creak is specific to the Stairwell. Other entity detection remains global.
     -- Fairwell's Companion Brain handles the actual reaction/hint.
-    if Name == "Creak" and not IsInStairwell(Object) then return end
-
     local Brain = Hub and Hub:GetFeature("Fairwell Companion Brain")
     if Brain and type(Brain.OnEntity) == "function" then
         Brain:OnEntity(Name, Object)
