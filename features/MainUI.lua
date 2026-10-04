@@ -1358,43 +1358,68 @@ AvatarStroke.Parent = AvatarFrame
 	-- When the main window is collapsed, Fairwell can temporarily appear
 	-- above the mini bar and speak the same message as Hub:Notify.
 
-	local MiniGui = Instance.new("ScreenGui")
-	MiniGui.Name = "FairwellMiniNotificationGui"
-	MiniGui.ResetOnSpawn = false
-	MiniGui.IgnoreGuiInset = true
-	MiniGui.DisplayOrder = 1000001
-	MiniGui.Enabled = true
-	MiniGui.Parent = PlayerGui
+	-- Two layers are intentional:
+	-- 1) Back layer: Fairwell's body sits BEHIND the collapsed menu.
+	-- 2) Front layer: the arms/speech bubble can pass over the menu.
+	local MiniBackGui = Instance.new("ScreenGui")
+	MiniBackGui.Name = "FairwellMiniNotificationBack"
+	MiniBackGui.ResetOnSpawn = false
+	MiniBackGui.IgnoreGuiInset = true
+	MiniBackGui.DisplayOrder = 999998
+	MiniBackGui.Enabled = true
+	MiniBackGui.Parent = PlayerGui
 
-	local MiniRoot = Instance.new("Frame")
-	MiniRoot.Name = "FairwellMiniNotification"
-	MiniRoot.AnchorPoint = Vector2.new(0.5, 1)
-	MiniRoot.Size = UDim2.fromOffset(320, 258)
-	MiniRoot.BackgroundTransparency = 1
-	MiniRoot.Visible = false
-	MiniRoot.ZIndex = 60
-	MiniRoot.Parent = MiniGui
+	local MiniFrontGui = Instance.new("ScreenGui")
+	MiniFrontGui.Name = "FairwellMiniNotificationFront"
+	MiniFrontGui.ResetOnSpawn = false
+	MiniFrontGui.IgnoreGuiInset = true
+	MiniFrontGui.DisplayOrder = 1000000
+	MiniFrontGui.Enabled = true
+	MiniFrontGui.Parent = PlayerGui
+
+	local MiniBackRoot = Instance.new("Frame")
+	MiniBackRoot.Name = "FairwellBodyLayer"
+	MiniBackRoot.AnchorPoint = Vector2.new(0.5, 1)
+	MiniBackRoot.Size = UDim2.fromOffset(320, 258)
+	MiniBackRoot.BackgroundTransparency = 1
+	MiniBackRoot.Visible = false
+	MiniBackRoot.ZIndex = 1
+	MiniBackRoot.Parent = MiniBackGui
+
+	local MiniFrontRoot = Instance.new("Frame")
+	MiniFrontRoot.Name = "FairwellNotificationLayer"
+	MiniFrontRoot.AnchorPoint = Vector2.new(0.5, 1)
+	MiniFrontRoot.Size = UDim2.fromOffset(320, 258)
+	MiniFrontRoot.BackgroundTransparency = 1
+	MiniFrontRoot.Visible = false
+	MiniFrontRoot.ZIndex = 1
+	MiniFrontRoot.Parent = MiniFrontGui
 
 	local MiniScale = Instance.new("UIScale")
-	MiniScale.Scale = 0.86
-	MiniScale.Parent = MiniRoot
+	MiniScale.Scale = 0.92
+	MiniScale.Parent = MiniBackRoot
+
+	local MiniFrontScale = Instance.new("UIScale")
+	MiniFrontScale.Scale = 0.92
+	MiniFrontScale.Parent = MiniFrontRoot
 
 	local MiniBubble = Instance.new("TextLabel")
 	MiniBubble.Name = "SpeechBubble"
 	MiniBubble.Position = UDim2.fromOffset(10, 4)
 	MiniBubble.Size = UDim2.new(1, -20, 0, 72)
 	MiniBubble.BackgroundColor3 = PANEL
-	MiniBubble.BackgroundTransparency = 0.02
+	MiniBubble.BackgroundTransparency = 1
 	MiniBubble.BorderSizePixel = 0
 	MiniBubble.Text = ""
 	MiniBubble.TextColor3 = WHITE
+	MiniBubble.TextTransparency = 1
 	MiniBubble.TextSize = 12
 	MiniBubble.Font = Enum.Font.GothamBold
 	MiniBubble.TextWrapped = true
 	MiniBubble.TextXAlignment = Enum.TextXAlignment.Center
 	MiniBubble.TextYAlignment = Enum.TextYAlignment.Center
-	MiniBubble.ZIndex = 63
-	MiniBubble.Parent = MiniRoot
+	MiniBubble.ZIndex = 5
+	MiniBubble.Parent = MiniFrontRoot
 
 	local MiniBubbleCorner = Instance.new("UICorner")
 	MiniBubbleCorner.CornerRadius = UDim.new(0, 12)
@@ -1403,6 +1428,7 @@ AvatarStroke.Parent = AvatarFrame
 	local MiniBubbleStroke = Instance.new("UIStroke")
 	MiniBubbleStroke.Color = BLUE
 	MiniBubbleStroke.Thickness = 2
+	MiniBubbleStroke.Transparency = 1
 	MiniBubbleStroke.Parent = MiniBubble
 
 	local MiniTail = Instance.new("Frame")
@@ -1412,9 +1438,10 @@ AvatarStroke.Parent = AvatarFrame
 	MiniTail.Size = UDim2.fromOffset(18, 18)
 	MiniTail.Rotation = 45
 	MiniTail.BackgroundColor3 = PANEL
+	MiniTail.BackgroundTransparency = 1
 	MiniTail.BorderSizePixel = 0
-	MiniTail.ZIndex = 61
-	MiniTail.Parent = MiniRoot
+	MiniTail.ZIndex = 4
+	MiniTail.Parent = MiniFrontRoot
 
 	local MiniAvatar = Instance.new("ImageLabel")
 	MiniAvatar.Name = "Body"
@@ -1423,25 +1450,26 @@ AvatarStroke.Parent = AvatarFrame
 	MiniAvatar.BackgroundTransparency = 1
 	MiniAvatar.BorderSizePixel = 0
 	MiniAvatar.Image = ""
+	MiniAvatar.ImageTransparency = 1
 	MiniAvatar.ScaleType = Enum.ScaleType.Fit
-	MiniAvatar.ZIndex = 60
-	MiniAvatar.Parent = MiniRoot
+	MiniAvatar.ZIndex = 1
+	MiniAvatar.Parent = MiniBackRoot
 
 	local MiniArms = Instance.new("ImageLabel")
 	MiniArms.Name = "Arms"
-	MiniArms.Position = MiniAvatar.Position
-	MiniArms.Size = MiniAvatar.Size
+	MiniArms.Position = UDim2.fromOffset(80, 205)
+	MiniArms.Size = UDim2.fromOffset(160, 160)
 	MiniArms.BackgroundTransparency = 1
 	MiniArms.BorderSizePixel = 0
 	MiniArms.Image = ""
+	MiniArms.ImageTransparency = 1
 	MiniArms.ScaleType = Enum.ScaleType.Fit
-	MiniArms.ZIndex = 61
-	MiniArms.Parent = MiniRoot
+	MiniArms.ZIndex = 6
+	MiniArms.Parent = MiniFrontRoot
 
 	local MiniNotificationQueue = {}
 	local MiniNotificationShowing = false
 	local MiniNotificationToken = 0
-	local MiniArmsTween
 
 	local ProcessMiniNotificationQueue
 
@@ -1452,66 +1480,92 @@ AvatarStroke.Parent = AvatarFrame
 
 		local CenterX = Window.AbsolutePosition.X + (Window.AbsoluteSize.X * 0.5)
 		local TopY = Window.AbsolutePosition.Y - 6
-		MiniRoot.Position = UDim2.fromOffset(CenterX, TopY)
+
+		MiniBackRoot.Position = UDim2.fromOffset(CenterX, TopY)
+		MiniFrontRoot.Position = UDim2.fromOffset(CenterX, TopY)
 	end
 
-	local function StopMiniAnimation()
-		MiniNotificationToken += 1
-		if MiniArmsTween then
-			MiniArmsTween:Cancel()
-			MiniArmsTween = nil
-		end
+	local function ResetMiniLayers()
+		MiniBackRoot.Visible = false
+		MiniFrontRoot.Visible = false
+
+		MiniScale.Scale = 0.92
+		MiniFrontScale.Scale = 0.92
+
+		MiniAvatar.Position = UDim2.fromOffset(80, 235)
+		MiniAvatar.ImageTransparency = 1
+
+		MiniArms.Position = UDim2.fromOffset(80, 235)
+		MiniArms.ImageTransparency = 1
+		MiniArms.Rotation = 0
+
+		MiniBubble.BackgroundTransparency = 1
+		MiniBubble.TextTransparency = 1
+		MiniBubbleStroke.Transparency = 1
+		MiniTail.BackgroundTransparency = 1
 	end
 
 	local function HideMiniNotification(Immediate)
-		StopMiniAnimation()
+		MiniNotificationToken += 1
 		MiniNotificationShowing = false
 
-		if not MiniRoot.Visible then
-			return
-		end
-
 		if Immediate then
-			MiniRoot.Visible = false
-			MiniScale.Scale = 0.86
-			MiniBubble.BackgroundTransparency = 0.02
-			MiniBubble.TextTransparency = 0
-			MiniAvatar.ImageTransparency = 0
-			MiniArms.ImageTransparency = 0
+			ResetMiniLayers()
 			return
 		end
 
-		local FadeInfo = TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-		TweenService:Create(MiniScale, FadeInfo, {Scale = 0.86}):Play()
-		TweenService:Create(MiniBubble, FadeInfo, {BackgroundTransparency = 1, TextTransparency = 1}):Play()
-		TweenService:Create(MiniAvatar, FadeInfo, {ImageTransparency = 1}):Play()
-		TweenService:Create(MiniArms, FadeInfo, {ImageTransparency = 1}):Play()
+		local Fade = TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+		TweenService:Create(MiniBubble, Fade, {
+			BackgroundTransparency = 1,
+			TextTransparency = 1
+		}):Play()
+		TweenService:Create(MiniBubbleStroke, Fade, {Transparency = 1}):Play()
+		TweenService:Create(MiniTail, Fade, {BackgroundTransparency = 1}):Play()
 
-		task.delay(0.3, function()
-			if MiniRoot.Parent then
-				MiniRoot.Visible = false
+		local ThisToken = MiniNotificationToken
+
+		task.delay(0.16, function()
+			if ThisToken ~= MiniNotificationToken then
+				return
 			end
-			MiniScale.Scale = 0.86
-			MiniBubble.BackgroundTransparency = 0.02
-			MiniBubble.TextTransparency = 0
-			MiniAvatar.ImageTransparency = 0
-			MiniArms.ImageTransparency = 0
-			ProcessMiniNotificationQueue()
+
+			-- Fairwell drops back behind the menu.
+			TweenService:Create(
+				MiniAvatar,
+				TweenInfo.new(0.32, Enum.EasingStyle.Quint, Enum.EasingDirection.In),
+				{Position = UDim2.fromOffset(80, 235), ImageTransparency = 1}
+			):Play()
+
+			-- Arms fall back onto/behind the mini menu.
+			TweenService:Create(
+				MiniArms,
+				TweenInfo.new(0.34, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+				{Position = UDim2.fromOffset(80, 235), ImageTransparency = 1, Rotation = 0}
+			):Play()
+
+			task.delay(0.36, function()
+			if ThisToken == MiniNotificationToken then
+				ResetMiniLayers()
+				ProcessMiniNotificationQueue()
+			end
 		end)
+	end)
 	end
 
 	local function ShowMiniNotification(TitleText, MessageText, Kind)
-		if not self.Collapsed or not MiniGui.Enabled then
+		if not self.Collapsed or not MiniBackGui.Enabled or not MiniFrontGui.Enabled then
 			return false
 		end
 
-		-- Prefer the dedicated mini artwork, but fall back to the main Fairwell
-		-- artwork so a single failed mini asset can never disable notifications.
-		local BodyImage = MiniArtworkImages.Body or FairwellArtworkImages.Silent
+		-- These are the exact artwork files supplied for the mini Fairwell.
+		local BodyImage = MiniArtworkImages.Body
 		local ArmsImage = MiniArtworkImages.Arms
 
-		if not BodyImage or BodyImage == "" then
-			Hub:Log("Mini Fairwell notification skipped: no Fairwell artwork is available.", "WARN")
+		if not BodyImage or not ArmsImage then
+			Hub:Log(
+				"Mini Fairwell waiting for Fairwellmini.png / Fairwellminiarms.png.",
+				"WARN"
+			)
 			return false
 		end
 
@@ -1520,71 +1574,128 @@ AvatarStroke.Parent = AvatarFrame
 		local ThisToken = MiniNotificationToken
 
 		local KindName = string.upper(tostring(Kind or "INFO"))
-		local Accent = KindName == "ERROR" and Color3.fromRGB(255, 75, 90)
+		local Accent =
+			KindName == "ERROR" and Color3.fromRGB(255, 75, 90)
 			or KindName == "WARNING" and Color3.fromRGB(255, 175, 55)
 			or KindName == "SUCCESS" and Color3.fromRGB(70, 210, 130)
 			or BLUE
 
 		UpdateMiniPosition()
-		MiniRoot.Visible = true
-		MiniScale.Scale = 0.82
-		MiniBubble.BackgroundTransparency = 0.02
-		MiniBubble.TextTransparency = 0
-		MiniAvatar.ImageTransparency = 0
-		MiniArms.ImageTransparency = ArmsImage and 0 or 1
+
+		MiniBackRoot.Visible = true
+		MiniFrontRoot.Visible = true
+
+		MiniBubble.Text =
+			string.upper(tostring(TitleText or "FAIRWELL"))
+			.. "\n"
+			.. tostring(MessageText or "")
+
 		MiniBubbleStroke.Color = Accent
-		MiniBubble.Text = string.upper(tostring(TitleText or "FAIRWELL")) .. "\n" .. tostring(MessageText or "")
 		MiniAvatar.Image = BodyImage
-		MiniArms.Image = ArmsImage or ""
-		MiniArms.Rotation = 0
+		MiniArms.Image = ArmsImage
+
+		-- Start both pieces hidden below the collapsed menu.
+		MiniAvatar.Position = UDim2.fromOffset(80, 235)
+		MiniArms.Position = UDim2.fromOffset(80, 235)
+		MiniAvatar.ImageTransparency = 1
+		MiniArms.ImageTransparency = 1
+		MiniBubble.BackgroundTransparency = 1
+		MiniBubble.TextTransparency = 1
+		MiniBubbleStroke.Transparency = 1
+		MiniTail.BackgroundTransparency = 1
+
+		--==================================================
+		-- 1. ARMS POP OUT OF THE MINI MENU
+		--==================================================
+		local ArmsUp = TweenService:Create(
+			MiniArms,
+			TweenInfo.new(0.38, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+			{
+				Position = UDim2.fromOffset(80, 62),
+				ImageTransparency = 0
+			}
+		)
+		ArmsUp:Play()
+
+		ArmsUp.Completed:Wait()
+		if ThisToken ~= MiniNotificationToken then
+			return false
+		end
+
+		--==================================================
+		-- 2. ARMS DROP BACK DOWN AND LAND ON THE MENU
+		--==================================================
+		local ArmsLand = TweenService:Create(
+			MiniArms,
+			TweenInfo.new(0.42, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out),
+			{
+				Position = UDim2.fromOffset(80, 190),
+				Rotation = 0,
+				ImageTransparency = 0
+			}
+		)
+		ArmsLand:Play()
+
+		--==================================================
+		-- 3. FAIRWELL POPS UP BEHIND THE MENU
+		--==================================================
+		local BodyPop = TweenService:Create(
+			MiniAvatar,
+			TweenInfo.new(0.48, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+			{
+				Position = UDim2.fromOffset(80, 78),
+				ImageTransparency = 0
+			}
+		)
+		BodyPop:Play()
+
+		ArmsLand.Completed:Wait()
+		BodyPop.Completed:Wait()
+
+		if ThisToken ~= MiniNotificationToken then
+			return false
+		end
+
+		--==================================================
+		-- 4. FAIRWELL SPEAKS
+		--==================================================
+		MiniBubble.BackgroundTransparency = 0.02
+		MiniBubble.TextTransparency = 1
+		MiniBubbleStroke.Transparency = 0
+		MiniTail.BackgroundTransparency = 0.02
 
 		TweenService:Create(
-			MiniScale,
-			TweenInfo.new(0.42, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+			MiniFrontScale,
+			TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
 			{Scale = 1}
 		):Play()
 
-		if ArmsImage then
-			task.spawn(function()
-				while MiniRoot.Visible and MiniNotificationShowing and ThisToken == MiniNotificationToken do
-					MiniArmsTween = TweenService:Create(
-						MiniArms,
-						TweenInfo.new(0.42, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-						{Rotation = -5}
-					)
-					MiniArmsTween:Play()
-					MiniArmsTween.Completed:Wait()
-					if ThisToken ~= MiniNotificationToken then break end
-
-					MiniArmsTween = TweenService:Create(
-						MiniArms,
-						TweenInfo.new(0.42, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-						{Rotation = 5}
-					)
-					MiniArmsTween:Play()
-					MiniArmsTween.Completed:Wait()
-				end
-			end)
-		end
+		TweenService:Create(
+			MiniBubble,
+			TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+			{TextTransparency = 0}
+		):Play()
 
 		local Duration = math.clamp(
-			1.8 + (#tostring(MessageText or "") * 0.035),
-			2.4,
-			5.5
+			2.0 + (#tostring(MessageText or "") * 0.035),
+			2.8,
+			6
 		)
 
 		task.delay(Duration, function()
-			if ThisToken ~= MiniNotificationToken then
-				return
+			if ThisToken == MiniNotificationToken then
+				HideMiniNotification(false)
 			end
-			HideMiniNotification(false)
 		end)
 
 		return true
 	end
 
 	ProcessMiniNotificationQueue = function()
-		if MiniNotificationShowing or not self.Collapsed or not MiniGui.Enabled then
+		if MiniNotificationShowing
+			or not self.Collapsed
+			or not MiniBackGui.Enabled
+			or not MiniFrontGui.Enabled then
 			return
 		end
 
@@ -1593,9 +1704,7 @@ AvatarStroke.Parent = AvatarFrame
 			return
 		end
 
-		if not ShowMiniNotification(Next.Title, Next.Message, Next.Kind) then
-			task.defer(ProcessMiniNotificationQueue)
-		end
+		ShowMiniNotification(Next.Title, Next.Message, Next.Kind)
 	end
 
 	local function QueueMiniNotification(TitleText, MessageText, Kind)
@@ -1608,12 +1717,12 @@ AvatarStroke.Parent = AvatarFrame
 	end
 
 	if Hub.NotificationEvent then
-		self.MiniNotificationConnection = Hub.NotificationEvent.Event:Connect(function(TitleText, MessageText, Kind)
-			if not self.Collapsed then
-				return
-			end
-			QueueMiniNotification(TitleText, MessageText, Kind)
-		end)
+		self.MiniNotificationConnection =
+			Hub.NotificationEvent.Event:Connect(function(TitleText, MessageText, Kind)
+				if self.Collapsed then
+					QueueMiniNotification(TitleText, MessageText, Kind)
+				end
+			end)
 	end
 
 	Hub:Log(
@@ -2736,7 +2845,7 @@ VisualInfo.TextSize = 10
 		if self.Collapsed then
 			self.Collapsed = false
 
-			if MiniRoot and MiniRoot.Parent then
+			if MiniBackRoot and MiniBackRoot.Parent then
 				HideMiniNotification(true)
 				table.clear(MiniNotificationQueue)
 			end
@@ -2772,7 +2881,7 @@ VisualInfo.TextSize = 10
 
 			ToggleButton.Text = "+"
 
-			if MiniGui and MiniGui.Parent then
+			if MiniBackGui and MiniBackGui.Parent then
 				UpdateMiniPosition()
 				ProcessMiniNotificationQueue()
 			end
@@ -2828,7 +2937,7 @@ VisualInfo.TextSize = 10
 
 	-- Keep the independent mini notification anchored above the collapsed window.
 	self.MiniPositionConnection = RunService.Heartbeat:Connect(function()
-		if self.Collapsed and MiniRoot and MiniRoot.Parent then
+		if self.Collapsed and MiniBackRoot and MiniBackRoot.Parent then
 			UpdateMiniPosition()
 		end
 	end)
@@ -2912,7 +3021,7 @@ VisualInfo.TextSize = 10
 	end
 
 	Hub:Log(
-		"Main UI v4.5 initialized with Fairwell chat, visual controls, and minimized notification animation."
+		"Main UI v4.6 initialized with Fairwell chat, visual controls, and animated mini Fairwell notifications."
 	)
 end
 
@@ -2980,8 +3089,11 @@ function MainUI.Stop(self)
 		self.MiniPositionConnection = nil
 	end
 
-	if MiniGui and MiniGui.Parent then
-		MiniGui:Destroy()
+	if MiniBackGui and MiniBackGui.Parent then
+		MiniBackGui:Destroy()
+	end
+	if MiniFrontGui and MiniFrontGui.Parent then
+		MiniFrontGui:Destroy()
 	end
 
 	if self.DragConnection then
