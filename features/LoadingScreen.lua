@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Loading Screen
---// Version 2.0
+--// Version 3.0
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -37,10 +37,10 @@ function LoadingScreen.Start(self, Hub)
 
 	local Gui = Instance.new("ScreenGui")
 
-	Gui.Name = "FairwellHeaven_Main"
+	Gui.Name = "FairwellHeaven_Loading"
 	Gui.ResetOnSpawn = false
 	Gui.IgnoreGuiInset = true
-	Gui.DisplayOrder = 999999
+	Gui.DisplayOrder = 1000000
 
 	Gui.Parent = PlayerGui
 
@@ -184,49 +184,60 @@ function LoadingScreen:Finish(Hub)
 	-- EXPAND WINDOW
 	--==================================================
 
-	local MainUI = Hub:GetFeature("Main UI")
-
-	if not MainUI then
-
-		warn("[Fairwell Heaven] Main UI was not found.")
-
-		return
-	end
-
-	local TargetSize = MainUI.TargetSize
-
-	if not TargetSize then
-
-		warn("[Fairwell Heaven] Main UI has no TargetSize.")
-
-		return
-	end
-
-	local ExpandInfo = TweenInfo.new(
-		0.65,
-		Enum.EasingStyle.Quint,
-		Enum.EasingDirection.Out
-	)
-
-	local ExpandTween = TweenService:Create(
-		self.Window,
-		ExpandInfo,
-		{
-			Size = TargetSize
-		}
-	)
-
-	ExpandTween:Play()
-
-	ExpandTween.Completed:Wait()
-
 	--==================================================
 	-- REVEAL MAIN UI
 	--==================================================
 
+	local MainUI = Hub:GetFeature("Main UI")
+
+	if not MainUI then
+		warn("[Fairwell Heaven] Main UI was not found.")
+		if self.Gui then
+			self.Gui:Destroy()
+		end
+		self.Gui = nil
+		return
+	end
+
+	-- The loading screen is a separate overlay. Main UI is revealed
+	-- only after every manifest feature has finished loading.
 	if MainUI.Reveal then
 		MainUI:Reveal()
 	end
+
+	-- Give the Main UI one frame to become visible, then remove the
+	-- loading overlay cleanly.
+	task.wait()
+
+	if self.Gui and self.Gui.Parent then
+		local OverlayFade = TweenService:Create(
+			self.Window,
+			TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{
+				BackgroundTransparency = 1
+			}
+		)
+		OverlayFade:Play()
+
+		if self.Outline then
+			TweenService:Create(
+				self.Outline,
+				TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+				{Transparency = 1}
+			):Play()
+		end
+
+		OverlayFade.Completed:Wait()
+
+		if self.Gui then
+			self.Gui:Destroy()
+		end
+	end
+
+	self.Gui = nil
+	self.Window = nil
+	self.Text = nil
+	self.Outline = nil
 
 	Hub:Log("Main interface ready.")
 
