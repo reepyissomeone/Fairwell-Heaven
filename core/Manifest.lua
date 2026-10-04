@@ -14,6 +14,7 @@ return {
 	"features/doors/DoorTracker.lua",
 	"features/doors/Highlights.lua",
 	"features/doors/RoomHUD.lua",
+	"features/doors/RoomTimer.lua",
 	"features/doors/EntityNotifications.lua",
 
 	-- Visual
