@@ -1362,6 +1362,14 @@ AvatarStroke.Parent = AvatarFrame
 	-- Two layers are intentional:
 	-- 1) Back layer: Fairwell's body sits BEHIND the collapsed menu.
 	-- 2) Front layer: the arms/speech bubble can pass over the menu.
+	local MiniBackGui = Instance.new("ScreenGui")
+	MiniBackGui.Name = "FairwellMiniNotificationBack"
+	MiniBackGui.ResetOnSpawn = false
+	MiniBackGui.IgnoreGuiInset = true
+	MiniBackGui.DisplayOrder = 999998
+	MiniBackGui.Enabled = true
+	MiniBackGui.Parent = PlayerGui
+
 	local MiniFrontGui = Instance.new("ScreenGui")
 	MiniFrontGui.Name = "FairwellMiniNotificationFront"
 	MiniFrontGui.ResetOnSpawn = false
@@ -1376,8 +1384,8 @@ AvatarStroke.Parent = AvatarFrame
 	MiniBackRoot.Size = UDim2.fromOffset(320, 300)
 	MiniBackRoot.BackgroundTransparency = 1
 	MiniBackRoot.Visible = false
-	MiniBackRoot.ZIndex = 2
-	MiniBackRoot.Parent = Gui
+	MiniBackRoot.ZIndex = 1
+	MiniBackRoot.Parent = MiniBackGui
 
 	local MiniFrontRoot = Instance.new("Frame")
 	MiniFrontRoot.Name = "FairwellNotificationLayer"
@@ -3034,7 +3042,7 @@ VisualInfo.TextSize = 10
 	end
 
 	Hub:Log(
-		"Main UI v4.8 initialized with menu-anchored Fairwell mini notifications."
+		"Main UI v4.9 initialized with strictly layered menu-anchored Fairwell mini notifications."
 	)
 end
 
@@ -3112,6 +3120,10 @@ function MainUI.Stop(self)
 	if MiniBackRoot and MiniBackRoot.Parent then
 		MiniBackGui:Destroy()
 	end
+	if MiniBackGui and MiniBackGui.Parent then
+		MiniBackGui:Destroy()
+	end
+
 	if MiniFrontGui and MiniFrontGui.Parent then
 		MiniFrontGui:Destroy()
 	end
