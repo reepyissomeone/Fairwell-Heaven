@@ -123,7 +123,10 @@ return {
 
             local order = 0
             for _, Info in ipairs(Features) do
-                if not skip[Info.Name] then
+                local DoorsOnly = Info.Feature and Info.Feature.Game == "DOORS"
+                local ShowFeature = not DoorsOnly or Hub:IsDOORS()
+
+                if not skip[Info.Name] and ShowFeature then
                     order += 1
                     local Button = Instance.new("TextButton")
                     Button.Name = "Feature_" .. tostring(order)
