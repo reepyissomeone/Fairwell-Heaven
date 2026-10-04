@@ -745,7 +745,7 @@ function MainUI:_CreateTabs()
     for _, data in ipairs(definitions) do
         local button = new("TextButton", {
             Name = data[1],
-            Size = UDim2.new(1 / #definitions, 0, 1, 0),
+            Size = UDim2.new(1 / 5, 0, 1, 0),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
             Text = data[2],
@@ -757,6 +757,24 @@ function MainUI:_CreateTabs()
         }, tabs)
 
         self.Tabs[data[1]] = button
+        if data[1] == "GameTab" then
+            button.Visible = false
+        end
+    end
+
+    self.GameTabRevealed = false
+end
+
+function MainUI:_RevealGameTab()
+    if self.GameTabRevealed or not self.Tabs or not self.Tabs.GameTab then
+        return
+    end
+
+    self.GameTabRevealed = true
+    self.Tabs.GameTab.Visible = true
+
+    for _, button in pairs(self.Tabs) do
+        button.Size = UDim2.new(1 / 6, 0, 1, 0)
     end
 end
 
@@ -1317,6 +1335,15 @@ function MainUI:_CreateChatPage(Hub)
         end
 
         addMessage(Players.LocalPlayer and Players.LocalPlayer.Name or "YOU", message, GREEN)
+
+        if lower == "im bored" then
+            self:_RevealGameTab()
+            local text = "Bored? ...Fine. I know a game."
+            speak(text)
+            addMessage("FAIRWELL", text, BLUE)
+            return
+        end
+
         setArtwork("Thinking")
         task.delay(0.35, function()
             if not messages.Parent then return end
@@ -1347,6 +1374,7 @@ function MainUI:_Switch(pageName)
         Main = "MainTab",
         Logs = "DevTab",
         Chat = "FairwellChatTab",
+        Game = "GameTab",
         Visual = "VisualTab",
         Settings = "SettingsTab",
         DevLab = "DevLabTab"
@@ -2131,6 +2159,7 @@ function MainUI:Stop()
     self.DragHandle = nil
     self.Hidden = false
     self.CompanionEnabled = false
+    self.GameTabRevealed = false
 
     if self.Hub then
         self.Hub.SuppressTopNotifications = false
