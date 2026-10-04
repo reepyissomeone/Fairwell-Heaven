@@ -13,7 +13,7 @@ local FPSCounter = {
 
 function FPSCounter.Start(self, Hub)
     local Settings = Hub:GetService("Settings")
-    if Settings and Settings:GetFeatureEnabled(self.Name, true) == false then return end
+    if Settings and Settings:GetFeatureEnabled(self.Name, true) == false then return false end
 
     local Player = Players.LocalPlayer
     if not Player then return end
