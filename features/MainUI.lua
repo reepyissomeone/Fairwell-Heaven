@@ -1,6 +1,7 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 4.3
+--// Version 4.4
+--// Adds animated minimized Fairwell notifications
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
@@ -1160,13 +1161,24 @@ AvatarStroke.Parent = AvatarFrame
 		Thinking = FAIRWELL_ASSET_BASE .. "thinking.png"
 	}
 
+	local MiniArtworkUrls = {
+		Body = FAIRWELL_ASSET_BASE .. "Fairwellmini.png",
+		Arms = FAIRWELL_ASSET_BASE .. "Fairwellminiarms.png"
+	}
+
 	local FairwellArtworkFiles = {
 		Silent = "FairwellHeaven/assets/Fairwell/Silent.png",
 		Talking = "FairwellHeaven/assets/Fairwell/talking.png",
 		Thinking = "FairwellHeaven/assets/Fairwell/thinking.png"
 	}
 
+	local MiniArtworkFiles = {
+		Body = "FairwellHeaven/assets/Fairwell/Fairwellmini.png",
+		Arms = "FairwellHeaven/assets/Fairwell/Fairwellminiarms.png"
+	}
+
 	local FairwellArtworkImages = {}
+	local MiniArtworkImages = {}
 
 	local function GetCustomAssetLoader()
 		if type(getcustomasset) == "function" then
@@ -1251,6 +1263,47 @@ AvatarStroke.Parent = AvatarFrame
 		Hub:Log("Failed to load Fairwell " .. State .. " artwork: " .. tostring(AssetOrError), "WARN")
 		return false
 	end
+
+	local function DownloadMiniArtwork(Name)
+		local FilePath = MiniArtworkFiles[Name]
+		local Url = MiniArtworkUrls[Name]
+		local AssetLoader = GetCustomAssetLoader()
+
+		if not FilePath or not Url or not AssetLoader then
+			return false
+		end
+
+		local Success, AssetOrError = pcall(function()
+			EnsureFolder("FairwellHeaven/assets/Fairwell")
+
+			if type(isfile) == "function" and isfile(FilePath) then
+				return AssetLoader(FilePath)
+			end
+
+			if type(writefile) ~= "function" then
+				error("writefile is unavailable")
+			end
+
+			local HttpSuccess, Data = pcall(function()
+				return game:HttpGet(Url .. "?cache=" .. tostring(math.floor(os.clock() * 1000000)))
+			end)
+
+			if not HttpSuccess or type(Data) ~= "string" or Data == "" then
+				error("download failed")
+			end
+
+			writefile(FilePath, Data)
+			return AssetLoader(FilePath)
+		end)
+
+		if Success and type(AssetOrError) == "string" and AssetOrError ~= "" then
+			MiniArtworkImages[Name] = AssetOrError
+			return true
+		end
+
+		Hub:Log("Failed to load Fairwell mini artwork: " .. tostring(Name) .. " / " .. tostring(AssetOrError), "WARN")
+		return false
+	end
 	-- Load the artwork before the chat starts so the first message and every
 	-- later chat state can immediately switch images.
 	local FairwellArtworkReady = false
@@ -1272,11 +1325,232 @@ AvatarStroke.Parent = AvatarFrame
 		Hub:Log("Thinking artwork is unavailable; chat will keep the current artwork.", "WARN")
 	end
 
+	for _, Name in ipairs({"Body", "Arms"}) do
+		DownloadMiniArtwork(Name)
+	end
+
 	Hub:Log(
 		"Fairwell artwork system initialized"
 		.. (FairwellArtworkReady and " and chat is ready." or "."),
 		"SUCCESS"
 	)
+
+	--==================================================
+	-- MINIMIZED FAIRWELL NOTIFICATIONS
+	--==================================================
+	-- When the main window is collapsed, Fairwell can temporarily appear
+	-- above the mini bar and speak the same message as Hub:Notify.
+
+	local MiniRoot = Instance.new("Frame")
+	MiniRoot.Name = "FairwellMiniNotification"
+	MiniRoot.AnchorPoint = Vector2.new(0.5, 1)
+	MiniRoot.Size = UDim2.fromOffset(320, 258)
+	MiniRoot.BackgroundTransparency = 1
+	MiniRoot.Visible = false
+	MiniRoot.ZIndex = 60
+	MiniRoot.Parent = Gui
+
+	local MiniScale = Instance.new("UIScale")
+	MiniScale.Scale = 0.86
+	MiniScale.Parent = MiniRoot
+
+	local MiniBubble = Instance.new("TextLabel")
+	MiniBubble.Name = "SpeechBubble"
+	MiniBubble.Position = UDim2.fromOffset(10, 4)
+	MiniBubble.Size = UDim2.new(1, -20, 0, 72)
+	MiniBubble.BackgroundColor3 = PANEL
+	MiniBubble.BackgroundTransparency = 0.02
+	MiniBubble.BorderSizePixel = 0
+	MiniBubble.Text = ""
+	MiniBubble.TextColor3 = WHITE
+	MiniBubble.TextSize = 12
+	MiniBubble.Font = Enum.Font.GothamBold
+	MiniBubble.TextWrapped = true
+	MiniBubble.TextXAlignment = Enum.TextXAlignment.Center
+	MiniBubble.TextYAlignment = Enum.TextYAlignment.Center
+	MiniBubble.ZIndex = 63
+	MiniBubble.Parent = MiniRoot
+
+	local MiniBubbleCorner = Instance.new("UICorner")
+	MiniBubbleCorner.CornerRadius = UDim.new(0, 12)
+	MiniBubbleCorner.Parent = MiniBubble
+
+	local MiniBubbleStroke = Instance.new("UIStroke")
+	MiniBubbleStroke.Color = BLUE
+	MiniBubbleStroke.Thickness = 2
+	MiniBubbleStroke.Parent = MiniBubble
+
+	local MiniTail = Instance.new("Frame")
+	MiniTail.Name = "Tail"
+	MiniTail.AnchorPoint = Vector2.new(0.5, 0.5)
+	MiniTail.Position = UDim2.new(0.5, 0, 0, 75)
+	MiniTail.Size = UDim2.fromOffset(18, 18)
+	MiniTail.Rotation = 45
+	MiniTail.BackgroundColor3 = PANEL
+	MiniTail.BorderSizePixel = 0
+	MiniTail.ZIndex = 61
+	MiniTail.Parent = MiniRoot
+
+	local MiniAvatar = Instance.new("ImageLabel")
+	MiniAvatar.Name = "Body"
+	MiniAvatar.Position = UDim2.fromOffset(80, 82)
+	MiniAvatar.Size = UDim2.fromOffset(160, 160)
+	MiniAvatar.BackgroundTransparency = 1
+	MiniAvatar.BorderSizePixel = 0
+	MiniAvatar.Image = ""
+	MiniAvatar.ScaleType = Enum.ScaleType.Fit
+	MiniAvatar.ZIndex = 60
+	MiniAvatar.Parent = MiniRoot
+
+	local MiniArms = Instance.new("ImageLabel")
+	MiniArms.Name = "Arms"
+	MiniArms.Position = MiniAvatar.Position
+	MiniArms.Size = MiniAvatar.Size
+	MiniArms.BackgroundTransparency = 1
+	MiniArms.BorderSizePixel = 0
+	MiniArms.Image = ""
+	MiniArms.ScaleType = Enum.ScaleType.Fit
+	MiniArms.ZIndex = 61
+	MiniArms.Parent = MiniRoot
+
+	local MiniNotificationQueue = {}
+	local MiniNotificationShowing = false
+	local MiniNotificationToken = 0
+	local MiniArmsTween
+
+	local function UpdateMiniPosition()
+		if not Window or not Window.Parent then
+			return
+		end
+
+		local CenterX = Window.AbsolutePosition.X + (Window.AbsoluteSize.X * 0.5)
+		local TopY = Window.AbsolutePosition.Y - 6
+		MiniRoot.Position = UDim2.fromOffset(CenterX, TopY)
+	end
+
+	local function StopMiniAnimation()
+		MiniNotificationToken += 1
+		if MiniArmsTween then
+			MiniArmsTween:Cancel()
+			MiniArmsTween = nil
+		end
+	end
+
+	local function HideMiniNotification(Immediate)
+		StopMiniAnimation()
+
+		if not MiniRoot.Visible then
+			return
+		end
+
+		if Immediate then
+			MiniRoot.Visible = false
+			MiniScale.Scale = 0.86
+			MiniBubble.BackgroundTransparency = 0.02
+			MiniBubble.TextTransparency = 0
+			MiniAvatar.ImageTransparency = 0
+			MiniArms.ImageTransparency = 0
+			return
+		end
+
+		local FadeInfo = TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+		TweenService:Create(MiniScale, FadeInfo, {Scale = 0.86}):Play()
+		TweenService:Create(MiniBubble, FadeInfo, {BackgroundTransparency = 1, TextTransparency = 1}):Play()
+		TweenService:Create(MiniAvatar, FadeInfo, {ImageTransparency = 1}):Play()
+		TweenService:Create(MiniArms, FadeInfo, {ImageTransparency = 1}):Play()
+		task.delay(0.3, function()
+			if not MiniNotificationShowing then
+				MiniRoot.Visible = false
+			end
+		end)
+	end
+
+	local function ShowMiniNotification(TitleText, MessageText, Kind)
+		if not self.Collapsed or not Gui.Enabled then
+			return
+		end
+		if not MiniArtworkImages.Body or not MiniArtworkImages.Arms then
+			return
+		end
+
+		MiniNotificationShowing = true
+		MiniNotificationToken += 1
+		local ThisToken = MiniNotificationToken
+
+		local KindName = string.upper(tostring(Kind or "INFO"))
+		local Accent = KindName == "ERROR" and Color3.fromRGB(255, 75, 90)
+			or KindName == "WARNING" and Color3.fromRGB(255, 175, 55)
+			or KindName == "SUCCESS" and Color3.fromRGB(70, 210, 130)
+			or BLUE
+
+		UpdateMiniPosition()
+		MiniRoot.Visible = true
+		MiniScale.Scale = 0.82
+		MiniBubble.BackgroundTransparency = 0.02
+		MiniBubble.TextTransparency = 0
+		MiniAvatar.ImageTransparency = 0
+		MiniArms.ImageTransparency = 0
+		MiniBubbleStroke.Color = Accent
+		MiniBubble.Text = string.upper(tostring(TitleText or "FAIRWELL")) .. "\n" .. tostring(MessageText or "")
+		MiniAvatar.Image = MiniArtworkImages.Body
+		MiniArms.Image = MiniArtworkImages.Arms
+		MiniArms.Rotation = 0
+
+		TweenService:Create(MiniScale, TweenInfo.new(0.42, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+
+		task.spawn(function()
+			while MiniRoot.Visible and MiniNotificationShowing and ThisToken == MiniNotificationToken do
+				MiniArmsTween = TweenService:Create(MiniArms, TweenInfo.new(0.42, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Rotation = -5})
+				MiniArmsTween:Play()
+			MiniArmsTween.Completed:Wait()
+				if ThisToken ~= MiniNotificationToken then break end
+				MiniArmsTween = TweenService:Create(MiniArms, TweenInfo.new(0.42, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Rotation = 5})
+				MiniArmsTween:Play()
+				MiniArmsTween.Completed:Wait()
+			end
+		end)
+
+		local Duration = math.clamp(1.8 + (#tostring(MessageText or "") * 0.035), 2.4, 5.5)
+		task.delay(Duration, function()
+			if ThisToken ~= MiniNotificationToken then
+				return
+			end
+			HideMiniNotification(false)
+			task.delay(0.32, function()
+				if ThisToken == MiniNotificationToken then
+					MiniNotificationShowing = false
+				end
+			end)
+		end)
+	end
+
+	local function ProcessMiniNotificationQueue()
+		if MiniNotificationShowing or not self.Collapsed then
+			return
+		end
+
+		local Next = table.remove(MiniNotificationQueue, 1)
+		if not Next then
+			return
+		end
+
+		ShowMiniNotification(Next.Title, Next.Message, Next.Kind)
+	end
+
+	if Hub.NotificationEvent then
+		self.MiniNotificationConnection = Hub.NotificationEvent.Event:Connect(function(TitleText, MessageText, Kind)
+			if not self.Collapsed then
+				return
+			end
+
+			table.insert(MiniNotificationQueue, {
+				Title = TitleText,
+				Message = MessageText,
+				Kind = Kind
+			})
+			ProcessMiniNotificationQueue()
+		end)
+	end
 
 	local FairwellSpeechId = 0
 
@@ -2198,284 +2472,3 @@ AvatarStroke.Parent = AvatarFrame
 							XOffset = Position.X.Offset,
 							YScale = Position.Y.Scale,
 							YOffset = Position.Y.Offset
-						},
-						Collapsed = self.Collapsed == true
-					},
-					true
-				)
-
-			end
-
-		end
-	end)
-
-	self.DragConnection = UserInputService.InputChanged:Connect(function(Input)
-		if not Dragging then
-			return
-		end
-
-		if Input.UserInputType ~=
-			Enum.UserInputType.MouseMovement
-			and Input.UserInputType ~=
-			Enum.UserInputType.Touch then
-			return
-		end
-
-		local Delta =
-			Input.Position - DragStart
-
-		Window.Position =
-			UDim2.new(
-				StartPosition.X.Scale,
-				StartPosition.X.Offset + Delta.X,
-				StartPosition.Y.Scale,
-				StartPosition.Y.Offset + Delta.Y
-			)
-	end)
-
-	--==================================================
-	-- COLLAPSE
-	--==================================================
-
-	self.Collapsed = false
-	self.ExpandedSize = self.TargetSize
-	self.ExpandedPosition =
-		UDim2.fromScale(0.5, 0.5)
-
-	ToggleButton.MouseButton1Click:Connect(function()
-		if self.Collapsed then
-			self.Collapsed = false
-
-			ToggleButton.Text = "−"
-
-			local Tween =
-				TweenService:Create(
-					Window,
-					TweenInfo.new(
-						0.35,
-						Enum.EasingStyle.Quint,
-						Enum.EasingDirection.Out
-					),
-					{
-						Size =
-							self.ExpandedSize,
-
-						Position =
-							self.ExpandedPosition
-					}
-				)
-
-			Tween:Play()
-		else
-			self.ExpandedSize =
-				Window.Size
-
-			self.ExpandedPosition =
-				Window.Position
-
-			self.Collapsed = true
-
-			ToggleButton.Text = "+"
-
-			local Tween =
-				TweenService:Create(
-					Window,
-					TweenInfo.new(
-						0.35,
-						Enum.EasingStyle.Quint,
-						Enum.EasingDirection.Out
-					),
-					{
-						Size =
-							UDim2.fromOffset(
-								270,
-								48
-							),
-
-						Position =
-							UDim2.new(
-								0.5,
-								0,
-								1,
-								-12
-							)
-					}
-				)
-
-			Tween:Play()
-
-			local Settings = Hub:GetService("Settings")
-
-			if Settings then
-				local Position = Window.Position
-
-				Settings:Set(
-					"Window",
-					{
-						Position = {
-							XScale = Position.X.Scale,
-							XOffset = Position.X.Offset,
-							YScale = Position.Y.Scale,
-							YOffset = Position.Y.Offset
-						},
-						Collapsed = self.Collapsed == true
-					},
-					true
-				)
-			end
-		end
-	end)
-
-	--==================================================
-	-- LIVE STATUS
-	--==================================================
-
-	self.StatusConnection =
-		RunService.Heartbeat:Connect(function()
-			if not Gui.Parent then
-				return
-			end
-
-			if self.StatusTimer
-				and os.clock() - self.StatusTimer < 0.25 then
-				return
-			end
-
-			self.StatusTimer = os.clock()
-
-			self:UpdateStatus(Hub)
-			if self.DevLogRefresh then
-				self.DevLogRefresh()
-			end
-		end)
-
-	self.Gui = Gui
-	self.Window = Window
-
-	--------------------------------------------------
-	-- RESTORE PERSISTENT WINDOW SETTINGS
-	--------------------------------------------------
-
-	local Settings = Hub:GetService("Settings")
-
-	if Settings then
-
-		local WindowSettings =
-			Settings:Get("Window", {})
-
-		local SavedPosition =
-			WindowSettings.Position
-
-		if type(SavedPosition) == "table" then
-
-			Window.Position =
-				UDim2.new(
-					tonumber(SavedPosition.XScale) or 0.5,
-					tonumber(SavedPosition.XOffset) or 0,
-					tonumber(SavedPosition.YScale) or 0.5,
-					tonumber(SavedPosition.YOffset) or 0
-				)
-
-			self.ExpandedPosition =
-				Window.Position
-
-		end
-
-		if WindowSettings.Collapsed == true then
-
-			self.Collapsed = true
-			ToggleButton.Text = "+"
-
-			Window.Size =
-				UDim2.fromOffset(
-					270,
-					48
-				)
-
-			Window.Position =
-				UDim2.new(
-					0.5,
-					0,
-					1,
-					-12
-				)
-
-		end
-
-	end
-
-	Hub:Log(
-		"Main UI v4.3 initialized with repaired Fairwell chat, artwork, status tracking, and startup reveal."
-	)
-end
-
-function MainUI:Reveal()
-	if not self.Gui or not self.Gui.Parent then
-		return
-	end
-
-	self.Gui.Enabled = true
-
-	if self.Window then
-		local ExpandTween = TweenService:Create(
-			self.Window,
-			TweenInfo.new(0.65, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
-			{
-				Size = self.TargetSize
-			}
-		)
-		ExpandTween:Play()
-	end
-end
-
-function MainUI.Stop(self)
-
-	local Hub = self.Hub
-
-	if Hub then
-		local Settings = Hub:GetService("Settings")
-
-		if Settings then
-			local Position =
-				self.Window
-				and self.Window.Position
-
-			if Position then
-				Settings:Set(
-					"Window",
-					{
-						Position = {
-							XScale = Position.X.Scale,
-							XOffset = Position.X.Offset,
-							YScale = Position.Y.Scale,
-							YOffset = Position.Y.Offset
-						},
-						Collapsed = self.Collapsed == true
-					},
-					true
-				)
-			end
-		end
-	end
-
-	if self.StatusConnection then
-		self.StatusConnection:Disconnect()
-		self.StatusConnection = nil
-	end
-
-	if self.DragConnection then
-		self.DragConnection:Disconnect()
-		self.DragConnection = nil
-	end
-
-
-	if self.Gui then
-		self.Gui:Destroy()
-		self.Gui = nil
-	end
-
-	self.Status = nil
-	self.Hub = nil
-end
-
-return MainUI
