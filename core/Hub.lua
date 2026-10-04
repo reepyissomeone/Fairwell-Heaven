@@ -324,7 +324,7 @@ function Hub:Notify(title, message, kind, duration)
 		end)
 	end
 
-	closeButton.MouseButton1Click:Connect(close)
+	closeButton.Activated:Connect(close)
 
 	card.Position = UDim2.new(1, 30, 0, 0)
 	TweenService:Create(card, TweenInfo.new(0.38, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
@@ -456,8 +456,8 @@ function Hub:Prompt(title, message, yesText, noText, duration)
 		end)
 	end
 
-	yes.MouseButton1Click:Connect(function() finish(true) end)
-	no.MouseButton1Click:Connect(function() finish(false) end)
+	yes.Activated:Connect(function() finish(true) end)
+	no.Activated:Connect(function() finish(false) end)
 
 	TweenService:Create(panel, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
 		Position = UDim2.new(0.5, 0, 0, 18)
