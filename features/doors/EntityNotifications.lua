@@ -221,42 +221,51 @@ function EntityNotifications.Start(self, Hub)
     self.LastAlert = {}
     self.Hub = Hub
     self.Connections = {}
+    self.HookedLiveContainers = {}
 
-    local LiveEntities = GetLiveEntities()
+    local function HookLiveEntities(LiveEntities)
+        if not LiveEntities or self.HookedLiveContainers[LiveEntities] then
+            return
+        end
 
-    if LiveEntities then
+        self.HookedLiveContainers[LiveEntities] = true
+
         table.insert(self.Connections, LiveEntities.ChildAdded:Connect(function(Object)
             Detect(self, Object)
         end))
 
-        -- Also catch entities that are inserted as a container and populated
-        -- a frame later.
+        -- Catch entities whose root is created first and named later,
+        -- or whose actual Creak object is inserted one level deeper.
         table.insert(self.Connections, LiveEntities.DescendantAdded:Connect(function(Object)
             Detect(self, Object)
         end))
+
+        ScanExisting(self)
     end
 
-    -- Catch Live Entities itself if DOORS creates it after the feature starts.
-    table.insert(self.Connections, Workspace.ChildAdded:Connect(function(Object)
+    local LiveEntities = GetLiveEntities()
+    if LiveEntities then
+        HookLiveEntities(LiveEntities)
+    end
+
+    -- Catch Live Entities whether it is created directly under Workspace
+    -- or inside another runtime container.
+    table.insert(self.Connections, Workspace.DescendantAdded:Connect(function(Object)
         if NormalizeName(Object.Name) == "liveentities" then
             task.defer(function()
-                if self.Hub ~= Hub then return end
-
-                local live = Object
-                table.insert(self.Connections, live.ChildAdded:Connect(function(entity)
-                    Detect(self, entity)
-                end))
-                table.insert(self.Connections, live.DescendantAdded:Connect(function(descendant)
-                    Detect(self, descendant)
-                end))
-
-                ScanExisting(self)
+                if self.Hub == Hub then
+                    HookLiveEntities(Object)
+                end
             end)
         end
     end))
 
     task.defer(function()
         if self.Hub == Hub then
+            local live = GetLiveEntities()
+            if live then
+                HookLiveEntities(live)
+            end
             ScanExisting(self)
         end
     end)
