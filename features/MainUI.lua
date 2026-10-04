@@ -1375,12 +1375,24 @@ function MainUI:_CreateCompanion(Hub)
         gui.Enabled = false
     end
 
+    -- From this point onward, Fairwell owns notifications whenever the
+    -- companion is actually visible.
+    if self.Hub then
+        self.Hub.SuppressTopNotifications =
+            self.CompanionEnabled == true and self.Hidden == true
+    end
+
     return true
 end
 
 function MainUI:SetVisible(visible)
     visible = visible == true
     self.Hidden = not visible
+
+    if self.Hub then
+        self.Hub.SuppressTopNotifications =
+            self.CompanionEnabled == true and not visible
+    end
 
     if self.Gui and self.Gui.Parent then
         self.Gui:SetAttribute("FairwellHidden", not visible)
@@ -1428,6 +1440,8 @@ function MainUI:Start(Hub)
     self.Gui = gui
     self.Hidden = false
     self.CompanionEnabled = true
+    self.Hub = Hub
+    Hub.SuppressTopNotifications = false
 
     -- Floating mobile toggle lives in its OWN ScreenGui.
     -- This keeps it visible even when the main window is hidden.
@@ -1655,6 +1669,11 @@ function MainUI:Stop()
     self.DragHandle = nil
     self.Hidden = false
     self.CompanionEnabled = false
+
+    if self.Hub then
+        self.Hub.SuppressTopNotifications = false
+        self.Hub = nil
+    end
 
     if self.NotificationConnection then
         self.NotificationConnection:Disconnect()
