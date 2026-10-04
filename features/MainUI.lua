@@ -924,8 +924,6 @@ end
 function MainUI:SetVisible(visible)
     visible = (visible == true)
 
-    -- Re-bind to the actual menu ScreenGui. This prevents the FW button
-    -- from controlling a stale/duplicate GUI instance after reloads.
     local player = Players.LocalPlayer
     local pg = player and player:FindFirstChild("PlayerGui")
     if pg then
@@ -942,18 +940,31 @@ function MainUI:SetVisible(visible)
         self.Gui.Enabled = visible
     end
 
-    if self.ToggleButton and self.ToggleButton.Parent then
-        self.ToggleButton.Visible = true
-        self.ToggleButton.Text = "FW"
-        self.ToggleButton.BackgroundColor3 = visible and PANEL2 or PANEL
-        local indicator = self.ToggleIndicator
-        if indicator then
-            indicator.Text = visible and "ON" or "OFF"
-            indicator.TextColor3 = visible and GREEN or GREY
+    -- Update the new switch from one source of truth.
+    local switch = self.ToggleSwitch
+    if switch and switch.Parent then
+        local track = self.ToggleTrack
+        local knob = self.ToggleKnob
+        local state = self.ToggleState
+
+        if track then
+            track.BackgroundColor3 = visible and BLUE or PANEL2
         end
+
+        if knob then
+            knob.Position = visible
+                and UDim2.new(1,-28,0.5,0)
+                or UDim2.new(0,4,0.5,0)
+        end
+
+        if state then
+            state.Text = visible and "ON" or "OFF"
+            state.TextColor3 = visible and GREEN or GREY
+        end
+
+        switch.Visible = true
     end
 
-    -- Companion is intentionally independent from the menu toggle.
     if self.CompanionGui then
         self.CompanionGui.Enabled = true
     end
@@ -1058,48 +1069,71 @@ function MainUI:Start(Hub)
     self:_Switch("Main")
     self:_StartDrag()
 
+    -- Standalone mobile-friendly Fairwell switch.
+    -- It controls only the main menu; the companion stays independent.
     local toggleGui=make("ScreenGui",{
         Name="FairwellHeaven_Toggle",
         ResetOnSpawn=false,
         IgnoreGuiInset=true,
         DisplayOrder=1000005
     },pg)
+
     local toggle=make("TextButton",{
-        Name="FW",
-        Position=UDim2.new(0,10,0.5,-34),
-        Size=UDim2.fromOffset(68,68),
-        BackgroundColor3=PANEL2,
+        Name="FWToggle",
+        Position=UDim2.new(0,12,0.5,-31),
+        Size=UDim2.fromOffset(86,62),
+        BackgroundColor3=BACKGROUND,
         BorderSizePixel=0,
-        Text="FW",
-        TextColor3=WHITE,
-        TextSize=16,
-        Font=Enum.Font.GothamBold,
-        Active=true,
-        AutoButtonColor=false
+        Text="",
+        AutoButtonColor=false,
+        Active=true
     },toggleGui)
-    round(toggle,14); line(toggle,BLUE,0.05)
+    round(toggle,12); line(toggle,BLUE,0.04)
 
-    local indicator=text(toggle,"Indicator","ON",
-        UDim2.new(0,0,1,-25),UDim2.new(1,0,0,13),8,GREEN)
-    indicator.TextXAlignment=Enum.TextXAlignment.Center
-    indicator.Font=Enum.Font.GothamBold
-    self.ToggleIndicator=indicator
+    local label=text(toggle,"Label","FAIRWELL",
+        UDim2.fromOffset(8,5),UDim2.new(1,-16,0,16),9,WHITE)
+    label.TextXAlignment=Enum.TextXAlignment.Left
+    label.Font=Enum.Font.GothamBold
 
-    text(toggle,"Hint","TOGGLE",
-        UDim2.new(0,0,1,-12),UDim2.new(1,0,0,10),6,GREY).TextXAlignment=Enum.TextXAlignment.Center
+    local track=make("Frame",{
+        Name="Track",
+        AnchorPoint=Vector2.new(0,0.5),
+        Position=UDim2.new(0,8,0,39),
+        Size=UDim2.fromOffset(70,16),
+        BackgroundColor3=PANEL2,
+        BorderSizePixel=0
+    },toggle)
+    round(track,8)
+
+    local knob=make("Frame",{
+        Name="Knob",
+        AnchorPoint=Vector2.new(0.5,0.5),
+        Position=UDim2.new(0,4,0.5,0),
+        Size=UDim2.fromOffset(24,24),
+        BackgroundColor3=WHITE,
+        BorderSizePixel=0
+    },track)
+    round(knob,12)
+
+    local state=text(toggle,"State","ON",
+        UDim2.new(0,0,0,39),UDim2.new(1,-8,0,16),8,GREEN)
+    state.TextXAlignment=Enum.TextXAlignment.Right
+    state.Font=Enum.Font.GothamBold
 
     self.ToggleGui=toggleGui
-    self.ToggleButton=toggle
+    self.ToggleSwitch=toggle
+    self.ToggleTrack=track
+    self.ToggleKnob=knob
+    self.ToggleState=state
 
-    -- Start from the actual ScreenGui state, then keep both controls synced.
     self:SetVisible(self.Gui and self.Gui.Enabled ~= false)
 
     tap(toggle,function()
-        local current = false
+        local current
         if self.Gui and self.Gui.Parent then
-            current = self.Gui.Enabled
+            current=self.Gui.Enabled
         else
-            current = self.MenuVisible == true
+            current=self.MenuVisible == true
         end
         self:SetVisible(not current)
     end)
@@ -1165,6 +1199,10 @@ function MainUI:Stop()
     self.Tabs=nil
     self.ToggleButton=nil
     self.ToggleIndicator=nil
+    self.ToggleSwitch=nil
+    self.ToggleTrack=nil
+    self.ToggleKnob=nil
+    self.ToggleState=nil
     self.MenuVisible=nil
     self.DragHandle=nil
     self.CompanionBubble=nil
