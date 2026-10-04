@@ -19,6 +19,7 @@ return {
 	-- Visual
 	"features/visual/FPSCounter.lua",
 	"features/visual/Clock.lua",
+	"features/visual/Fullbright.lua",
 	"features/visual/Crosshair.lua",
 	"features/visual/PerformanceHUD.lua",
 	"features/visual/DOORSItemLabels.lua",
