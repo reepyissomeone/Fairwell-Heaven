@@ -53,6 +53,11 @@ return {
                 return
             end
 
+            -- MainUI owns visibility. Never reopen a deliberately hidden UI.
+            if self.Gui:GetAttribute("FairwellHidden") == true then
+                return
+            end
+
             if not self.Gui.Enabled then
                 self.Gui.Enabled = true
             end
