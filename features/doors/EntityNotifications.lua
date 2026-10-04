@@ -31,6 +31,18 @@ local ENTITY_ALIASES = {
 
 local COOLDOWN = 1.25
 
+local function IsScreechObject(object)
+    if not object then return false end
+
+    -- Screech may be a Model, or a descendant/part inside the runtime model.
+    if Normalize(object.Name) == "screech" then
+        return true
+    end
+
+    local model = object:FindFirstAncestorOfClass("Model")
+    return model and Normalize(model.Name) == "screech"
+end
+
 local function Normalize(value)
     return string.lower(tostring(value or "")):gsub("[%s_%-%./]", "")
 end
@@ -153,21 +165,22 @@ local function ScanTree(self, root)
     for _, child in ipairs(root:GetDescendants()) do
         if child:IsA("Model") or child:IsA("Folder") then
             TryDetect(self, child)
+        end
 
-            -- Screech can be assembled after its Model is created.
-            -- Retry the model briefly so detection does not depend on the
-            -- exact frame when its descendants are inserted.
-            if Normalize(child.Name) == "screech" then
-                task.delay(0.05, function()
-                    if self.Hub and child.Parent then TryDetect(self, child) end
-                end)
-                task.delay(0.25, function()
-                    if self.Hub and child.Parent then TryDetect(self, child) end
-                end)
-                task.delay(0.75, function()
-                    if self.Hub and child.Parent then TryDetect(self, child) end
-                end)
-            end
+        -- Screech is sometimes created/assembled under a generic runtime
+        -- object. Catch the actual Screech object and resolve its model.
+        if IsScreechObject(child) then
+            TryDetect(self, child)
+
+            task.delay(0.05, function()
+                if self.Hub and child.Parent then TryDetect(self, child) end
+            end)
+            task.delay(0.25, function()
+                if self.Hub and child.Parent then TryDetect(self, child) end
+            end)
+            task.delay(0.75, function()
+                if self.Hub and child.Parent then TryDetect(self, child) end
+            end)
         end
     end
 end
@@ -201,10 +214,13 @@ local function HookContainer(self, container)
     end))
 
     table.insert(self.Connections, container.DescendantAdded:Connect(function(object)
-        if object:IsA("Model") or object:IsA("Folder") then
+        if object:IsA("Model") or object:IsA("Folder") or IsScreechObject(object) then
             task.defer(function()
                 if self.Hub then
                     TryDetect(self, object)
+                    if IsScreechObject(object) then
+                        ScanTree(self, object)
+                    end
                 end
             end)
         end
@@ -233,8 +249,29 @@ function EntityNotifications.Start(self, Hub)
 
     ScanTree(self, Workspace)
 
-    -- Future entities and containers.
+    -- Catch models that are inserted under a generic container and then
+    -- renamed to Screech after creation.
+    local function WatchModelName(model)
+        if not model:IsA("Model") then return end
+
+        table.insert(self.Connections, model:GetPropertyChangedSignal("Name"):Connect(function()
+            if self.Hub and IsScreechObject(model) then
+                TryDetect(self, model)
+                ScanTree(self, model)
+            end
+        end))
+    end
+
+    for _, object in ipairs(Workspace:GetDescendants()) do
+        if object:IsA("Model") then
+            WatchModelName(object)
+        end
+    end
+
     table.insert(self.Connections, Workspace.DescendantAdded:Connect(function(object)
+        if object:IsA("Model") then
+            WatchModelName(object)
+        end
         if not self.Hub then return end
 
         local normalized = Normalize(object.Name)
@@ -248,8 +285,19 @@ function EntityNotifications.Start(self, Hub)
             return
         end
 
-        -- Only process models/folders. Their descendants are handled by
-        -- ResolveEntity, avoiding thousands of unnecessary BasePart checks.
+        -- Screech gets a dedicated path because its runtime object can be
+        -- inserted/assembled under a generic model.
+        if IsScreechObject(object) then
+            task.defer(function()
+                if self.Hub then
+                    TryDetect(self, object)
+                    ScanTree(self, object)
+                end
+            end)
+            return
+        end
+
+        -- Only process models/folders for normal entities.
         if object:IsA("Model") or object:IsA("Folder") then
             task.defer(function()
                 if self.Hub then
