@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 4.0
+--// Version 4.1
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
@@ -570,7 +570,7 @@ function MainUI.Start(self, Hub)
 
 	local Old =
 		PlayerGui:FindFirstChild(
-			"FairwellHeaven_Main"
+			"FairwellHeaven_MainUI"
 		)
 
 	if Old then
@@ -581,11 +581,13 @@ function MainUI.Start(self, Hub)
 		Instance.new("ScreenGui")
 
 	Gui.Name =
-		"FairwellHeaven_Main"
+		"FairwellHeaven_MainUI"
 
 	Gui.ResetOnSpawn = false
 	Gui.IgnoreGuiInset = true
 	Gui.DisplayOrder = 999999
+
+	Gui.Enabled = false
 
 	Gui.Parent =
 		PlayerGui
@@ -606,7 +608,7 @@ function MainUI.Start(self, Hub)
 		UDim2.fromScale(0.5, 0.5)
 
 	Window.Size =
-		self.TargetSize
+		UDim2.fromScale(0.55, 0.32)
 
 	Window.BackgroundColor3 =
 		BACKGROUND
@@ -685,7 +687,7 @@ function MainUI.Start(self, Hub)
 	Version.BackgroundTransparency = 1
 
 	Version.Text =
-		"FAIRWELL HEAVEN • v4.0"
+		"FAIRWELL HEAVEN • v4.1"
 
 	Version.TextColor3 =
 		GREY
@@ -2291,7 +2293,7 @@ AvatarStroke.Parent = AvatarFrame
 	end
 
 	Hub:Log(
-		"Main UI v4.0 initialized with Fairwell artwork assets."
+		"Main UI v4.1 initialized with Fairwell artwork assets and startup reveal."
 	)
 end
 
@@ -2301,6 +2303,17 @@ function MainUI:Reveal()
 	end
 
 	self.Gui.Enabled = true
+
+	if self.Window then
+		local ExpandTween = TweenService:Create(
+			self.Window,
+			TweenInfo.new(0.65, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+			{
+				Size = self.TargetSize
+			}
+		)
+		ExpandTween:Play()
+	end
 end
 
 function MainUI.Stop(self)
