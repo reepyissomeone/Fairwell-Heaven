@@ -22,20 +22,24 @@ local function IsSeekRoom(Room)
 		return false
 	end
 
-	local function LooksLikeSeek(Name)
-		Name = string.lower(tostring(Name or ""))
-		return Name == "seek"
-			or string.find(Name, "seekroom", 1, true) ~= nil
-			or string.find(Name, "seek_room", 1, true) ~= nil
-	end
+	-- Do not scan every descendant for the word "Seek".
+	-- DOORS rooms contain many ordinary assets/markers with Seek-related
+	-- names. We only accept a dedicated Seek model/room container.
+	local RoomName = string.lower(tostring(Room.Name or ""))
 
-	if LooksLikeSeek(Room.Name) then
+	if RoomName == "seek" or RoomName == "seekroom" or RoomName == "seek_room" then
 		return true
 	end
 
-	for _, Object in ipairs(Room:GetDescendants()) do
-		if LooksLikeSeek(Object.Name) then
-			return true
+	for _, Object in ipairs(Room:GetChildren()) do
+		if Object:IsA("Model") then
+			local Name = string.lower(tostring(Object.Name or ""))
+
+			if Name == "seek"
+				or Name == "seekroom"
+				or Name == "seek_room" then
+				return true
+			end
 		end
 	end
 
