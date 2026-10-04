@@ -59,6 +59,12 @@ end
 local COOLDOWN = 2
 
 local function Notify(Hub, Name)
+    local Brain = Hub and Hub:GetFeature("Fairwell Companion Brain")
+    if Brain and type(Brain.OnEntity) == "function" then
+        Brain:OnEntity(Name)
+        return
+    end
+
     local MainUI = Hub and Hub:GetFeature("Main UI")
     local Sprite = EntitySprites[Name]
 
