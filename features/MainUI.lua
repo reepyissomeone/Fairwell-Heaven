@@ -7,7 +7,6 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local ContentProvider = game:GetService("ContentProvider")
 
 local MainUI = {
 	Name = "Main UI",
@@ -955,7 +954,7 @@ function MainUI.Start(self, Hub)
 	local ChatInfo = MakeLabel(ChatScroll, "ChatInfo", "Talk to Fairwelladmi. He's right here.", UDim2.new(1, -10, 0, 24), UDim2.new(0, 5, 0, 38))
 	ChatInfo.TextColor3 = GREY
 	ChatInfo.TextSize = 10
-	ChatInfo.Text = "Live avatar • Fairwelladmi • Chat ready"
+	ChatInfo.Text = "Artwork character • Fairwelladmi • Chat ready"
 
 	local ChatStage = Instance.new("Frame")
 	ChatStage.Name = "FairwellStage"
@@ -1091,9 +1090,33 @@ AvatarStroke.Parent = AvatarFrame
 	local FairwellArtworkImages = {}
 
 	local function GetCustomAssetLoader()
-		if type(getcustomasset) == "function" then return getcustomasset end
-		if type(getsynasset) == "function" then return getsynasset end
+		if type(getcustomasset) == "function" then
+			return getcustomasset
+		end
+		if type(getsynasset) == "function" then
+			return getsynasset
+		end
+		if type(getcustomassetfromfile) == "function" then
+			return getcustomassetfromfile
+		end
 		return nil
+	end
+
+	local function EnsureFolder(Path)
+		if type(makefolder) ~= "function" then
+			return
+		end
+
+		local Parts = {}
+		for Part in string.gmatch(Path, "[^/]+") do
+			table.insert(Parts, Part)
+		end
+
+		local Current = ""
+		for _, Part in ipairs(Parts) do
+			Current = Current == "" and Part or Current .. "/" .. Part
+			pcall(makefolder, Current)
+		end
 	end
 
 	local function SetFairwellArtwork(State)
@@ -1108,40 +1131,47 @@ AvatarStroke.Parent = AvatarFrame
 		local Url = FairwellArtworkUrls[State]
 		local AssetLoader = GetCustomAssetLoader()
 
-		if not FilePath or not Url or not AssetLoader then
-			Hub:Log("Custom asset loading is unavailable; Fairwell artwork cannot be mounted.", "WARN")
+		if not FilePath or not Url then
+			Hub:Log("Missing Fairwell artwork configuration for " .. tostring(State), "ERROR")
 			return false
 		end
 
-		local Success, Asset = pcall(function()
+		if not AssetLoader then
+			Hub:Log("This executor does not expose a custom-asset loader; Fairwell artwork cannot be displayed.", "WARN")
+			return false
+		end
+
+		local Success, AssetOrError = pcall(function()
+			EnsureFolder("FairwellHeaven/assets/Fairwell")
+
 			if type(isfile) == "function" and isfile(FilePath) then
 				return AssetLoader(FilePath)
-			end
-
-			if type(makefolder) == "function" then
-				pcall(makefolder, "FairwellHeaven")
-				pcall(makefolder, "FairwellHeaven/assets")
-				pcall(makefolder, "FairwellHeaven/assets/Fairwell")
 			end
 
 			if type(writefile) ~= "function" then
 				error("writefile is unavailable")
 			end
 
-			local Data = game:HttpGet(Url .. "?cache=" .. tostring(math.floor(os.clock() * 1000000)))
+			local HttpSuccess, Data = pcall(function()
+				return game:HttpGet(Url .. "?cache=" .. tostring(math.floor(os.clock() * 1000000)))
+			end)
+
+			if not HttpSuccess or type(Data) ~= "string" or Data == "" then
+				error("download failed")
+			end
+
 			writefile(FilePath, Data)
 			return AssetLoader(FilePath)
 		end)
 
-		if Success and type(Asset) == "string" and Asset ~= "" then
-			FairwellArtworkImages[State] = Asset
+		if Success and type(AssetOrError) == "string" and AssetOrError ~= "" then
+			FairwellArtworkImages[State] = AssetOrError
 			return true
 		end
 
-		Hub:Log("Failed to load Fairwell " .. State .. " artwork: " .. tostring(Asset), "WARN")
+		Hub:Log("Failed to load Fairwell " .. State .. " artwork: " .. tostring(AssetOrError), "WARN")
 		return false
 	end
-
 	task.spawn(function()
 		for _, State in ipairs({"Silent", "Talking", "Thinking"}) do
 			DownloadFairwellArtwork(State)
@@ -1154,6 +1184,8 @@ AvatarStroke.Parent = AvatarFrame
 		end
 
 		Hub:Log("Fairwell artwork system initialized.", "SUCCESS")
+			if not FairwellArtworkImages.Talking then Hub:Log("Talking artwork is unavailable.", "WARN") end
+			if not FairwellArtworkImages.Thinking then Hub:Log("Thinking artwork is unavailable.", "WARN") end
 	end)
 
 	SetFairwellArtwork("Silent")
