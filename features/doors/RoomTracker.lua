@@ -230,6 +230,14 @@ function RoomTracker.Start(self, Hub)
 								return
 							end
 
+							-- Give DOORS time to finish cloning/populating the room
+							-- before Fairwell tries to read it.
+							task.wait(1.25)
+
+							if Token ~= self.SeekRoomToken or Doors.CurrentRoom ~= NewRoom then
+								return
+							end
+
 							local Comment = AnalyzeRoom(NewRoom)
 							if Comment then
 								TellFairwell(Hub, Comment, 4)
