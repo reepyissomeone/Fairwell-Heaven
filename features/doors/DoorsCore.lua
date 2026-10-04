@@ -1,7 +1,7 @@
 --// FAIRWELL HEAVEN
 --// DOORS Core
---// Version 1.1
---// Uses the player's position when possible; falls back to highest loaded room.
+--// Version 1.2
+--// More reliable room centers and throttled room checks.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -26,6 +26,45 @@ end
 
 function Doors:GetRoomCenter(room)
     if not room then return nil end
+
+    -- Prefer the room's model bounds instead of the first arbitrary
+    -- BasePart (which can be furniture, a prop, or a trigger).
+    if room:IsA("Model") then
+        local Success, BoundsCFrame = pcall(function()
+            local CFrameValue = room:GetBoundingBox()
+            return CFrameValue
+        end)
+
+        if Success and BoundsCFrame then
+            return BoundsCFrame.Position
+        end
+    end
+
+    -- DOORS rooms can also expose a Door model/part. Prefer that over
+    -- an arbitrary descendant when a bounding box is unavailable.
+    local Door = room:FindFirstChild("Door")
+    if Door then
+        if Door:IsA("BasePart") then
+            return Door.Position
+        end
+
+        if Door:IsA("Model") then
+            local Success, BoundsCFrame = pcall(function()
+                local CFrameValue = Door:GetBoundingBox()
+                return CFrameValue
+            end)
+
+            if Success and BoundsCFrame then
+                return BoundsCFrame.Position
+            end
+        end
+
+        local DoorPart = Door:FindFirstChildWhichIsA("BasePart", true)
+        if DoorPart then
+            return DoorPart.Position
+        end
+    end
+
     local Part = room:FindFirstChildWhichIsA("BasePart", true)
     return Part and Part.Position or nil
 end
@@ -76,8 +115,19 @@ function Doors.Start(self, Hub)
         self:UpdatePlayer()
     end)
 
-    self.UpdateConnection = RunService.Heartbeat:Connect(function()
+    local RoomCheckTimer = 0
+
+    self.UpdateConnection = RunService.Heartbeat:Connect(function(DeltaTime)
+        RoomCheckTimer += DeltaTime
+
+        -- Room detection does not need to run every rendered frame.
+        if RoomCheckTimer < 0.10 then
+            return
+        end
+
+        RoomCheckTimer = 0
         self:UpdatePlayer()
+
         local NewRoom = self:GetCurrentRoom()
         if NewRoom ~= self.CurrentRoom then
             local OldRoom = self.CurrentRoom
