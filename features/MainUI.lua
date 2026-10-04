@@ -1479,10 +1479,12 @@ AvatarStroke.Parent = AvatarFrame
 		end
 
 		local CenterX = Window.AbsolutePosition.X + (Window.AbsoluteSize.X * 0.5)
-		local TopY = Window.AbsolutePosition.Y - 6
+		local MenuBottomY = Window.AbsolutePosition.Y + Window.AbsoluteSize.Y + 2
 
-		MiniBackRoot.Position = UDim2.fromOffset(CenterX, TopY)
-		MiniFrontRoot.Position = UDim2.fromOffset(CenterX, TopY)
+		-- The mini layers use AnchorPoint (0.5, 1), so their position is
+		-- the bottom edge of the collapsed menu.
+		MiniBackRoot.Position = UDim2.fromOffset(CenterX, MenuBottomY)
+		MiniFrontRoot.Position = UDim2.fromOffset(CenterX, MenuBottomY)
 	end
 
 	local function ResetMiniLayers()
@@ -1694,7 +1696,6 @@ AvatarStroke.Parent = AvatarFrame
 	ProcessMiniNotificationQueue = function()
 		if MiniNotificationShowing
 			or not self.Collapsed
-			or not MiniFrontGui.Enabled
 			or not MiniFrontGui.Enabled then
 			return
 		end
@@ -1720,7 +1721,16 @@ AvatarStroke.Parent = AvatarFrame
 		self.MiniNotificationConnection =
 			Hub.NotificationEvent.Event:Connect(function(TitleText, MessageText, Kind)
 				if self.Collapsed then
+					SetNormalNotificationsVisible(false)
 					QueueMiniNotification(TitleText, MessageText, Kind)
+
+					-- Hub:Notify builds its normal card immediately after firing
+					-- NotificationEvent. Re-hide it on the next task step as well.
+					task.defer(function()
+						if self.Collapsed then
+							SetNormalNotificationsVisible(false)
+						end
+					end)
 				end
 			end)
 	end
@@ -3024,7 +3034,7 @@ VisualInfo.TextSize = 10
 	end
 
 	Hub:Log(
-		"Main UI v4.7 initialized with Fairwell chat, visual controls, and layered mini Fairwell notifications."
+		"Main UI v4.8 initialized with menu-anchored Fairwell mini notifications."
 	)
 end
 
