@@ -718,18 +718,30 @@ function MainUI:_CreateSimplePage(name, titleText)
 end
 
 function MainUI:_CreateTabs()
+    -- Vertical navigation rail: designed for touch first.
+    -- It never overlaps the content area and does not use an invisible
+    -- full-width touch surface.
     local tabs = new("Frame", {
         Name = "Tabs",
-        Position = UDim2.new(0, 0, 0, 36),
-        Size = UDim2.new(1, 0, 0, 36),
+        Position = UDim2.fromOffset(0, 44),
+        Size = UDim2.new(0, 72, 1, -44),
         BackgroundColor3 = PANEL,
         BorderSizePixel = 0,
-        ZIndex = 20
+        ZIndex = 50,
+        Active = false
     }, self.Window)
 
-    local layout = new("UIListLayout", {
-        FillDirection = Enum.FillDirection.Horizontal,
-        SortOrder = Enum.SortOrder.LayoutOrder
+    new("UIListLayout", {
+        FillDirection = Enum.FillDirection.Vertical,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 5)
+    }, tabs)
+
+    new("UIPadding", {
+        PaddingTop = UDim.new(0, 7),
+        PaddingLeft = UDim.new(0, 6),
+        PaddingRight = UDim.new(0, 6),
+        PaddingBottom = UDim.new(0, 7)
     }, tabs)
 
     local definitions = {
@@ -738,7 +750,7 @@ function MainUI:_CreateTabs()
         {"GameTab", "GAME", 3},
         {"FairwellChatTab", "CHAT", 4},
         {"VisualTab", "VISUAL", 5},
-        {"SettingsTab", "SETTINGS", 6}
+        {"SettingsTab", "SET", 6}
     }
 
     self.Tabs = {}
@@ -746,20 +758,25 @@ function MainUI:_CreateTabs()
     for _, data in ipairs(definitions) do
         local button = new("TextButton", {
             Name = data[1],
-            Size = UDim2.new(1 / 5, 0, 1, 0),
-            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 42),
+            BackgroundColor3 = BACKGROUND,
+            BackgroundTransparency = 0,
             BorderSizePixel = 0,
             Text = data[2],
             TextColor3 = GREY,
-            TextSize = 9,
+            TextSize = 8,
             Font = Enum.Font.GothamBold,
             LayoutOrder = data[3],
             Active = true,
             Interactable = true,
-            ZIndex = 21
+            AutoButtonColor = true,
+            ZIndex = 51
         }, tabs)
 
+        corner(button, 6)
+        stroke(button, BLUE, 0.75)
         self.Tabs[data[1]] = button
+
         if data[1] == "GameTab" then
             button.Visible = false
         end
@@ -775,10 +792,6 @@ function MainUI:_RevealGameTab()
 
     self.GameTabRevealed = true
     self.Tabs.GameTab.Visible = true
-
-    for _, button in pairs(self.Tabs) do
-        button.Size = UDim2.new(1 / 6, 0, 1, 0)
-    end
 end
 
 function MainUI:_CreateSettingsPage(Hub)
@@ -1451,10 +1464,10 @@ function MainUI:_StartDragging()
     end
 
     local dragging = false
-    local dragStart = nil
-    local startPosition = nil
+    local dragStart
+    local startPosition
 
-    local function begin(input)
+    handle.InputBegan:Connect(function(input)
         local inputType = input.UserInputType
         if inputType ~= Enum.UserInputType.Touch
             and inputType ~= Enum.UserInputType.MouseButton1 then
@@ -1470,36 +1483,25 @@ function MainUI:_StartDragging()
                 dragging = false
             end
         end)
-    end
+    end)
 
-    local function move(input)
-        if not dragging or not dragStart or not startPosition then
+    UserInputService.InputChanged:Connect(function(input)
+        if not dragging then
             return
         end
 
-        local inputType = input.UserInputType
-        if inputType ~= Enum.UserInputType.Touch
-            and inputType ~= Enum.UserInputType.MouseMovement then
+        if input.UserInputType ~= Enum.UserInputType.MouseMovement
+            and input.UserInputType ~= Enum.UserInputType.Touch then
             return
         end
 
         local delta = input.Position - dragStart
-
         window.Position = UDim2.new(
             startPosition.X.Scale,
             startPosition.X.Offset + delta.X,
             startPosition.Y.Scale,
             startPosition.Y.Offset + delta.Y
         )
-    end
-
-    handle.InputBegan:Connect(begin)
-    handle.InputChanged:Connect(move)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging then
-            move(input)
-        end
     end)
 end
 
@@ -2039,34 +2041,23 @@ function MainUI:Start(Hub)
 
     local top = new("Frame", {
         Name = "TopBar",
-        Size = UDim2.new(1, 0, 0, 36),
+        Size = UDim2.new(1, 0, 0, 44),
         BackgroundColor3 = PANEL,
-        BorderSizePixel = 0
+        BorderSizePixel = 0,
+        ZIndex = 60,
+        Active = true
     }, window)
 
-    -- Dedicated invisible touch surface for reliable mobile dragging.
-    -- It sits behind the title/minimize/close controls so those buttons
-    -- remain tappable while the rest of the top bar can be dragged.
-    local dragSurface = new("TextButton", {
-        Name = "DragSurface",
-        Size = UDim2.new(1, -42, 1, 0),
-        Position = UDim2.fromOffset(0, 0),
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        Text = "",
-        AutoButtonColor = false,
-        Active = true,
-        ZIndex = 1
-    }, top)
-
-    self.DragHandle = dragSurface
+    -- The title bar itself is the drag target.
+    -- There is no invisible overlay covering the navigation buttons.
+    self.DragHandle = top
 
     label(
         top,
         "Title",
         "FAIRWELL HEAVEN",
         UDim2.fromOffset(12, 0),
-        UDim2.new(1, -12, 1, 0),
+        UDim2.new(1, -50, 1, 0),
         14,
         WHITE
     ).Font = Enum.Font.GothamBold
@@ -2075,7 +2066,8 @@ function MainUI:Start(Hub)
         Name = "Close",
         AnchorPoint = Vector2.new(1, 0.5),
         Position = UDim2.new(1, -8, 0.5, 0),
-        Size = UDim2.fromOffset(28, 26),
+        Size = UDim2.fromOffset(32, 30),
+        ZIndex = 62,
         BackgroundColor3 = Color3.fromRGB(65, 20, 35),
         BorderSizePixel = 0,
         Text = "×",
@@ -2087,9 +2079,10 @@ function MainUI:Start(Hub)
 
     local content = new("Frame", {
         Name = "Content",
-        Position = UDim2.fromOffset(0, 80),
-        Size = UDim2.new(1, 0, 1, -80),
-        BackgroundTransparency = 1
+        Position = UDim2.fromOffset(72, 44),
+        Size = UDim2.new(1, -72, 1, -44),
+        BackgroundTransparency = 1,
+        ZIndex = 10
     }, window)
 
     self.Content = content
