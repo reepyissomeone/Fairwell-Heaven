@@ -531,6 +531,10 @@ function MainUI:_BuildChat(Hub)
             return "Try /status or /clear. Or just tell me what's going on.","Cthinking"
         elseif lower:find("scared",1,true) then
             return "Stay close. We'll deal with it together.","Scared"
+        elseif lower:find("rush",1,true) or lower:find("hide",1,true) then
+            return "Hide. Don't run around looking for him.","hiding"
+        elseif lower:find("figure",1,true) then
+            return "Keep quiet. I don't want him finding us.","nervous"
         elseif lower:find("where",1,true) then
             return "Room "..tostring(Hub.Game and Hub.Game.CurrentRoom or "?")..". Keep moving.","Cthinking"
         elseif lower:find("bored",1,true) then
@@ -560,7 +564,7 @@ function MainUI:_BuildChat(Hub)
             for _,c in ipairs(messages:GetChildren()) do
                 if c.Name=="Message" then c:Destroy() end
             end
-            add("FAIRWELL","Chat cleared.","BLUE","Ctalking")
+            add("FAIRWELL","Chat cleared.",BLUE,"Ctalking")
             scrollBottom()
             return
         end
@@ -776,11 +780,23 @@ function MainUI:_CreateCompanion()
         Ctalking="FairwellHeaven/assets/Fairwell/Companion/Ctalking.png",
         Cthinking="FairwellHeaven/assets/Fairwell/Companion/Cthinking.png",
         Yippe="FairwellHeaven/assets/Fairwell/Companion/Yippe.png",
-        Tapped="FairwellHeaven/assets/Fairwell/Companion/Tapped.png"
+        Tapped="FairwellHeaven/assets/Fairwell/Companion/Tapped.png",
+        Scared="FairwellHeaven/assets/Fairwell/Companion/Scared.png",
+        confused="FairwellHeaven/assets/Fairwell/Companion/confused.png",
+        nervous="FairwellHeaven/assets/Fairwell/Companion/nervous.png",
+        hiding="FairwellHeaven/assets/Fairwell/Companion/hiding.png",
+        hurt="FairwellHeaven/assets/Fairwell/Companion/hurt.png",
+        relief="FairwellHeaven/assets/Fairwell/Companion/relief.png",
+        surpised="FairwellHeaven/assets/Fairwell/Companion/surpised.png",
+        terrified="FairwellHeaven/assets/Fairwell/Companion/terrified.png",
+        ALERT="FairwellHeaven/assets/Fairwell/Companion/ALERT.png"
     }
     local urls={
         Idle=base.."Idle.png",Ctalking=base.."Ctalking.png",
-        Cthinking=base.."Cthinking.png",Yippe=base.."Yippe.png",Tapped=base.."Tapped.png"
+        Cthinking=base.."Cthinking.png",Yippe=base.."Yippe.png",Tapped=base.."Tapped.png",
+        Scared=base.."Scared.png",confused=base.."confused.png",nervous=base.."nervous.png",
+        hiding=base.."hiding.png",hurt=base.."hurt.png",relief=base.."relief.png",
+        surpised=base.."surpised.png",terrified=base.."terrified.png",ALERT=base.."ALERT.png"
     }
     local assets={}
     self.CompanionAssets=assets
