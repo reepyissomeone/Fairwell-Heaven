@@ -16,7 +16,11 @@ local Brain = {
     TapIndex = 0,
     SeenObjects = {},
     SeenEntities = {},
-    ActiveEntity = {}
+    ActiveEntity = {},
+    Mood = 0,
+    MoodName = "Calm",
+    EntityEncounters = {},
+    RoomVisits = {}
 }
 
 local function normalize(name)
@@ -96,6 +100,132 @@ function Brain:Cooldown(key, seconds)
     return true
 end
 
+function Brain:SetMood(delta, reason)
+    self.Mood = math.clamp((self.Mood or 0) + (delta or 0), -100, 100)
+
+    local moodName
+    if self.Mood >= 55 then
+        moodName = "Panicked"
+    elseif self.Mood >= 20 then
+        moodName = "Nervous"
+    elseif self.Mood <= -45 then
+        moodName = "Uneasy"
+    elseif self.Mood <= -15 then
+        moodName = "Worried"
+    else
+        moodName = "Calm"
+    end
+
+    local changed = moodName ~= self.MoodName
+    self.MoodName = moodName
+
+    if changed and reason and self:Cooldown("MoodShift", 6) then
+        local lines = {
+            Calm = "Okay. We're doing fine.",
+            Worried = "I don't like how this run is going.",
+            Uneasy = "Something about this place feels wrong.",
+            Nervous = "I'm getting a little nervous.",
+            Panicked = "I REALLY don't like this."
+        }
+        self:React(lines[moodName], moodName == "Panicked" and "Panicking"
+            or moodName == "Nervous" and "Nervous"
+            or moodName == "Calm" and "Thinking"
+            or "Suspicious", 3, "INFO")
+    end
+end
+
+function Brain:GetMood()
+    return self.MoodName or "Calm"
+end
+
+function Brain:GetEntityPersonality(name)
+    name = tostring(name)
+    self.EntityEncounters[name] = (self.EntityEncounters[name] or 0) + 1
+    local count = self.EntityEncounters[name]
+
+    local personalities = {
+        Rush = {
+            first = {"That thing is FAST. MOVE!", "Hiding"},
+            repeatLine = {"Rush again... I really hate that thing.", "Nervous"},
+            veteran = {"Rush. Of course. We know the drill.", "Focused"}
+        },
+        Ambush = {
+            first = {"Ambush?! It can come back. DON'T relax.", "Hiding"},
+            repeatLine = {"Not Ambush again...", "Nervous"},
+            veteran = {"Ambush. Stay ready for the second pass.", "Focused"}
+        },
+        Seek = {
+            first = {"Seek is here. KEEP MOVING.", "Danger"},
+            repeatLine = {"The chase again. Don't stop.", "Nervous"},
+            veteran = {"We know this chase. Keep moving.", "Focused"}
+        },
+        Figure = {
+            first = {"Figure. Quiet. Don't let it find us.", "Nervous"},
+            repeatLine = {"Figure again. Stay quiet.", "Focused"},
+            veteran = {"We know how this works. Stay quiet.", "Focused"}
+        },
+        Screech = {
+            first = {"LOOK THERE!", "Shocked"},
+            repeatLine = {"Screech again. I heard it.", "Annoyed"},
+            veteran = {"I know that sound. Watch for it.", "Focused"}
+        },
+        Creak = {
+            first = {"CREAK?! What was that?", "Confused"},
+            repeatLine = {"That noise again...", "Suspicious"},
+            veteran = {"Creak. Just keep an eye on it.", "Focused"}
+        },
+        Halt = {
+            first = {"...Halt. Don't panic.", "Confused"},
+            repeatLine = {"Halt again. Follow the signs.", "Focused"},
+            veteran = {"We know what Halt wants. Keep moving.", "Focused"}
+        },
+        Eyes = {
+            first = {"Don't look at it.", "Suspicious"},
+            repeatLine = {"Eyes again. Look away.", "Nervous"},
+            veteran = {"Eyes. Same rule: don't look.", "Focused"}
+        },
+        Dupe = {
+            first = {"Wait. Something is wrong with this door.", "Confused"},
+            repeatLine = {"Another fake door. Check it first.", "Suspicious"},
+            veteran = {"Dupe. Trust the room number, not the door.", "Focused"}
+        },
+        Grumble = {
+            first = {"That thing is too close.", "Nervous"},
+            repeatLine = {"Grumble again. Keep your distance.", "Nervous"},
+            veteran = {"Grumble. We know the danger zone.", "Focused"}
+        },
+        Giggle = {
+            first = {"I heard something laugh.", "Shocked"},
+            repeatLine = {"That laugh again...", "Suspicious"},
+            veteran = {"Giggle. Ignore it and keep going.", "Focused"}
+        },
+        Sally = {
+            first = {"SALLY?! I don't trust that thing.", "Suspicious"},
+            repeatLine = {"Sally again... seriously?", "Nervous"},
+            veteran = {"Sally. I'm still watching that thing.", "Suspicious"}
+        }
+    }
+
+    local personality = personalities[name]
+    if not personality then
+        return nil
+    end
+
+    if count == 1 then
+        return personality.first[1], personality.first[2], count
+    elseif count >= 4 and personality.veteran then
+        return personality.veteran[1], personality.veteran[2], count
+    else
+        return personality.repeatLine[1], personality.repeatLine[2], count
+    end
+end
+
+function Brain:GetRoomMemory(number)
+    number = tonumber(number)
+    if not number then return nil end
+    return self.RoomVisits[number] or 0
+end
+
 function Brain:OnTap()
     self.TapIndex += 1
     local lines = {
@@ -129,32 +259,45 @@ function Brain:OnRoom(room)
     local number = tonumber(room.Name)
     if not number or self.LastRoom == number then return end
 
+    local visits = (self.RoomVisits[number] or 0) + 1
+    self.RoomVisits[number] = visits
+
     local wasVisited = self:HasRemembered("Rooms", number)
     self.LastRoom = number
     self:Remember("Rooms", number)
 
+    -- Returning to a room makes Fairwell reference what it remembers.
     if wasVisited and self:Cooldown("RoomRepeat:" .. tostring(number), 8) then
-        self:React("We've been here before...", "Suspicious", 3, "INFO")
+        local line
+        if visits >= 3 then
+            line = "Room " .. tostring(number) .. "... we've been through here " .. tostring(visits) .. " times."
+        else
+            line = "We've been in Room " .. tostring(number) .. " before..."
+        end
+        self:SetMood(-2, "familiar room")
+        self:React(line, "Suspicious", 3, "INFO")
         return
     end
 
     local lower = normalize(room.Name)
-    if lower == "seek" or lower == "seekroom" or lower == "seekroom" then
+    if lower == "seek" or lower == "seekroom" then
+        self:SetMood(12, "Seek room")
         self:React("Good luck. Stay focused.", "Focused", 4, "WARNING")
         return
     end
 
     if number == 50 then
-        self:React("This is the library. Be careful.", "Listening", 5, "WARNING")
+        self:SetMood(8, "Library")
+        self:React("This is the library. Be careful. I remember this place.", "Listening", 5, "WARNING")
         return
     end
 
     if number == 100 then
-        self:React("Something feels different up here.", "Suspicious", 4, "WARNING")
+        self:SetMood(8, "Room 100")
+        self:React("Something feels different up here... I remember this part.", "Suspicious", 4, "WARNING")
         return
     end
 
-    -- Only special rooms get automatic room dialogue. Normal rooms stay quiet.
     if number % 10 == 0 then
         self:React("Room " .. tostring(number) .. ". Stay alert.", "Thinking", 3)
     end
@@ -210,29 +353,26 @@ function Brain:OnEntity(name, object)
     self:Remember("Entities", name)
     self.ActiveEntity[name] = true
 
-    local reactions = {
-        Rush = {"HIDE! NOW!", "Hiding", "WARNING"},
-        Ambush = {"HIDE AGAIN! IT'S COMING BACK!", "Hiding", "WARNING"},
-        Seek = {"Don't stop. Keep moving.", "Danger", "WARNING"},
-        Figure = {"Quiet. Don't let it find us.", "Nervous", "WARNING"},
-        Screech = {"LOOK THERE!", "Shocked", "WARNING"},
-        Creak = {"CREAK?!", "Confused", "WARNING"},
-        Halt = {"...What is it doing?", "Confused", "WARNING"},
-        Eyes = {"Don't look at it.", "Suspicious", "WARNING"},
-        Dupe = {"Wait. Something is wrong with this door.", "Confused", "WARNING"},
-        Grumble = {"That thing is too close.", "Nervous", "WARNING"},
-        Giggle = {"I heard something laugh.", "Shocked", "WARNING"},
-        Sally = {"SALLY?! I don't trust that thing.", "Suspicious", "WARNING"}
-    }
+    local message, expression, count = self:GetEntityPersonality(name)
+    if not message then return end
 
-    local reaction = reactions[name]
-    if reaction then
-        if name == "Screech" then
-            self:FocusCameraOnEntity(object)
-        elseif name == "Creak" then
-            self:FocusCameraOnEntity(object)
-        end
-        self:React(reaction[1], reaction[2], 4, reaction[3])
+    local moodDeltas = {
+        Rush = 18, Ambush = 24, Seek = 16, Figure = 14,
+        Screech = 7, Creak = 5, Halt = 9, Eyes = 7,
+        Dupe = 3, Grumble = 12, Giggle = 5, Sally = 4
+    }
+    self:SetMood(moodDeltas[name] or 4, name)
+
+    if name == "Screech" or name == "Creak" then
+        self:FocusCameraOnEntity(object)
+    end
+
+    -- Experienced encounters become calmer and more tactical instead of
+    -- repeating the exact same panic line every time.
+    if count >= 4 and (name == "Rush" or name == "Ambush" or name == "Seek" or name == "Figure") then
+        self:React(message, expression, 4, "WARNING")
+    else
+        self:React(message, expression, 4, "WARNING")
     end
 end
 
@@ -240,8 +380,25 @@ function Brain:OnEntityGone(name)
     name = tostring(name)
     if not self.ActiveEntity[name] then return end
     self.ActiveEntity[name] = nil
+
+    local recovery = {
+        Rush = 8, Ambush = 10, Seek = 8, Figure = 7,
+        Screech = 4, Creak = 3, Halt = 5, Eyes = 3
+    }
+    self:SetMood(-(recovery[name] or 2), "entity gone")
+
     if self:Cooldown("Gone:" .. name, 3) then
-        self:React("It's gone. Keep going.", "Relieved", 3, "SUCCESS")
+        local lines = {
+            Rush = "Rush is gone. Breathe.",
+            Ambush = "It's gone. Watch for another pass.",
+            Seek = "The chase is over. Keep going.",
+            Figure = "Figure is gone. Stay quiet.",
+            Screech = "Screech is gone. Finally.",
+            Creak = "That thing is gone. Keep moving.",
+            Halt = "Halt is gone. We're okay.",
+            Eyes = "Eyes is gone. Don't look back."
+        }
+        self:React(lines[name] or "It's gone. Keep going.", "Relieved", 3, "SUCCESS")
     end
 end
 
@@ -380,11 +537,13 @@ end
 
 function Brain:OnFlicker()
     if not self:Cooldown("Flicker", 5) then return end
+    self:SetMood(5, "flicker")
     self:React("The lights are flickering...", "Nervous", 3, "WARNING")
 end
 
 function Brain:OnHide()
     self:Remember("Hides", os.clock())
+    self:SetMood(-4, "hiding")
     if self:Cooldown("Hide", 4) then
         self:React("Good. Stay hidden.", "Hiding", 3)
     end
@@ -392,6 +551,7 @@ end
 
 function Brain:OnDamage()
     if not self:Cooldown("Damage", 3) then return end
+    self:SetMood(10, "damage")
     self:React("OW! Are you okay?!", "Hurt", 3, "ERROR")
 end
 
@@ -439,6 +599,7 @@ function Brain:OnPlayerDeath(player)
 
     local pick = lines[math.random(1, #lines)]
     self:Remember("Deaths", player.Name)
+    self:SetMood(7, "player death")
     self:React(pick[1], pick[2], 3.5, pick[3])
 end
 
@@ -505,12 +666,16 @@ function Brain:Start(Hub)
 
     self.Hub = Hub
     self.Connections = {}
-    self.Memory = {Rooms = {}, Entities = {}, Keys = {}, ImportantItems = {}, Hides = {}}
+    self.Memory = {Rooms = {}, Entities = {}, Keys = {}, ImportantItems = {}, Hides = {}, Deaths = {}, MoodHistory = {}}
     self.LastEvent = {}
     self.LastRoom = nil
     self.TapIndex = 0
     self.SeenObjects = {}
     self.ActiveEntity = {}
+    self.Mood = 0
+    self.MoodName = "Calm"
+    self.EntityEncounters = {}
+    self.RoomVisits = {}
 
     local Doors = Hub:GetService("Doors")
     if Doors and Doors.RoomChanged then
