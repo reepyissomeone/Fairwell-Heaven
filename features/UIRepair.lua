@@ -445,5 +445,3 @@ return {
         end
     end
 }
-
-return
