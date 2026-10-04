@@ -138,13 +138,33 @@ local function ScanStandaloneExisting(self)
     local seen = {}
 
     for _, Object in ipairs(Workspace:GetDescendants()) do
-        local Name = NormalizeName(Object.Name)
+        local normalized = NormalizeName(Object.Name)
 
-        if Name == "rushmoving"
-            or EntityNames[Name]
-            or Name == "figure"
-            or Name == "dupe"
-        then
+        -- Loose matching: inspect anything that looks even remotely like
+        -- a known entity name. This catches renamed/variant runtime models.
+        local possible = normalized == "rushmoving"
+            or normalized == "rush"
+            or normalized == "ambush"
+            or normalized == "seek"
+            or normalized == "halt"
+            or normalized == "screech"
+            or normalized == "creak"
+            or normalized == "eyes"
+            or normalized == "figure"
+            or normalized == "dupe"
+            or normalized == "grumble"
+            or normalized == "giggle"
+            or normalized == "sally"
+            or string.find(normalized, "rush", 1, true)
+            or string.find(normalized, "ambush", 1, true)
+            or string.find(normalized, "seek", 1, true)
+            or string.find(normalized, "screech", 1, true)
+            or string.find(normalized, "halt", 1, true)
+            or string.find(normalized, "grumble", 1, true)
+            or string.find(normalized, "giggle", 1, true)
+            or string.find(normalized, "sally", 1, true)
+
+        if possible then
             local EntityName, Target = ResolveStandaloneEntity(Object)
             if EntityName and Target and not seen[Target] then
                 seen[Target] = true
@@ -362,6 +382,14 @@ function EntityNotifications.Start(self, Hub)
             or EntityNames[normalized]
             or normalized == "figure"
             or normalized == "dupe"
+            or string.find(normalized, "rush", 1, true)
+            or string.find(normalized, "ambush", 1, true)
+            or string.find(normalized, "seek", 1, true)
+            or string.find(normalized, "screech", 1, true)
+            or string.find(normalized, "halt", 1, true)
+            or string.find(normalized, "grumble", 1, true)
+            or string.find(normalized, "giggle", 1, true)
+            or string.find(normalized, "sally", 1, true)
         then
             task.defer(function()
                 if self.Hub == Hub then
