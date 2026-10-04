@@ -94,15 +94,61 @@ local function Notify(Hub, Name, Object)
 end
 
 local function GetLiveEntities()
-    -- DOORS stores active spawned entities in this container.
-    -- Only scan this container so parts/children named after another entity
-    -- cannot accidentally trigger the wrong reaction.
-    for _, child in ipairs(Workspace:GetChildren()) do
-        local n = NormalizeName(child.Name)
-        if n == "liveentities" then
-            return child
+    -- DOORS may place Live Entities directly under Workspace or inside
+    -- another runtime container. Find the actual container by name without
+    -- scanning unrelated entity objects.
+    local direct = Workspace:FindFirstChild("Live Entities")
+        or Workspace:FindFirstChild("LiveEntities")
+    if direct then
+        return direct
+    end
+
+    for _, descendant in ipairs(Workspace:GetDescendants()) do
+        if NormalizeName(descendant.Name) == "liveentities" then
+            return descendant
         end
     end
+
+    return nil
+end
+
+local function FindEntityInRoot(Root)
+    local direct = FindEntityName(Root)
+    if direct then
+        return direct, Root
+    end
+
+    -- Some entity containers have a generic root name and put the actual
+    -- entity name on a descendant. Prefer exact matches for reliability.
+    for _, descendant in ipairs(Root:GetDescendants()) do
+        local normalized = NormalizeName(descendant.Name)
+        if EntityNames[normalized] then
+            local name = EntityNames[normalized]
+            if name == "Figure" or name == "Dupe" then
+                if descendant:IsA("Model") then
+                    return name, descendant
+                end
+            else
+                return name, descendant
+            end
+        end
+    end
+
+    return nil, nil
+end
+
+local function FindMatchingEntity(LiveEntities, WantedName)
+    if not LiveEntities then
+        return nil
+    end
+
+    for _, root in ipairs(LiveEntities:GetChildren()) do
+        local name = FindEntityInRoot(root)
+        if name == WantedName then
+            return root
+        end
+    end
+
     return nil
 end
 
@@ -127,7 +173,7 @@ local function Detect(self, Object)
         return
     end
 
-    local Name = FindEntityName(Root)
+    local Name, Target = FindEntityInRoot(Root)
     if not Name then
         return
     end
@@ -138,22 +184,12 @@ local function Detect(self, Object)
     end
 
     self.LastAlert[Name] = Now
-    Notify(self.Hub, Name, Root)
+    Notify(self.Hub, Name, Target or Root)
 
-    -- Keep entity state in sync so Fairwell can react again after an entity leaves.
     task.delay(4, function()
         if self.Hub and self.LastAlert[Name] == Now then
             local live = GetLiveEntities()
-            local stillThere = false
-
-            if live then
-                for _, candidate in ipairs(live:GetChildren()) do
-                    if FindEntityName(candidate) == Name then
-                        stillThere = true
-                        break
-                    end
-                end
-            end
+            local stillThere = FindMatchingEntity(live, Name) ~= nil
 
             if not stillThere then
                 local Brain = self.Hub:GetFeature("Fairwell Companion Brain")
