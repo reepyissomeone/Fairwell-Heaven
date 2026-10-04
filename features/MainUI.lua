@@ -27,7 +27,8 @@ local INFRASTRUCTURE = {
     ["UI Repair"] = true,
     ["Mini Notification Test"] = true,
     ["Test Feature"] = true,
-    ["Developer Diagnostics"] = true
+    ["Developer Diagnostics"] = true,
+    ["Fairwell Dev Lab"] = true
 }
 
 local function new(className, props, parent)
@@ -560,6 +561,161 @@ function MainUI:_CreateLogsPage(Hub)
     return page
 end
 
+
+function MainUI:_CreateDevLabPage(Hub)
+    local page = self:_CreateSimplePage("DevLabScroll", "PRIVATE DEV LAB")
+
+    local lab = Hub:GetFeature("Fairwell Dev Lab")
+
+    local status = label(
+        page,
+        "AccessStatus",
+        "Checking private access...",
+        UDim2.new(1, -10, 0, 42),
+        UDim2.fromOffset(5, 43),
+        10,
+        GREY
+    )
+    status.TextWrapped = true
+
+    local featureName = new("TextBox", {
+        Name = "FeatureName",
+        Position = UDim2.fromOffset(5, 92),
+        Size = UDim2.new(1, -10, 0, 38),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        Text = "",
+        PlaceholderText = "Feature name",
+        TextColor3 = WHITE,
+        PlaceholderColor3 = GREY,
+        TextSize = 10,
+        Font = Enum.Font.Gotham
+    }, page)
+    corner(featureName, 7)
+    stroke(featureName, BLUE, 0.45)
+
+    local target = new("TextBox", {
+        Name = "Target",
+        Position = UDim2.fromOffset(5, 137),
+        Size = UDim2.new(1, -10, 0, 38),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        Text = "DOORS",
+        PlaceholderText = "Target game",
+        TextColor3 = WHITE,
+        PlaceholderColor3 = GREY,
+        TextSize = 10,
+        Font = Enum.Font.Gotham
+    }, page)
+    corner(target, 7)
+    stroke(target, BLUE, 0.45)
+
+    local prompt = new("TextBox", {
+        Name = "Prompt",
+        Position = UDim2.fromOffset(5, 182),
+        Size = UDim2.new(1, -10, 0, 180),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        Text = "",
+        PlaceholderText = "Describe the feature you want Fairwell's development AI to build...",
+        TextColor3 = WHITE,
+        PlaceholderColor3 = GREY,
+        TextSize = 10,
+        Font = Enum.Font.Gotham,
+        TextWrapped = true,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Top,
+        ClearTextOnFocus = false,
+        MultiLine = true
+    }, page)
+    corner(prompt, 7)
+    stroke(prompt, BLUE, 0.45)
+
+    local send = new("TextButton", {
+        Name = "SendRequest",
+        Position = UDim2.fromOffset(5, 372),
+        Size = UDim2.new(1, -10, 0, 46),
+        BackgroundColor3 = BLUE,
+        BorderSizePixel = 0,
+        Text = "SEND TO DEV BRIDGE",
+        TextColor3 = WHITE,
+        TextSize = 11,
+        Font = Enum.Font.GothamBold,
+        Active = true
+    }, page)
+    corner(send, 7)
+
+    local result = label(
+        page,
+        "Result",
+        "Requests will appear here.",
+        UDim2.new(1, -10, 0, 90),
+        UDim2.fromOffset(5, 430),
+        10,
+        GREY
+    )
+    result.TextWrapped = true
+    result.TextYAlignment = Enum.TextYAlignment.Top
+
+    local function refreshAccess()
+        if lab and type(lab.GetStatus) == "function" then
+            local ok, message = lab:GetStatus()
+            status.Text = ok and ("🔒 " .. tostring(message)) or ("🔒 PRIVATE • " .. tostring(message))
+            status.TextColor3 = ok and GREEN or RED
+            send.Active = ok
+            send.AutoButtonColor = ok
+            return ok
+        end
+
+        status.Text = "Private Dev Lab module unavailable."
+        status.TextColor3 = RED
+        send.Active = false
+        return false
+    end
+
+    send.Activated:Connect(function()
+        if not lab or type(lab.Submit) ~= "function" then
+            result.Text = "Dev bridge module unavailable."
+            return
+        end
+
+        local name = featureName.Text:gsub("^%s+", ""):gsub("%s+$", "")
+        local gameTarget = target.Text:gsub("^%s+", ""):gsub("%s+$", "")
+        local requestText = prompt.Text:gsub("^%s+", ""):gsub("%s+$", "")
+
+        if name == "" or requestText == "" then
+            result.Text = "Enter a feature name and description first."
+            result.TextColor3 = RED
+            return
+        end
+
+        send.Text = "SENDING..."
+        send.Active = false
+
+        local ok, message = lab:Submit({
+            FeatureName = name,
+            Description = requestText,
+            Target = gameTarget ~= "" and gameTarget or "GLOBAL",
+            HubVersion = tostring(Hub.Version or "unknown")
+        })
+
+        send.Text = "SEND TO DEV BRIDGE"
+        send.Active = true
+        result.Text = tostring(message)
+        result.TextColor3 = ok and GREEN or RED
+    end)
+
+    refreshAccess()
+
+    self.DevLabRefresh = function()
+        if page.Parent then
+            refreshAccess()
+        end
+    end
+
+    return page
+end
+
 function MainUI:_CreateSimplePage(name, titleText)
     local page = new("ScrollingFrame", {
         Name = name,
@@ -603,9 +759,10 @@ function MainUI:_CreateTabs()
     local definitions = {
         {"MainTab", "MAIN", 1},
         {"DevTab", "LOGS", 2},
-        {"FairwellChatTab", "CHAT", 3},
-        {"VisualTab", "VISUAL", 4},
-        {"SettingsTab", "SETTINGS", 5}
+        {"DevLabTab", "LAB", 3},
+        {"FairwellChatTab", "CHAT", 4},
+        {"VisualTab", "VISUAL", 5},
+        {"SettingsTab", "SETTINGS", 6}
     }
 
     self.Tabs = {}
@@ -613,7 +770,7 @@ function MainUI:_CreateTabs()
     for _, data in ipairs(definitions) do
         local button = new("TextButton", {
             Name = data[1],
-            Size = UDim2.new(0.2, 0, 1, 0),
+            Size = UDim2.new(1 / #definitions, 0, 1, 0),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
             Text = data[2],
@@ -1216,7 +1373,8 @@ function MainUI:_Switch(pageName)
         Logs = "DevTab",
         Chat = "FairwellChatTab",
         Visual = "VisualTab",
-        Settings = "SettingsTab"
+        Settings = "SettingsTab",
+        DevLab = "DevLabTab"
     }
 
     local tab = self.Tabs and self.Tabs[tabMap[pageName]]
@@ -1911,6 +2069,7 @@ function MainUI:Start(Hub)
     local pages = {}
     pages.Main = self:_CreateFeaturePage(Hub)
     pages.Logs = self:_CreateLogsPage(Hub)
+    pages.DevLab = self:_CreateDevLabPage(Hub)
     pages.Chat = self:_CreateChatPage(Hub)
     pages.Visual = self:_CreateVisualPage(Hub)
     pages.Settings = self:_CreateSimplePage("SettingsScroll", "SETTINGS")
@@ -1931,6 +2090,9 @@ function MainUI:Start(Hub)
     end)
     self.Tabs.DevTab.Activated:Connect(function()
         self:_Switch("Logs")
+    end)
+    self.Tabs.DevLabTab.Activated:Connect(function()
+        self:_Switch("DevLab")
     end)
     self.Tabs.FairwellChatTab.Activated:Connect(function()
         self:_Switch("Chat")
@@ -1955,6 +2117,7 @@ function MainUI:Start(Hub)
             self:_UpdateStatus(Hub)
             self:_BuildFeatureList(Hub, false)
             if self.DevRefresh then self.DevRefresh() end
+            if self.DevLabRefresh then self.DevLabRefresh() end
             task.wait(0.75)
         end
     end)
