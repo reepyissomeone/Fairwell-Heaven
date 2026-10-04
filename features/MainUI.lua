@@ -1036,9 +1036,284 @@ function MainUI:_StartDragging()
     UserInputService.InputChanged:Connect(update)
 end
 
+
+function MainUI:_CreateCompanion(Hub)
+    local player = Players.LocalPlayer
+    if not player then return false end
+    local playerGui = player:WaitForChild("PlayerGui")
+
+    local old = playerGui:FindFirstChild("FairwellHeaven_Companion")
+    if old then old:Destroy() end
+
+    local gui = new("ScreenGui", {
+        Name = "FairwellHeaven_Companion",
+        ResetOnSpawn = false,
+        IgnoreGuiInset = true,
+        DisplayOrder = 1000003,
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    }, playerGui)
+
+    local holder = new("Frame", {
+        Name = "Companion",
+        AnchorPoint = Vector2.new(1, 1),
+        Position = UDim2.new(1, -16, 1, -16),
+        Size = UDim2.fromOffset(82, 82),
+        BackgroundTransparency = 1
+    }, gui)
+
+    local button = new("ImageButton", {
+        Name = "Fairwell",
+        Size = UDim2.fromScale(1, 1),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Image = "",
+        ScaleType = Enum.ScaleType.Fit,
+        AutoButtonColor = false,
+        Active = true,
+        ZIndex = 20
+    }, holder)
+
+    local bubble = new("TextLabel", {
+        Name = "Notification",
+        AnchorPoint = Vector2.new(1, 1),
+        Position = UDim2.new(0, -8, 0, -4),
+        Size = UDim2.fromOffset(210, 62),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        Text = "",
+        TextColor3 = WHITE,
+        TextSize = 10,
+        Font = Enum.Font.Gotham,
+        TextWrapped = true,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Center,
+        Visible = false,
+        ZIndex = 30
+    }, holder)
+    corner(bubble, 9)
+    stroke(bubble, BLUE, 0.15)
+    new("UIPadding", {
+        PaddingLeft = UDim.new(0, 9),
+        PaddingRight = UDim.new(0, 9),
+        PaddingTop = UDim.new(0, 5),
+        PaddingBottom = UDim.new(0, 5)
+    }, bubble)
+
+    local title = new("TextLabel", {
+        Name = "NotificationTitle",
+        Position = UDim2.fromOffset(8, -19),
+        Size = UDim2.fromOffset(194, 18),
+        BackgroundTransparency = 1,
+        Text = "",
+        TextColor3 = BLUE,
+        TextSize = 9,
+        Font = Enum.Font.GothamBold,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Visible = false,
+        ZIndex = 31
+    }, bubble)
+
+    local base = "https://raw.githubusercontent.com/reepyissomeone/Fairwell-Heaven/main/assets/Fairwell/"
+    local urls = {
+        Idle = base .. "Idle.png",
+        ALERT = base .. "ALERT.png",
+        Ctalking = base .. "Ctalking.png",
+        Cthinking = base .. "Cthinking.png",
+        Yippe = base .. "Yippe.png",
+        uhoh = base .. "uhoh.png"
+    }
+    local files = {
+        Idle = "FairwellHeaven/assets/Fairwell/Idle.png",
+        ALERT = "FairwellHeaven/assets/Fairwell/ALERT.png",
+        Ctalking = "FairwellHeaven/assets/Fairwell/Ctalking.png",
+        Cthinking = "FairwellHeaven/assets/Fairwell/Cthinking.png",
+        Yippe = "FairwellHeaven/assets/Fairwell/Yippe.png",
+        uhoh = "FairwellHeaven/assets/Fairwell/uhoh.png"
+    }
+    local images = {}
+
+    local function assetLoader()
+        if type(getcustomasset) == "function" then return getcustomasset end
+        if type(getsynasset) == "function" then return getsynasset end
+        if type(getcustomassetfromfile) == "function" then return getcustomassetfromfile end
+        return nil
+    end
+
+    local function ensureFolder(path)
+        if type(makefolder) ~= "function" then return end
+        local current = ""
+        for part in string.gmatch(path, "[^/]+") do
+            current = current == "" and part or current .. "/" .. part
+            pcall(makefolder, current)
+        end
+    end
+
+    local function loadAsset(state)
+        local loader = assetLoader()
+        if not loader then return end
+
+        local path, url = files[state], urls[state]
+        local ok, result = pcall(function()
+            ensureFolder("FairwellHeaven/assets/Fairwell")
+            if type(isfile) == "function" and isfile(path) then
+                return loader(path)
+            end
+            if type(writefile) ~= "function" then
+                error("writefile unavailable")
+            end
+            local downloaded = game:HttpGet(
+                url .. "?cache=" .. tostring(math.floor(os.clock() * 1000000))
+            )
+            if type(downloaded) ~= "string" or downloaded == "" then
+                error("asset download failed")
+            end
+            writefile(path, downloaded)
+            return loader(path)
+        end)
+
+        if ok and type(result) == "string" and result ~= "" then
+            images[state] = result
+        end
+    end
+
+    for _, state in ipairs({"Idle", "ALERT", "Ctalking", "Cthinking", "Yippe", "uhoh"}) do
+        loadAsset(state)
+    end
+
+    local stateToken = 0
+    local function setState(state, duration)
+        stateToken += 1
+        local token = stateToken
+
+        if images[state] then
+            button.Image = images[state]
+        elseif images.Idle then
+            button.Image = images.Idle
+        end
+
+        if duration then
+            task.delay(duration, function()
+                if token == stateToken and holder.Parent then
+                    if images.Idle then
+                        button.Image = images.Idle
+                    end
+                end
+            end)
+        end
+    end
+
+    setState("Idle")
+
+    local function showNotification(noticeTitle, message, kind, duration)
+        if not gui.Parent or not self.Hidden then
+            return
+        end
+
+        local normalized = string.upper(tostring(kind or "INFO"))
+        local state = "Cthinking"
+        local accent = BLUE
+
+        if normalized == "SUCCESS" then
+            state = "Yippe"
+            accent = GREEN
+        elseif normalized == "WARNING" then
+            state = "ALERT"
+            accent = Color3.fromRGB(255, 185, 70)
+        elseif normalized == "ERROR" then
+            state = "uhoh"
+            accent = RED
+        elseif normalized == "INFO" then
+            state = "Ctalking"
+        end
+
+        duration = math.clamp(tonumber(duration) or 4, 1, 15)
+        setState(state, math.min(duration, 3))
+
+        title.Text = string.upper(tostring(noticeTitle or "FAIRWELL"))
+        title.TextColor3 = accent
+        title.Visible = true
+        bubble.Text = tostring(message or "")
+        bubble.Visible = true
+
+        task.delay(duration, function()
+            if not bubble.Parent then return end
+            bubble.Visible = false
+            title.Visible = false
+        end)
+    end
+
+    self.CompanionGui = gui
+    self.CompanionHolder = holder
+    self.CompanionButton = button
+    self.CompanionBubble = bubble
+    self.CompanionSetState = setState
+    self.CompanionNotify = showNotification
+
+    button.Activated:Connect(function()
+        self:SetVisible(true)
+    end)
+
+    -- Touch/mouse dragging. Activated remains available for tapping.
+    local dragging = false
+    local dragStart
+    local startPosition
+
+    local function beginDrag(input)
+        if input.UserInputType ~= Enum.UserInputType.MouseButton1
+            and input.UserInputType ~= Enum.UserInputType.Touch then
+            return
+        end
+
+        dragging = true
+        dragStart = input.Position
+        startPosition = holder.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+
+    local function updateDrag(input)
+        if not dragging then return end
+        local delta = input.Position - dragStart
+        holder.Position = UDim2.new(
+            startPosition.X.Scale,
+            startPosition.X.Offset + delta.X,
+            startPosition.Y.Scale,
+            startPosition.Y.Offset + delta.Y
+        )
+    end
+
+    button.InputBegan:Connect(beginDrag)
+    UserInputService.InputChanged:Connect(updateDrag)
+
+    return true
+end
+
+function MainUI:SetVisible(visible)
+    visible = visible == true
+    self.Hidden = not visible
+
+    if self.Gui and self.Gui.Parent then
+        self.Gui.Enabled = visible
+    end
+
+    if self.CompanionGui and self.CompanionGui.Parent then
+        self.CompanionGui.Enabled = not visible
+    end
+
+    if visible and self.CompanionBubble then
+        self.CompanionBubble.Visible = false
+        local title = self.CompanionBubble:FindFirstChild("NotificationTitle")
+        if title then title.Visible = false end
+    end
+end
+
 function MainUI:Start(Hub)
     if self.Gui and self.Gui.Parent then
-        self.Gui.Enabled = true
+        self:SetVisible(true)
         return true
     end
 
@@ -1064,6 +1339,9 @@ function MainUI:Start(Hub)
     }, playerGui)
 
     self.Gui = gui
+    self.Hidden = false
+
+    self:_CreateCompanion(Hub)
 
     local window = new("Frame", {
         Name = "Window",
@@ -1167,7 +1445,7 @@ function MainUI:Start(Hub)
     self:_StartDragging()
 
     close.Activated:Connect(function()
-        gui.Enabled = false
+        self:SetVisible(false)
     end)
 
     -- Refresh every 0.75s instead of every frame.
@@ -1179,39 +1457,15 @@ function MainUI:Start(Hub)
         end
     end)
 
-    -- Fairwell notification support while minimized.
+    -- Companion Mode notification bridge.
     if Hub.NotificationEvent then
         self.NotificationConnection =
-            Hub.NotificationEvent.Event:Connect(function(title, message)
-                if not gui.Parent or gui.Enabled then
-                    return
+            Hub.NotificationEvent.Event:Connect(function(title, message, kind, duration)
+                if self.CompanionNotify then
+                    self.CompanionNotify(title, message, kind, duration)
                 end
-
-                local notice = new("TextLabel", {
-                    Name = "MiniNotification",
-                    AnchorPoint = Vector2.new(1, 1),
-                    Position = UDim2.new(1, -12, 1, -12),
-                    Size = UDim2.new(0.8, 0, 0, 52),
-                    BackgroundColor3 = PANEL,
-                    BorderSizePixel = 0,
-                    Text = tostring(title or "FAIRWELL")
-                        .. "\\n"
-                        .. tostring(message or ""),
-                    TextColor3 = WHITE,
-                    TextSize = 9,
-                    Font = Enum.Font.Gotham,
-                    TextWrapped = true,
-                    ZIndex = 50
-                }, gui)
-                corner(notice, 8)
-                stroke(notice, BLUE, 0.2)
-
-                task.delay(4, function()
-                    if notice then
-                        notice:Destroy()
-                    end
-                end)
             end)
+    end
     end
 
     Hub:Log("Main UI rebuilt for mobile.")
@@ -1219,6 +1473,17 @@ function MainUI:Start(Hub)
 end
 
 function MainUI:Stop()
+    if self.CompanionGui then
+        self.CompanionGui:Destroy()
+        self.CompanionGui = nil
+    end
+    self.CompanionHolder = nil
+    self.CompanionButton = nil
+    self.CompanionBubble = nil
+    self.CompanionSetState = nil
+    self.CompanionNotify = nil
+    self.Hidden = false
+
     if self.NotificationConnection then
         self.NotificationConnection:Disconnect()
         self.NotificationConnection = nil
