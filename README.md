@@ -18,7 +18,13 @@ The loader downloads the current main branch and can detect repository updates w
 - DOORS Highlights — room-scoped highlights for doors, keys, and keycards.
 - DOORS Entity Notifications — alerts for common entities when they appear.
 - DOORS Room HUD — small live room/door status display.
-- Main UI — status, development, and settings pages.
+- Visual FPS Counter — live frame-rate overlay.
+- Visual Clock — live local-time overlay.
+- Visual Crosshair — optional center-screen crosshair.
+- Visual Performance HUD — optional FPS/memory monitor.
+- Visual DOORS Item Labels — optional labels for doors, keys, keycards, and levers.
+- Visual DOORS Entity Markers — optional floating labels for active entities.
+- Main UI — status, development, Fairwell Chat, Visual, and Settings pages.
 
 ## Settings
 
@@ -37,6 +43,7 @@ Current settings include:
 - core/ — hub, game detection, manifest, and settings.
 - features/ — UI and game-specific modules.
 - features/doors/ — DOORS-specific functionality.
+- features/visual/ — standalone visual overlays and DOORS visual helpers.
 
 ## Adding features
 
