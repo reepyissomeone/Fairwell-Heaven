@@ -562,105 +562,135 @@ function MainUI:_CreateLogsPage(Hub)
 end
 
 
-function MainUI:_CreateDevLabPage(Hub)
-    local page = self:_CreateSimplePage("DevLabScroll", "PRIVATE DEV LAB")
-    local lab = Hub:GetFeature("Fairwell Dev Lab")
+function MainUI:_CreateGamePage(Hub)
+    local page = self:_CreateSimplePage("GameScroll", "GAME")
 
-    local status = label(page, "AccessStatus", "🔒 Enter your private Dev Lab password.", UDim2.new(1,-10,0,42), UDim2.fromOffset(5,43), 10, GREY)
-    status.TextWrapped = true
+    local intro = label(page, "Intro", "Fairwell's hidden game area.", UDim2.new(1,-10,0,40), UDim2.fromOffset(5,43), 10, GREY)
+    intro.TextWrapped = true
 
-    local password = new("TextBox", {
-        Name = "Password", Position = UDim2.fromOffset(5,92), Size = UDim2.new(1,-10,0,38),
-        BackgroundColor3 = PANEL, BorderSizePixel = 0, Text = "", PlaceholderText = "Dev Lab password",
-        TextColor3 = WHITE, PlaceholderColor3 = GREY, TextSize = 10, Font = Enum.Font.Gotham,
-        ClearTextOnFocus = false
+    local title = new("TextButton", {
+        Name = "GameTitleSecret",
+        Position = UDim2.fromOffset(5,88),
+        Size = UDim2.new(1,-10,0,48),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        Text = "PLAY FAIRWELL",
+        TextColor3 = WHITE,
+        TextSize = 13,
+        Font = Enum.Font.GothamBold,
+        Active = true,
+        AutoButtonColor = false
     }, page)
-    password.TextEditable = true
-    corner(password,7); stroke(password,BLUE,0.45)
+    corner(title,7)
+    stroke(title,BLUE,0.55)
 
-    local unlock = new("TextButton", {
-        Name = "Unlock", Position = UDim2.fromOffset(5,137), Size = UDim2.new(1,-10,0,42),
-        BackgroundColor3 = BLUE, BorderSizePixel = 0, Text = "UNLOCK DEV LAB",
-        TextColor3 = WHITE, TextSize = 11, Font = Enum.Font.GothamBold, Active = true
+    local status = label(page, "Status", "Find the secret.", UDim2.new(1,-10,0,34), UDim2.fromOffset(5,143), 9, GREY)
+    status.TextXAlignment = Enum.TextXAlignment.Center
+
+    local secret = new("Frame", {
+        Name = "SecretFeatureConsole",
+        Position = UDim2.fromOffset(5,185),
+        Size = UDim2.new(1,-10,0,360),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        Visible = false
     }, page)
-    corner(unlock,7)
+    corner(secret,8)
+    stroke(secret,GREEN,0.25)
+
+    label(secret,"SecretHeader","PRIVATE FEATURE NOTES",UDim2.fromOffset(10,8),UDim2.new(1,-20,0,28),13,GREEN).Font=Enum.Font.GothamBold
 
     local featureName = new("TextBox", {
-        Name = "FeatureName", Position = UDim2.fromOffset(5,190), Size = UDim2.new(1,-10,0,38),
-        BackgroundColor3 = PANEL, BorderSizePixel = 0, Text = "", PlaceholderText = "Feature name",
-        TextColor3 = WHITE, PlaceholderColor3 = GREY, TextSize = 10, Font = Enum.Font.Gotham, Active = false
-    }, page)
-    corner(featureName,7); stroke(featureName,BLUE,0.45)
-
-    local target = new("TextBox", {
-        Name = "Target", Position = UDim2.fromOffset(5,235), Size = UDim2.new(1,-10,0,38),
-        BackgroundColor3 = PANEL, BorderSizePixel = 0, Text = "DOORS", PlaceholderText = "Target game",
-        TextColor3 = WHITE, PlaceholderColor3 = GREY, TextSize = 10, Font = Enum.Font.Gotham, Active = false
-    }, page)
-    corner(target,7); stroke(target,BLUE,0.45)
+        Name="FeatureName", Position=UDim2.fromOffset(10,48), Size=UDim2.new(1,-20,0,40),
+        BackgroundColor3=BACKGROUND, BorderSizePixel=0, Text="", PlaceholderText="Feature name",
+        TextColor3=WHITE, PlaceholderColor3=GREY, TextSize=10, Font=Enum.Font.Gotham,
+        ClearTextOnFocus=false
+    }, secret)
+    corner(featureName,6); stroke(featureName,BLUE,0.5)
 
     local prompt = new("TextBox", {
-        Name = "Prompt", Position = UDim2.fromOffset(5,280), Size = UDim2.new(1,-10,0,150),
-        BackgroundColor3 = PANEL, BorderSizePixel = 0, Text = "",
-        PlaceholderText = "Describe the feature you want built...", TextColor3 = WHITE,
-        PlaceholderColor3 = GREY, TextSize = 10, Font = Enum.Font.Gotham, TextWrapped = true,
-        TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top,
-        ClearTextOnFocus = false, MultiLine = true, Active = false
-    }, page)
-    corner(prompt,7); stroke(prompt,BLUE,0.45)
+        Name="FeatureRequest", Position=UDim2.fromOffset(10,96), Size=UDim2.new(1,-20,0,145),
+        BackgroundColor3=BACKGROUND, BorderSizePixel=0, Text="",
+        PlaceholderText="Type what you want Fairwell to add...",
+        TextColor3=WHITE, PlaceholderColor3=GREY, TextSize=10, Font=Enum.Font.Gotham,
+        TextWrapped=true, TextXAlignment=Enum.TextXAlignment.Left, TextYAlignment=Enum.TextYAlignment.Top,
+        ClearTextOnFocus=false, MultiLine=true
+    }, secret)
+    corner(prompt,6); stroke(prompt,BLUE,0.5)
 
-    local send = new("TextButton", {
-        Name = "SendRequest", Position = UDim2.fromOffset(5,440), Size = UDim2.new(1,-10,0,46),
-        BackgroundColor3 = BLUE, BorderSizePixel = 0, Text = "SEND TO DEV BRIDGE",
-        TextColor3 = WHITE, TextSize = 11, Font = Enum.Font.GothamBold, Active = false
-    }, page)
-    corner(send,7)
+    local save = new("TextButton", {
+        Name="SaveFeature", Position=UDim2.fromOffset(10,253), Size=UDim2.new(1,-20,0,42),
+        BackgroundColor3=GREEN, BorderSizePixel=0, Text="SAVE FEATURE IDEA",
+        TextColor3=WHITE, TextSize=10, Font=Enum.Font.GothamBold, Active=true
+    }, secret)
+    corner(save,6)
 
-    local result = label(page, "Result", "Unlock the lab to send requests.", UDim2.new(1,-10,0,80), UDim2.fromOffset(5,498), 10, GREY)
-    result.TextWrapped = true; result.TextYAlignment = Enum.TextYAlignment.Top
+    local saved = label(secret,"Saved","Ideas are kept locally on this device when file access is available.",UDim2.new(1,-20,0,50),UDim2.fromOffset(10,302),9,GREY)
+    saved.TextWrapped=true
+    saved.TextYAlignment=Enum.TextYAlignment.Top
 
-    local unlocked = false
-    local function setLocked(allowed)
-        unlocked = allowed == true
-        for _, box in ipairs({featureName,target,prompt}) do box.Active = unlocked end
-        send.Active = unlocked
-        send.AutoButtonColor = unlocked
-        unlock.Text = unlocked and "DEV LAB UNLOCKED" or "UNLOCK DEV LAB"
-        status.TextColor3 = unlocked and GREEN or GREY
-    end
+    local taps, lastTap, unlocked = 0, 0, false
 
-    unlock.Activated:Connect(function()
-        if not lab or type(lab.Authenticate) ~= "function" then
-            status.Text = "Authentication module unavailable."; status.TextColor3 = RED; return
+    title.Activated:Connect(function()
+        local now=os.clock()
+        if now-lastTap>2.5 then taps=0 end
+        lastTap=now
+        taps+=1
+        if taps>=9 then
+            taps=0
+            unlocked=true
+            secret.Visible=true
+            status.Text="..."
+            status.TextColor3=GREEN
+            title.Text="GAME UNLOCKED"
         end
-        unlock.Text = "CHECKING..."
-        unlock.Active = false
-        local ok, message = lab:Authenticate(password.Text)
-        status.Text = (ok and "🔓 " or "🔒 ") .. tostring(message)
-        status.TextColor3 = ok and GREEN or RED
-        result.Text = ok and "You can now create a feature request." or "Access denied."
-        setLocked(ok)
-        unlock.Active = true
     end)
 
-    send.Activated:Connect(function()
-        if not unlocked or not lab or type(lab.Submit) ~= "function" then return end
-        local name = featureName.Text:gsub("^%s+",""):gsub("%s+$","")
-        local gameTarget = target.Text:gsub("^%s+",""):gsub("%s+$","")
-        local requestText = prompt.Text:gsub("^%s+",""):gsub("%s+$","")
-        if name == "" or requestText == "" then
-            result.Text = "Enter a feature name and description first."; result.TextColor3 = RED; return
+    save.Activated:Connect(function()
+        if not unlocked then return end
+        local name=featureName.Text:gsub("^%s+",""):gsub("%s+$","")
+        local request=prompt.Text:gsub("^%s+",""):gsub("%s+$","")
+        if name=="" or request=="" then
+            saved.Text="Enter a feature name and description first."
+            saved.TextColor3=RED
+            return
         end
-        send.Text = "SENDING..."; send.Active = false
-        local ok, message = lab:Submit({FeatureName=name, Description=requestText, Target=gameTarget ~= "" and gameTarget or "GLOBAL", HubVersion=tostring(Hub.Version or "unknown")})
-        send.Text = "SEND TO DEV BRIDGE"; send.Active = unlocked
-        result.Text = tostring(message); result.TextColor3 = ok and GREEN or RED
+
+        local record={FeatureName=name,Description=request,Target="DOORS",Created=os.date("!%Y-%m-%dT%H:%M:%SZ")}
+        local wrote=false
+
+        if type(writefile)=="function" then
+            pcall(function()
+                if type(isfolder)=="function" and type(makefolder)=="function" then
+                    if not isfolder("FairwellHeaven") then makefolder("FairwellHeaven") end
+                    if not isfolder("FairwellHeaven/Dev") then makefolder("FairwellHeaven/Dev") end
+                elseif type(makefolder)=="function" then
+                    pcall(makefolder,"FairwellHeaven")
+                    pcall(makefolder,"FairwellHeaven/Dev")
+                end
+
+                local HttpService=game:GetService("HttpService")
+                local path="FairwellHeaven/Dev/feature_ideas.json"
+                local list={}
+                if type(isfile)=="function" and isfile(path) then
+                    local ok,decoded=pcall(function() return HttpService:JSONDecode(readfile(path)) end)
+                    if ok and type(decoded)=="table" then list=decoded end
+                end
+                table.insert(list,record)
+                writefile(path,HttpService:JSONEncode(list))
+                wrote=true
+            end)
+        end
+
+        saved.Text=wrote and "Saved privately to this device." or "Saved for this session. File saving is unavailable here."
+        saved.TextColor3=GREEN
+        featureName.Text=""
+        prompt.Text=""
     end)
 
-    setLocked(false)
-    self.DevLabRefresh = function() end
     return page
 end
+
 function MainUI:_CreateSimplePage(name, titleText)
     local page = new("ScrollingFrame", {
         Name = name,
