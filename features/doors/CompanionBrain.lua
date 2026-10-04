@@ -269,6 +269,12 @@ function Brain:OnItem(object)
     local id = object:GetDebugId()
     if self.SeenObjects[id] then return end
 
+    -- Revive Rift is a DOORS mechanic/object, not a pickup for Fairwell's
+    -- normal item commentary. Ignore the object and all of its descendants.
+    if name == "reviverift" or string.find(name, "reviverift", 1, true) then
+        return
+    end
+
     -- Never treat these as inventory items.
     local blocked = {
         door=true, room=true, locker=true, wardrobe=true, closet=true,
