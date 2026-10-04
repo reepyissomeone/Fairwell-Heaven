@@ -1276,6 +1276,66 @@ function MainUI:_CreateChatPage(Hub)
     speak("Hey! I'm Fairwell. Talk to me.","Ctalking")
     addMessage("FAIRWELL", "Hey! I'm Fairwell. Talk to me.", BLUE)
 
+    local boredAnimationId = 0
+    local function playBoredAnimation()
+        boredAnimationId += 1
+        local id = boredAnimationId
+        local originalPosition = artwork.Position
+        local originalRotation = artwork.Rotation
+
+        local function move(xOffset, rotation, duration)
+            if not artwork.Parent or id ~= boredAnimationId then return end
+            local tween = TweenService:Create(
+                artwork,
+                TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                {
+                    Position = originalPosition + UDim2.fromOffset(xOffset, 0),
+                    Rotation = rotation
+                }
+            )
+            tween:Play()
+            tween.Completed:Wait()
+        end
+
+        setArtwork("Cthinking")
+        move(-5, -3, 0.22)
+        move(5, 3, 0.28)
+        move(-4, -2, 0.24)
+        move(4, 2, 0.24)
+
+        if id ~= boredAnimationId or not artwork.Parent then return end
+        setArtwork("nervous")
+        task.wait(0.35)
+
+        if id ~= boredAnimationId or not artwork.Parent then return end
+        move(0, 0, 0.18)
+        setArtwork("Cthinking")
+        task.wait(0.45)
+
+        if id ~= boredAnimationId or not artwork.Parent then return end
+        setArtwork("Yippe")
+        local pop = TweenService:Create(
+            artwork,
+            TweenInfo.new(0.14, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+            {Size = UDim2.fromOffset(182, 222)}
+        )
+        pop:Play()
+        pop.Completed:Wait()
+
+        if artwork.Parent then
+            TweenService:Create(
+                artwork,
+                TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+                {Size = UDim2.fromOffset(170, 210)}
+            ):Play()
+        end
+
+        if artwork.Parent then
+            artwork.Position = originalPosition
+            artwork.Rotation = originalRotation
+        end
+    end
+
     local function sendMessage()
         local message = input.Text:gsub("^%s+", ""):gsub("%s+$", "")
         if message == "" then return end
@@ -1299,10 +1359,14 @@ function MainUI:_CreateChatPage(Hub)
         addMessage(Players.LocalPlayer and Players.LocalPlayer.Name or "YOU", message, GREEN)
 
         if lower == "im bored" then
-            self:_RevealGameTab()
-            local text = "Bored? ...Fine. I know a game."
-            speak(text, "Yippe")
-            addMessage("FAIRWELL", text, BLUE)
+            task.spawn(playBoredAnimation)
+            task.delay(1.65, function()
+                if not messages.Parent then return end
+                self:_RevealGameTab()
+                local text = "Bored? ...Fine. I know a game."
+                speak(text, "Yippe")
+                addMessage("FAIRWELL", text, BLUE)
+            end)
             return
         end
 
