@@ -58,29 +58,40 @@ local function AnalyzeRoom(Room)
 		entity = 0
 	}
 
+	local function Count(Name, Kind)
+		Name = string.lower(tostring(Name or ""))
+		if Name == Kind or string.match(Name, "^" .. Kind .. "[_%-%d]*$") then
+			Counts[Kind] += 1
+		end
+	end
+
 	for _, Object in ipairs(Room:GetDescendants()) do
 		local Name = string.lower(tostring(Object.Name or ""))
 
-		for Kind in pairs(Counts) do
-			if string.find(Name, Kind, 1, true) then
-				Counts[Kind] += 1
+		-- Match actual room props rather than arbitrary substrings.
+		Count(Name, "key")
+		Count(Name, "drawer")
+		Count(Name, "locker")
+		Count(Name, "book")
+		Count(Name, "painting")
+		Count(Name, "light")
+		Count(Name, "door")
+
+		-- Entities are only recognized when their model is actually present
+		-- in the room. Child parts with names such as "Figure" are ignored.
+		if Object:IsA("Model") then
+			local IsEntityName =
+				Name == "rush"
+				or Name == "ambush"
+				or Name == "figure"
+				or Name == "halt"
+				or Name == "screech"
+				or Name == "dupe"
+				or Name == "timothy"
+
+			if IsEntityName then
+				Counts.entity += 1
 			end
-		end
-
-		-- Only count unmistakable entity instances.
-		-- Normal room assets can contain words like "Seek" or "Figure",
-		-- so substring matching here causes false positives.
-		local IsEntityName =
-			Name == "rush"
-			or Name == "ambush"
-			or Name == "figure"
-			or Name == "halt"
-			or Name == "screech"
-			or Name == "dupe"
-			or Name == "timothy"
-
-		if IsEntityName then
-			Counts.entity += 1
 		end
 	end
 
