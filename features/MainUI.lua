@@ -1459,9 +1459,7 @@ AvatarStroke.Parent = AvatarFrame
 		TweenService:Create(MiniAvatar, FadeInfo, {ImageTransparency = 1}):Play()
 		TweenService:Create(MiniArms, FadeInfo, {ImageTransparency = 1}):Play()
 		task.delay(0.3, function()
-			if not MiniNotificationShowing then
-				MiniRoot.Visible = false
-			end
+			MiniRoot.Visible = false
 		end)
 	end
 
@@ -1519,6 +1517,7 @@ AvatarStroke.Parent = AvatarFrame
 			task.delay(0.32, function()
 				if ThisToken == MiniNotificationToken then
 					MiniNotificationShowing = false
+					ProcessMiniNotificationQueue()
 				end
 			end)
 		end)
