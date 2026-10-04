@@ -529,13 +529,20 @@ function Hub:Enable(name)
 	end
 
 	if feature.Start then
-		local success, err = pcall(function()
-			feature.Start(feature, self)
+		local success, started = pcall(function()
+			return feature.Start(feature, self)
 		end)
 
 		if not success then
-			self:Error("Failed to start", name, "-", err)
+			self:Error("Failed to start", name, "-", started)
 			return false
+		end
+
+		-- A feature may return false to decline startup (for example when
+		-- its persistent setting is OFF). Do not mark it enabled in that case.
+		if started == false then
+			self:Log("Skipped startup for disabled feature:", name)
+			return true
 		end
 	end
 
