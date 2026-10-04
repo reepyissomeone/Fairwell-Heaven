@@ -819,7 +819,6 @@ function MainUI:_CreateSettingsPage(Hub)
 
         -- Hard-kill the current Fairwell runtime.
         -- Shutdown disconnects every registered feature and destroys Fairwell UI.
-        runtimeHub._Killed = true
         if type(runtimeHub.Shutdown) == "function" then
             runtimeHub:Shutdown()
         end
@@ -1406,8 +1405,7 @@ function MainUI:_Switch(pageName)
         Game = "GameTab",
         Visual = "VisualTab",
         Settings = "SettingsTab",
-        DevLab = "DevLabTab"
-    }
+        }
 
     local tab = self.Tabs and self.Tabs[tabMap[pageName]]
     if tab then
