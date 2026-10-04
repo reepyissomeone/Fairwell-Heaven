@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 4.2
+--// Version 4.3
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
@@ -378,31 +378,20 @@ function MainUI:UpdateStatus(Hub)
 			"Current Room: "
 			.. CurrentRoomNumber
 
-		local PreviousRoom =
-			self.LastRoomNumber
-
-		if PreviousRoom then
-			self.PreviousRoomLabel.Text =
-				"Previous Room: "
-				.. tostring(PreviousRoom)
-		else
-			self.PreviousRoomLabel.Text =
-				"Previous Room: --"
-		end
+		local PreviousRoom = self.LastRoomNumber
 
 		if self.LastDisplayedRoom
-			and self.LastDisplayedRoom
-				~= CurrentRoomNumber then
-
-			self.RoomChangeCount =
-				(self.RoomChangeCount or 0) + 1
-
-			self.LastRoomNumber =
-				self.LastDisplayedRoom
+			and self.LastDisplayedRoom ~= CurrentRoomNumber then
+			self.RoomChangeCount = (self.RoomChangeCount or 0) + 1
+			self.LastRoomNumber = self.LastDisplayedRoom
+			PreviousRoom = self.LastRoomNumber
 		end
 
-		self.LastDisplayedRoom =
-			CurrentRoomNumber
+		self.LastDisplayedRoom = CurrentRoomNumber
+
+		self.PreviousRoomLabel.Text =
+			"Previous Room: "
+			.. tostring(PreviousRoom or "--")
 
 		self.RoomChangesLabel.Text =
 			"Room Changes: "
@@ -1065,6 +1054,7 @@ function MainUI.Start(self, Hub)
 		local Row = Instance.new("TextLabel")
 		Row.Name = "Message"
 		Row.Size = UDim2.new(1, -4, 0, 34)
+		Row.AutomaticSize = Enum.AutomaticSize.Y
 		Row.BackgroundTransparency = 1
 		Row.Text = tostring(Author) .. ": " .. tostring(Message)
 		Row.TextColor3 = TextColor or WHITE
@@ -1351,7 +1341,8 @@ AvatarStroke.Parent = AvatarFrame
 		}
 
 		for _, Entry in ipairs(Replies) do
-			if string.find(Lower, Entry[1], 1, true) then
+			local Key = Entry[1]
+			if Lower == Key or string.find(Lower, "%f[%a]" .. Key .. "%f[%A]") then
 				return Entry[2]
 			end
 		end
@@ -2406,7 +2397,7 @@ AvatarStroke.Parent = AvatarFrame
 	end
 
 	Hub:Log(
-		"Main UI v4.2 initialized with repaired Fairwell chat, artwork, and startup reveal."
+		"Main UI v4.3 initialized with repaired Fairwell chat, artwork, status tracking, and startup reveal."
 	)
 end
 
