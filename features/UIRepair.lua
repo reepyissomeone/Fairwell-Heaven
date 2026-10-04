@@ -102,15 +102,21 @@ return {
             end
         end
 
-        if Gui.Destroying then
-            self.DestroyConnection = Gui.Destroying:Connect(cleanup)
-        end
-
         self.ChildConnection = PlayerGui.ChildAdded:Connect(function(child)
             if child.Name == "FairwellMiniNotificationBack" then
                 child.DisplayOrder = 999999
             elseif child.Name == "FairwellMiniNotificationFront" then
                 child.DisplayOrder = 1000001
+            end
+        end)
+
+        self.CleanupWatcher = PlayerGui.ChildRemoved:Connect(function(child)
+            if child == Gui or child.Name == "FairwellHeaven_MainUI" then
+                cleanup()
+                if self.CleanupWatcher then
+                    self.CleanupWatcher:Disconnect()
+                    self.CleanupWatcher = nil
+                end
             end
         end)
 
