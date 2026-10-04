@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 4.4
+--// Version 4.10
 --// Adds animated minimized Fairwell notifications
 --// Adds live DOORS information to Main > Status
 
@@ -3042,7 +3042,7 @@ VisualInfo.TextSize = 10
 	end
 
 	Hub:Log(
-		"Main UI v4.9 initialized with strictly layered menu-anchored Fairwell mini notifications."
+		"Main UI v4.10 initialized with layered mini Fairwell notifications."
 	)
 end
 
@@ -3117,9 +3117,6 @@ function MainUI.Stop(self)
 		self.MiniPositionConnection = nil
 	end
 
-	if MiniBackRoot and MiniBackRoot.Parent then
-		MiniBackGui:Destroy()
-	end
 	if MiniBackGui and MiniBackGui.Parent then
 		MiniBackGui:Destroy()
 	end
@@ -3138,6 +3135,9 @@ function MainUI.Stop(self)
 		self.Gui:Destroy()
 		self.Gui = nil
 	end
+
+	MiniBackGui = nil
+	MiniFrontGui = nil
 
 	self.Status = nil
 	self.Hub = nil
