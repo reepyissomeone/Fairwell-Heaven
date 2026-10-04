@@ -354,96 +354,197 @@ end
 function MainUI:_BuildChat(Hub)
     local page=self.Pages.Chat
 
+    -- Chat header: gives the page an identity instead of looking like a log.
+    local header=make("Frame",{
+        Name="ChatHeader",
+        Position=UDim2.fromOffset(6,42),
+        Size=UDim2.new(1,-12,0,54),
+        BackgroundColor3=PANEL,
+        BorderSizePixel=0
+    },page)
+    round(header,8); line(header,BLUE,0.45)
+
+    local avatar=make("ImageLabel",{
+        Name="HeaderAvatar",
+        Position=UDim2.fromOffset(8,7),
+        Size=UDim2.fromOffset(40,40),
+        BackgroundColor3=PANEL2,
+        BorderSizePixel=0,
+        BackgroundTransparency=0.15,
+        Image="",
+        ScaleType=Enum.ScaleType.Fit
+    },header)
+    round(avatar,20)
+
+    local who=text(header,"Who","FAIRWELL",UDim2.fromOffset(57,6),UDim2.new(1,-70,0,20),11,WHITE)
+    who.Font=Enum.Font.GothamBold
+    local online=text(header,"Online","Your companion • ready to talk",UDim2.fromOffset(57,26),UDim2.new(1,-70,0,18),8,GREEN)
+
     local messages=make("ScrollingFrame",{
         Name="Messages",
-        Position=UDim2.fromOffset(6,43),
-        Size=UDim2.new(1,-12,1,-112),
-        BackgroundColor3=PANEL,
+        Position=UDim2.fromOffset(6,103),
+        Size=UDim2.new(1,-12,1,-172),
+        BackgroundColor3=Color3.fromRGB(5,4,34),
         BorderSizePixel=0,
-        ScrollBarThickness=4,
+        ScrollBarThickness=3,
         ScrollBarImageColor3=BLUE,
         CanvasSize=UDim2.fromOffset(0,0),
-        AutomaticCanvasSize=Enum.AutomaticSize.Y
+        AutomaticCanvasSize=Enum.AutomaticSize.Y,
+        ScrollingDirection=Enum.ScrollingDirection.Y
     },page)
-    round(messages,7); line(messages,BLUE,0.55)
-    make("UIListLayout",{Padding=UDim.new(0,5),SortOrder=Enum.SortOrder.LayoutOrder},messages)
+    round(messages,8); line(messages,BLUE,0.72)
+
+    local list=make("UIListLayout",{
+        Padding=UDim.new(0,8),
+        SortOrder=Enum.SortOrder.LayoutOrder
+    },messages)
     local pad=Instance.new("UIPadding")
-    pad.PaddingTop=UDim.new(0,7); pad.PaddingLeft=UDim.new(0,7); pad.PaddingRight=UDim.new(0,7); pad.PaddingBottom=UDim.new(0,7)
+    pad.PaddingTop=UDim.new(0,9)
+    pad.PaddingLeft=UDim.new(0,9)
+    pad.PaddingRight=UDim.new(0,9)
+    pad.PaddingBottom=UDim.new(0,9)
     pad.Parent=messages
+
+    local inputBar=make("Frame",{
+        Name="InputBar",
+        Position=UDim2.new(0,6,1,-62),
+        Size=UDim2.new(1,-12,0,52),
+        BackgroundColor3=PANEL,
+        BorderSizePixel=0
+    },page)
+    round(inputBar,8); line(inputBar,BLUE,0.5)
 
     local input=make("TextBox",{
         Name="Input",
-        Position=UDim2.new(0,6,1,-62),
-        Size=UDim2.new(1,-70,0,50),
-        BackgroundColor3=PANEL,
+        Position=UDim2.fromOffset(10,4),
+        Size=UDim2.new(1,-68,1,-8),
+        BackgroundTransparency=1,
         BorderSizePixel=0,
         Text="",
-        PlaceholderText="Talk to Fairwell...",
+        PlaceholderText="Message Fairwell...",
         PlaceholderColor3=GREY,
         TextColor3=WHITE,
         TextSize=10,
         Font=Enum.Font.Gotham,
         ClearTextOnFocus=false,
         MultiLine=false,
-        TextXAlignment=Enum.TextXAlignment.Left
-    },page)
-    round(input,7); line(input,BLUE,0.55)
+        TextXAlignment=Enum.TextXAlignment.Left,
+        TextYAlignment=Enum.TextYAlignment.Center
+    },inputBar)
 
     local send=make("TextButton",{
         Name="Send",
-        Position=UDim2.new(1,-58,1,-62),
-        Size=UDim2.fromOffset(52,50),
+        AnchorPoint=Vector2.new(1,0.5),
+        Position=UDim2.new(1,-5,0.5,0),
+        Size=UDim2.fromOffset(44,42),
         BackgroundColor3=BLUE,
         BorderSizePixel=0,
-        Text="SEND",
+        Text="➤",
         TextColor3=WHITE,
-        TextSize=9,
+        TextSize=18,
         Font=Enum.Font.GothamBold,
-        Active=true
-    },page)
+        Active=true,
+        AutoButtonColor=true
+    },inputBar)
     round(send,7)
 
-    local function add(who,msg,color)
-        local row=make("TextLabel",{
+    self.ChatMessages=messages
+    self.ChatHeaderAvatar=avatar
+
+    local function setPortrait(imageObject,state)
+        local assets=self.CompanionAssets or {}
+        if assets[state] then
+            imageObject.Image=assets[state]
+            imageObject.Visible=true
+        else
+            imageObject.Visible=false
+        end
+    end
+
+    local function add(who,msg,color,state)
+        local isFairwell=(who=="FAIRWELL")
+        local row=make("Frame",{
             Name="Message",
             Size=UDim2.new(1,0,0,0),
             AutomaticSize=Enum.AutomaticSize.Y,
             BackgroundTransparency=1,
-            Text=tostring(who)..": "..tostring(msg),
-            TextColor3=color or WHITE,
-            TextSize=9,
-            Font=Enum.Font.Gotham,
-            TextWrapped=true,
-            TextXAlignment=Enum.TextXAlignment.Left,
-            TextYAlignment=Enum.TextYAlignment.Top
+            LayoutOrder=#messages:GetChildren()
         },messages)
-        task.defer(function() messages.CanvasPosition=Vector2.new(0,math.max(0,messages.AbsoluteCanvasSize.Y-messages.AbsoluteWindowSize.Y)) end)
+
+        local bubbleWidth=isFairwell and 0.78 or 0.76
+        local bubble=make("Frame",{
+            Name="Bubble",
+            Position=isFairwell and UDim2.fromScale(0.17,0) or UDim2.fromScale(0.24,0),
+            Size=UDim2.new(bubbleWidth,0,0,0),
+            AutomaticSize=Enum.AutomaticSize.Y,
+            BackgroundColor3=isFairwell and PANEL2 or Color3.fromRGB(19,17,66),
+            BorderSizePixel=0
+        },row)
+        round(bubble,8)
+        line(bubble,isFairwell and BLUE or GREEN,0.62)
+
+        local body=text(bubble,"Text",msg,UDim2.fromOffset(10,7),UDim2.new(1,-20,0,0),10,color or WHITE)
+        body.AutomaticSize=Enum.AutomaticSize.Y
+        body.TextWrapped=true
+        body.TextYAlignment=Enum.TextYAlignment.Top
+
+        local nameLabel=text(bubble,"Name",isFairwell and "FAIRWELL" or "YOU",
+            UDim2.fromOffset(10,3),UDim2.new(1,-20,0,15),7,isFairwell and BLUE or GREEN)
+        nameLabel.Font=Enum.Font.GothamBold
+        body.Position=UDim2.fromOffset(10,20)
+
+        if isFairwell then
+            local portrait=make("ImageLabel",{
+                Name="Portrait",
+                Position=UDim2.fromOffset(0,2),
+                Size=UDim2.fromOffset(43,43),
+                BackgroundColor3=PANEL2,
+                BorderSizePixel=0,
+                BackgroundTransparency=0.1,
+                Image="",
+                ScaleType=Enum.ScaleType.Fit
+            },row)
+            round(portrait,21)
+            line(portrait,BLUE,0.5)
+            setPortrait(portrait,state or "Ctalking")
+            table.insert(self.ChatPortraits or {},portrait)
+        end
+
         return row
+    end
+
+    local function scrollBottom()
+        task.defer(function()
+            if messages.Parent then
+                messages.CanvasPosition=Vector2.new(0,math.max(0,messages.AbsoluteCanvasSize.Y-messages.AbsoluteWindowSize.Y))
+            end
+        end)
     end
 
     local function reply(message)
         local lower=message:lower()
         if lower=="hi" or lower=="hello" or lower=="hey" then
-            return "Hey. I'm right here."
+            return "Hey. I'm right here.","Ctalking"
         elseif lower:find("how are you",1,true) then
-            return "Doing alright. Better now that you're talking to me."
+            return "Doing alright. Better now that you're talking to me.","Ctalking"
         elseif lower:find("help",1,true) then
-            return "Try /status, /clear, or just tell me what you're thinking."
+            return "Try /status or /clear. Or just tell me what's going on.","Cthinking"
         elseif lower:find("scared",1,true) then
-            return "Stay close. We'll deal with it together."
+            return "Stay close. We'll deal with it together.","Scared"
         elseif lower:find("where",1,true) then
-            return "Room "..tostring(Hub.Game and Hub.Game.CurrentRoom or "?")..". Keep moving."
+            return "Room "..tostring(Hub.Game and Hub.Game.CurrentRoom or "?")..". Keep moving.","Cthinking"
         elseif lower:find("bored",1,true) then
-            return "Then we need something to do."
+            return "Then we need something to do.","Yippe"
         else
             local choices={
-                "I'm listening.",
-                "Hmm. Tell me more.",
-                "I don't know about that one, but I'm thinking.",
-                "Fair enough.",
-                "I'll keep that in mind."
+                {"I'm listening.","Ctalking"},
+                {"Hmm. Tell me more.","Cthinking"},
+                {"I'm thinking.","Cthinking"},
+                {"Fair enough.","Idle"},
+                {"I'll keep that in mind.","Ctalking"}
             }
-            return choices[math.random(1,#choices)]
+            local pick=choices[math.random(1,#choices)]
+            return pick[1],pick[2]
         end
     end
 
@@ -451,36 +552,50 @@ function MainUI:_BuildChat(Hub)
         local msg=trim(input.Text)
         if msg=="" then return end
         input.Text=""
-        add(Players.LocalPlayer and Players.LocalPlayer.Name or "YOU",msg,GREEN)
+        add("YOU",msg,GREEN)
+        scrollBottom()
 
         local lower=msg:lower()
         if lower=="/clear" then
             for _,c in ipairs(messages:GetChildren()) do
-                if c:IsA("TextLabel") and c.Name=="Message" then c:Destroy() end
+                if c.Name=="Message" then c:Destroy() end
             end
-            add("FAIRWELL","Chat cleared.",BLUE)
+            add("FAIRWELL","Chat cleared.","BLUE","Ctalking")
+            scrollBottom()
             return
         end
+
         if lower=="/status" then
-            add("FAIRWELL","Game: "..tostring(Hub.Game.Name).." • Place: "..tostring(game.PlaceId),BLUE)
+            add("FAIRWELL",
+                "Game: "..tostring(Hub.Game and Hub.Game.Name or "Unknown")..
+                "\nPlace: "..tostring(game.PlaceId),
+                BLUE,"Cthinking")
+            scrollBottom()
             return
         end
+
         if lower=="im bored" or lower=="i'm bored" then
             task.spawn(function()
                 self:_CompanionState("Cthinking")
-                task.wait(0.6)
+                add("FAIRWELL","Bored? ...Fine. I know a game.",BLUE,"Cthinking")
+                scrollBottom()
+                task.wait(0.65)
                 self:_CompanionState("Yippe")
                 self:_RevealGameTab()
-                add("FAIRWELL","Bored? ...Fine. I know a game.",BLUE)
             end)
             return
         end
 
-        task.delay(0.3,function()
+        self:_CompanionState("Cthinking")
+        task.delay(0.45,function()
             if not messages.Parent then return end
-            add("FAIRWELL",reply(msg),BLUE)
-            self:_CompanionState("Ctalking")
-            task.delay(1.5,function() self:_CompanionState("Idle") end)
+            local answer,state=reply(msg)
+            add("FAIRWELL",answer,BLUE,state)
+            scrollBottom()
+            self:_CompanionState(state)
+            task.delay(1.5,function()
+                if self.CompanionSetState then self:_CompanionState("Idle") end
+            end)
         end)
     end
 
@@ -489,7 +604,8 @@ function MainUI:_BuildChat(Hub)
         if enter then sendMessage() end
     end)
 
-    add("FAIRWELL","Hey. Talk to me.",BLUE)
+    add("FAIRWELL","Hey. I'm here if you need me.","Ctalking","Ctalking")
+    setPortrait(avatar,"Idle")
 end
 
 function MainUI:_Switch(pageName)
@@ -667,6 +783,8 @@ function MainUI:_CreateCompanion()
         Cthinking=base.."Cthinking.png",Yippe=base.."Yippe.png",Tapped=base.."Tapped.png"
     }
     local assets={}
+    self.CompanionAssets=assets
+    self.ChatPortraits={}
 
     local function loader()
         if type(getcustomasset)=="function" then return getcustomasset end
@@ -698,6 +816,15 @@ function MainUI:_CreateCompanion()
             end)
         end
         if assets.Idle then image.Image=assets.Idle end
+        if self.ChatHeaderAvatar and assets.Idle then
+            self.ChatHeaderAvatar.Image=assets.Idle
+        end
+        for _,portrait in ipairs(self.ChatPortraits or {}) do
+            if portrait and portrait.Parent and assets.Ctalking then
+                portrait.Image=assets.Ctalking
+                portrait.Visible=true
+            end
+        end
     end)
 
     local current="Idle"
@@ -915,6 +1042,10 @@ function MainUI:Stop()
     self.DragHandle=nil
     self.CompanionBubble=nil
     self.CompanionSetState=nil
+    self.CompanionAssets=nil
+    self.ChatPortraits=nil
+    self.ChatMessages=nil
+    self.ChatHeaderAvatar=nil
     self.Hub=nil
 end
 
