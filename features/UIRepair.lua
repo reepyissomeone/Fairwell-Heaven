@@ -52,6 +52,13 @@ return {
             and Gui.Window.Content:FindFirstChild("MainScroll")
         local Settings = Hub:GetService("Settings")
 
+        if MainScroll then
+            local Status = MainScroll:FindFirstChild("Status")
+            if Status then
+                Status.Position = UDim2.new(0, 5, 0, 250)
+            end
+        end
+
         if MainScroll and not MainScroll:FindFirstChild("Repair_FeaturesSection") then
             local Section = Instance.new("Frame")
             Section.Name = "Repair_FeaturesSection"
