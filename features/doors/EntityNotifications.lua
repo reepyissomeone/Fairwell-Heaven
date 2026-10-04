@@ -18,6 +18,9 @@ local EntityNames = {
     grumble="Grumble", giggle="Giggle"
 }
 
+-- These names are the NEW companion sprites in:
+-- assets/Fairwell/Companion/
+-- Do not use the older Fairwell reaction sprites here.
 local EntitySprites = {
     Rush = "Scared",
     Ambush = "nervous",
@@ -38,8 +41,6 @@ end
 local function FindEntityName(Object)
     local Name = NormalizeName(Object.Name)
 
-    -- Figure and Dupe are commonly referenced by room assets/templates.
-    -- Only treat a newly-added Model with the exact entity name as active.
     if Name == "figure" or Name == "dupe" then
         if Object:IsA("Model") then
             return EntityNames[Name]
@@ -47,13 +48,10 @@ local function FindEntityName(Object)
         return nil
     end
 
-    -- Exact names for the other entities.
     if EntityNames[Name] then
         return EntityNames[Name]
     end
 
-    -- Common active-entity variants such as RushMoving / AmbushMoving.
-    -- Figure/Dupe are intentionally excluded from this broad match.
     for Key, DisplayName in pairs(EntityNames) do
         if Key ~= "figure" and Key ~= "dupe"
             and string.find(Name, Key, 1, true) then
