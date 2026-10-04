@@ -1368,6 +1368,10 @@ function MainUI:_CreateCompanion(Hub)
     -- A message stays visible until the player taps Fairwell.
     local dialogueQueue = {}
     local dialogueShowing = false
+    local activeDialogue = nil
+
+    -- Only show one dialogue at a time. New text is ALWAYS queued while
+    -- another message is visible; nothing is allowed to overwrite it.
 
     local function resolveDialogue(noticeTitle, message, kind, forcedState)
         local normalized = string.upper(tostring(kind or "INFO"))
@@ -1406,10 +1410,14 @@ function MainUI:_CreateCompanion(Hub)
         end
 
         local entry = table.remove(dialogueQueue, 1)
+        activeDialogue = entry
         dialogueShowing = true
 
         setState(entry.state)
 
+        -- These are the only writes to the dialogue text. Because this
+        -- function refuses to run while dialogueShowing is true, a new
+        -- notification can never replace the current message.
         title.Text = entry.title
         title.TextColor3 = entry.accent
         title.Visible = true
@@ -1422,12 +1430,15 @@ function MainUI:_CreateCompanion(Hub)
             return
         end
 
-        table.insert(
-            dialogueQueue,
-            resolveDialogue(noticeTitle, message, kind, forcedState)
-        )
+        local entry = resolveDialogue(noticeTitle, message, kind, forcedState)
 
-        showNextDialogue()
+        -- Never replace the visible message. Append every new message to
+        -- the queue, including messages fired during the same frame.
+        table.insert(dialogueQueue, entry)
+
+        if not dialogueShowing then
+            showNextDialogue()
+        end
     end
 
     self.CompanionGui = gui
@@ -1446,9 +1457,12 @@ function MainUI:_CreateCompanion(Hub)
         -- dialogue is showing keeps the normal companion interaction.
         if dialogueShowing then
             dialogueShowing = false
+            activeDialogue = nil
             bubble.Visible = false
             title.Visible = false
             setState("Tapped", 1.5)
+
+            -- Advance ONLY after the player dismissed the previous text.
             showNextDialogue()
             return
         end
