@@ -13,7 +13,7 @@ local EntityNotifications = {
 }
 
 local EntityNames = {
-    rush="Rush", ambush="Ambush", seek="Seek", halt="Halt",
+    rush="Rush", rushmoving="Rush", ambush="Ambush", seek="Seek", halt="Halt",
     screech="Screech", creak="Creak", eyes="Eyes", figure="Figure", dupe="Dupe",
     grumble="Grumble", giggle="Giggle", sally="Sally"
 }
