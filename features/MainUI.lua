@@ -1049,12 +1049,13 @@ function MainUI:_StartDragging()
     end
 
     local dragging = false
-    local dragStart
-    local startPosition
+    local dragStart = nil
+    local startPosition = nil
 
     local function begin(input)
-        if input.UserInputType ~= Enum.UserInputType.MouseButton1
-            and input.UserInputType ~= Enum.UserInputType.Touch then
+        local inputType = input.UserInputType
+        if inputType ~= Enum.UserInputType.Touch
+            and inputType ~= Enum.UserInputType.MouseButton1 then
             return
         end
 
@@ -1069,12 +1070,19 @@ function MainUI:_StartDragging()
         end)
     end
 
-    local function update(input)
-        if not dragging then
+    local function move(input)
+        if not dragging or not dragStart or not startPosition then
+            return
+        end
+
+        local inputType = input.UserInputType
+        if inputType ~= Enum.UserInputType.Touch
+            and inputType ~= Enum.UserInputType.MouseMovement then
             return
         end
 
         local delta = input.Position - dragStart
+
         window.Position = UDim2.new(
             startPosition.X.Scale,
             startPosition.X.Offset + delta.X,
@@ -1084,17 +1092,14 @@ function MainUI:_StartDragging()
     end
 
     handle.InputBegan:Connect(begin)
-    UserInputService.InputChanged:Connect(update)
+    handle.InputChanged:Connect(move)
 
-    -- Also support touch movement directly from the drag surface.
-    handle.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement
-            or input.UserInputType == Enum.UserInputType.Touch then
-            update(input)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging then
+            move(input)
         end
     end)
 end
-
 
 function MainUI:_CreateCompanion(Hub)
     local player = Players.LocalPlayer
@@ -1411,6 +1416,42 @@ function MainUI:Start(Hub)
     self.Gui = gui
     self.Hidden = false
 
+    -- Dedicated floating mobile toggle. This is separate from the main
+    -- window so it remains easy to find and use.
+    local toggle = new("TextButton", {
+        Name = "FairwellToggle",
+        AnchorPoint = Vector2.new(0, 0.5),
+        Position = UDim2.new(0, 10, 0.5, 0),
+        Size = UDim2.fromOffset(52, 52),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        Text = "FW",
+        TextColor3 = WHITE,
+        TextSize = 14,
+        Font = Enum.Font.GothamBold,
+        Active = true,
+        ZIndex = 100
+    }, gui)
+    corner(toggle, 12)
+    stroke(toggle, BLUE, 0.05)
+
+    local toggleHint = label(
+        toggle,
+        "Hint",
+        "MENU",
+        UDim2.new(0, 0, 1, -15),
+        UDim2.new(1, 0, 0, 12),
+        7,
+        GREY
+    )
+    toggleHint.TextXAlignment = Enum.TextXAlignment.Center
+
+    toggle.Activated:Connect(function()
+        self:SetVisible(not self.Hidden)
+    end)
+
+    self.ToggleButton = toggle
+
     -- Companion assets are optional. Never let a custom-asset API or
     -- network request block the main UI from appearing.
     task.spawn(function()
@@ -1454,7 +1495,7 @@ function MainUI:Start(Hub)
     -- remain tappable while the rest of the top bar can be dragged.
     local dragSurface = new("TextButton", {
         Name = "DragSurface",
-        Size = UDim2.new(1, -74, 1, 0),
+        Size = UDim2.new(1, -42, 1, 0),
         Position = UDim2.fromOffset(0, 0),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
@@ -1471,7 +1512,7 @@ function MainUI:Start(Hub)
         "Title",
         "FAIRWELL HEAVEN",
         UDim2.fromOffset(12, 0),
-        UDim2.new(1, -55, 1, 0),
+        UDim2.new(1, -12, 1, 0),
         14,
         WHITE
     ).Font = Enum.Font.GothamBold
@@ -1489,26 +1530,6 @@ function MainUI:Start(Hub)
         Font = Enum.Font.GothamBold
     }, top)
     corner(close, 7)
-
-    -- Dedicated mobile-friendly minimize/toggle button.
-    local minimize = new("TextButton", {
-        Name = "Minimize",
-        AnchorPoint = Vector2.new(1, 0.5),
-        Position = UDim2.new(1, -42, 0.5, 0),
-        Size = UDim2.fromOffset(28, 26),
-        BackgroundColor3 = PANEL2,
-        BorderSizePixel = 0,
-        Text = "−",
-        TextColor3 = WHITE,
-        TextSize = 16,
-        Font = Enum.Font.GothamBold,
-        Active = true
-    }, top)
-    corner(minimize, 7)
-
-    minimize.Activated:Connect(function()
-        self:SetVisible(false)
-    end)
 
     local content = new("Frame", {
         Name = "Content",
@@ -1595,6 +1616,13 @@ function MainUI:Stop()
     self.CompanionBubble = nil
     self.CompanionSetState = nil
     self.CompanionNotify = nil
+
+    if self.ToggleButton then
+        self.ToggleButton:Destroy()
+        self.ToggleButton = nil
+    end
+
+    self.DragHandle = nil
     self.Hidden = false
 
     if self.NotificationConnection then
