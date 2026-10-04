@@ -2342,7 +2342,6 @@ AvatarStroke.Parent = AvatarFrame
 
 	self.Gui = Gui
 	self.Window = Window
-	self.FairwellAnimationConnection = nil
 
 	--------------------------------------------------
 	-- RESTORE PERSISTENT WINDOW SETTINGS
@@ -2460,10 +2459,6 @@ function MainUI.Stop(self)
 		self.DragConnection = nil
 	end
 
-	if self.FairwellAnimationConnection then
-		self.FairwellAnimationConnection:Disconnect()
-		self.FairwellAnimationConnection = nil
-	end
 
 	if self.Gui then
 		self.Gui:Destroy()
