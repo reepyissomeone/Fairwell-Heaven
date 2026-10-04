@@ -153,6 +153,21 @@ local function ScanTree(self, root)
     for _, child in ipairs(root:GetDescendants()) do
         if child:IsA("Model") or child:IsA("Folder") then
             TryDetect(self, child)
+
+            -- Screech can be assembled after its Model is created.
+            -- Retry the model briefly so detection does not depend on the
+            -- exact frame when its descendants are inserted.
+            if Normalize(child.Name) == "screech" then
+                task.delay(0.05, function()
+                    if self.Hub and child.Parent then TryDetect(self, child) end
+                end)
+                task.delay(0.25, function()
+                    if self.Hub and child.Parent then TryDetect(self, child) end
+                end)
+                task.delay(0.75, function()
+                    if self.Hub and child.Parent then TryDetect(self, child) end
+                end)
+            end
         end
     end
 end
