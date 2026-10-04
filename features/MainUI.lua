@@ -487,7 +487,12 @@ function MainUI:_CreateSettingsPage(Hub)
 
     unload.Activated:Connect(function()
         local runtimeHub = self.Hub or Hub
-        if runtimeHub and type(runtimeHub.Shutdown) == "function" then
+        if not runtimeHub then return end
+
+        -- Hard-kill the current Fairwell runtime.
+        -- Shutdown disconnects every registered feature and destroys Fairwell UI.
+        runtimeHub._Killed = true
+        if type(runtimeHub.Shutdown) == "function" then
             runtimeHub:Shutdown()
         end
     end)
