@@ -564,8 +564,15 @@ print(
 )
 
 ------------------------------------------------------------
--- LOAD FEATURES
+-- LOAD + REGISTER FEATURES
 ------------------------------------------------------------
+-- IMPORTANT:
+-- Register every feature before enabling any feature.
+-- UI Repair depends on this because it builds its feature list
+-- when it starts. A one-pass loader used to start UI Repair
+-- before the later DOORS features had even been registered.
+
+local LoadedFeatures = {}
 
 for _, path in ipairs(Manifest) do
 
@@ -586,10 +593,6 @@ for _, path in ipairs(Manifest) do
 	local Name =
 		Feature.Name or path
 
-	--------------------------------------------------------
-	-- REGISTER
-	--------------------------------------------------------
-
 	local Registered, ErrorMessage =
 		Hub:RegisterFeature(
 			Name,
@@ -609,21 +612,58 @@ for _, path in ipairs(Manifest) do
 
 	end
 
+	table.insert(LoadedFeatures, {
+		Name = Name,
+		Path = path
+	})
+
 	print(
-		"[Fairwell Heaven] Loaded feature:",
+		"[Fairwell Heaven] Registered feature:",
 		Name
 	)
-
-	--------------------------------------------------------
-	-- ENABLE
-	--------------------------------------------------------
-
-	Hub:Enable(Name)
 
 end
 
 print(
-	"[Fairwell Heaven] All features loaded."
+	"[Fairwell Heaven] Registered "
+	.. tostring(#LoadedFeatures)
+	.. " / "
+	.. tostring(#Manifest)
+	.. " feature(s)."
+)
+
+------------------------------------------------------------
+-- ENABLE FEATURES
+------------------------------------------------------------
+-- Registration is now complete, so every feature can see the
+-- complete Hub:GetFeatures() list during startup.
+
+for _, Entry in ipairs(LoadedFeatures) do
+
+	local Enabled, ErrorMessage =
+		Hub:Enable(Entry.Name)
+
+	if not Enabled then
+
+		warn(
+			"[Fairwell Heaven] Failed to enable:",
+			Entry.Name,
+			ErrorMessage or ""
+		)
+
+	else
+
+		print(
+			"[Fairwell Heaven] Processed feature:",
+			Entry.Name
+		)
+
+	end
+
+end
+
+print(
+	"[Fairwell Heaven] All features processed."
 )
 
 ------------------------------------------------------------
