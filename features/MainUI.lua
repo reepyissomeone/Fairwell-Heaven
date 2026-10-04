@@ -839,6 +839,24 @@ function MainUI:Start(Hub)
 
     self:_BuildFeatureList(Hub, true)
     self:_UpdateStatus(Hub)
+
+    -- Tab buttons are wired once here. Pages are never duplicated.
+    self.Tabs.MainTab.Activated:Connect(function()
+        self:_Switch("Main")
+    end)
+    self.Tabs.DevTab.Activated:Connect(function()
+        self:_Switch("Logs")
+    end)
+    self.Tabs.FairwellChatTab.Activated:Connect(function()
+        self:_Switch("Chat")
+    end)
+    self.Tabs.VisualTab.Activated:Connect(function()
+        self:_Switch("Visual")
+    end)
+    self.Tabs.SettingsTab.Activated:Connect(function()
+        self:_Switch("Settings")
+    end)
+
     self:_Switch("Main")
     self:_StartDragging()
 
