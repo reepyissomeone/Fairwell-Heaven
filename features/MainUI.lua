@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 3.7
+--// Version 3.8
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
@@ -1038,7 +1038,7 @@ AvatarStroke.Parent = AvatarFrame
 	FairwellSpot.Position = UDim2.new(0, 10, 0, 52)
 	FairwellSpot.Size = UDim2.fromOffset(170, 210)
 	FairwellSpot.BackgroundColor3 = Color3.fromRGB(7, 8, 24)
-	FairwellSpot.BackgroundTransparency = 0.05
+	FairwellSpot.BackgroundTransparency = 1
 	FairwellSpot.ClipsDescendants = true
 	FairwellSpot.ZIndex = 3
 	FairwellSpot.Ambient = Color3.fromRGB(180, 190, 210)
@@ -1126,7 +1126,7 @@ AvatarStroke.Parent = AvatarFrame
 	FairwellThumbnail.Image = ""
 	FairwellThumbnail.ScaleType = Enum.ScaleType.Fit
 	FairwellThumbnail.Visible = true
-	FairwellThumbnail.ZIndex = 10
+	FairwellThumbnail.ZIndex = 2
 	FairwellThumbnail.Parent = ChatStage
 
 	local FairwellThumbnailCorner = Instance.new("UICorner")
@@ -1227,7 +1227,7 @@ AvatarStroke.Parent = AvatarFrame
 	local function LoadFairwellThumbnail(UserId)
 		local ThumbnailUrl = "rbxthumb://type=AvatarBust&id=" .. tostring(UserId) .. "&w=420&h=420"
 		FairwellThumbnail.Image = ThumbnailUrl
-		FairwellThumbnail.Visible = not Fairwell3DActive
+		FairwellThumbnail.Visible = true
 
 		task.spawn(function()
 			local ok, err = pcall(function()
@@ -1246,9 +1246,7 @@ AvatarStroke.Parent = AvatarFrame
 			end)
 			if Success and type(Image) == "string" and Image ~= "" then
 				FairwellThumbnail.Image = Image
-				if not Fairwell3DActive then
-					FairwellThumbnail.Visible = true
-				end
+				FairwellThumbnail.Visible = true
 				Hub:Log("Loaded official fairwelladmi avatar thumbnail" .. (IsReady and " (ready)." or " (waiting)."), "INFO")
 			else
 				Hub:Log("Using direct Roblox thumbnail URL fallback.", "WARN")
@@ -1285,9 +1283,9 @@ AvatarStroke.Parent = AvatarFrame
 			local Prepared = PrepareFairwellModel(Model)
 			if Prepared then
 				Fairwell3DActive = true
-				FairwellThumbnail.Visible = false
+				FairwellThumbnail.Visible = true
 				FairwellSpot.Visible = true
-				Hub:Log("Loaded the actual 3D fairwelladmi Roblox avatar.", "SUCCESS")
+				Hub:Log("Loaded the actual 3D fairwelladmi Roblox avatar over the fallback thumbnail.", "SUCCESS")
 				return Prepared
 			end
 		end
@@ -1314,9 +1312,9 @@ AvatarStroke.Parent = AvatarFrame
 				local Prepared = PrepareFairwellModel(DescriptionModel)
 				if Prepared then
 					Fairwell3DActive = true
-					FairwellThumbnail.Visible = false
+					FairwellThumbnail.Visible = true
 					FairwellSpot.Visible = true
-					Hub:Log("Loaded fairwelladmi through HumanoidDescription with wall-lean pose.", "SUCCESS")
+					Hub:Log("Loaded fairwelladmi through HumanoidDescription over the fallback thumbnail.", "SUCCESS")
 					return Prepared
 				end
 			end
@@ -1347,9 +1345,9 @@ AvatarStroke.Parent = AvatarFrame
 		if Model then
 			FairwellModel = Model
 			Fairwell3DActive = true
-			FairwellThumbnail.Visible = false
+			FairwellThumbnail.Visible = true
 			FairwellSpot.Visible = true
-			Hub:Log("Fairwell 3D avatar is active with wall-lean pose.", "SUCCESS")
+			Hub:Log("Fairwell 3D avatar is active; thumbnail remains as a transparent fallback.", "SUCCESS")
 		else
 			Fairwell3DActive = false
 			FairwellThumbnail.Visible = true
@@ -2662,7 +2660,7 @@ AvatarStroke.Parent = AvatarFrame
 	end
 
 	Hub:Log(
-		"Main UI v3.7 initialized with true 3D fairwelladmi avatar display and thumbnail fallback."
+		"Main UI v3.8 initialized with 3D fairwelladmi avatar plus transparent thumbnail fallback."
 	)
 end
 
