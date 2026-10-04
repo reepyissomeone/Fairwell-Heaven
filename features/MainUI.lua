@@ -1273,7 +1273,7 @@ function MainUI:_CreateCompanion(Hub)
     setState("Idle")
 
     local function showNotification(noticeTitle, message, kind, duration)
-        if not gui.Parent or not self.Hidden then
+        if not gui.Parent or not self.Hidden or self.CompanionEnabled ~= true then
             return
         end
 
@@ -1358,7 +1358,7 @@ function MainUI:_CreateCompanion(Hub)
     UserInputService.InputChanged:Connect(updateDrag)
 
     -- MainUI may have been hidden before the companion finished loading.
-    gui.Enabled = self.Hidden == true
+    gui.Enabled = self.CompanionEnabled == true and self.Hidden == true
     if not self.Hidden then
         gui.Enabled = false
     end
@@ -1376,7 +1376,7 @@ function MainUI:SetVisible(visible)
     end
 
     if self.CompanionGui and self.CompanionGui.Parent then
-        self.CompanionGui.Enabled = not visible
+        self.CompanionGui.Enabled = self.CompanionEnabled == true and not visible
     end
 
     if visible and self.CompanionBubble then
@@ -1415,6 +1415,7 @@ function MainUI:Start(Hub)
 
     self.Gui = gui
     self.Hidden = false
+    self.CompanionEnabled = true
 
     -- Floating mobile toggle lives in its OWN ScreenGui.
     -- This keeps it visible even when the main window is hidden.
@@ -1460,7 +1461,14 @@ function MainUI:Start(Hub)
     toggleHint.TextXAlignment = Enum.TextXAlignment.Center
 
     toggle.Activated:Connect(function()
-        self:SetVisible(not self.Hidden)
+        self.CompanionEnabled = not self.CompanionEnabled
+
+        if self.CompanionGui and self.CompanionGui.Parent then
+            self.CompanionGui.Enabled = self.CompanionEnabled and self.Hidden
+        end
+
+        toggle.Text = self.CompanionEnabled and "FW" or "OFF"
+        toggleHint.Text = self.CompanionEnabled and "MENU" or "OFF"
     end)
 
     self.ToggleGui = toggleGui
@@ -1641,6 +1649,7 @@ function MainUI:Stop()
 
     self.DragHandle = nil
     self.Hidden = false
+    self.CompanionEnabled = false
 
     if self.NotificationConnection then
         self.NotificationConnection:Disconnect()
