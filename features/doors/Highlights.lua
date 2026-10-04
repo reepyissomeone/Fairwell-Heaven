@@ -30,7 +30,14 @@ local function GetKind(object)
 
     if Name == "door" then return "door" end
     if Name == "keycard" then return "keycard" end
-    if Name == "key" or string.find(Name, "key", 1, true) then return "key" end
+
+    -- Keys are highlighted only when the actual key is a Model.
+    -- This prevents handles, meshes, attachments, and other key-named
+    -- descendants from receiving their own highlights.
+    if object:IsA("Model") and (Name == "key" or string.find(Name, "key", 1, true)) then
+        return "key"
+    end
+
     if Name == "lever" or string.find(Name, "lever", 1, true) then return "lever" end
 
     return nil
