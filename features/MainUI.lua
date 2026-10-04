@@ -1316,9 +1316,17 @@ function MainUI:_CreateCompanion(Hub)
     self.CompanionBubble = bubble
     self.CompanionSetState = setState
     self.CompanionNotify = showNotification
+    self.CompanionTap = function()
+        -- Reserved for Fairwell tap artwork/action.
+        -- Intentionally does not change main menu visibility.
+    end
 
+    -- Tapping Fairwell does NOT open the main menu.
+    -- FW is the only control that toggles the menu.
     button.Activated:Connect(function()
-        self:SetVisible(true)
+        if self.CompanionTap then
+            self.CompanionTap()
+        end
     end)
 
     -- Touch/mouse dragging. Activated remains available for tapping.
