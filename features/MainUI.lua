@@ -1225,6 +1225,11 @@ function MainUI:_CreateCompanion(Hub)
         Scared = base .. "Scared.png",
         confused = base .. "confused.png",
         nervous = base .. "nervous.png",
+        hiding = base .. "hiding.png",
+        hurt = base .. "hurt.png",
+        relief = base .. "relief.png",
+        surpised = base .. "surpised.png",
+        terrified = base .. "terrified.png",
     }
     local files = {
         Idle = "FairwellHeaven/assets/Fairwell/Companion/Idle.png",
@@ -1237,6 +1242,11 @@ function MainUI:_CreateCompanion(Hub)
         Scared = "FairwellHeaven/assets/Fairwell/Companion/Scared.png",
         confused = "FairwellHeaven/assets/Fairwell/Companion/confused.png",
         nervous = "FairwellHeaven/assets/Fairwell/Companion/nervous.png",
+        hiding = "FairwellHeaven/assets/Fairwell/Companion/hiding.png",
+        hurt = "FairwellHeaven/assets/Fairwell/Companion/hurt.png",
+        relief = "FairwellHeaven/assets/Fairwell/Companion/relief.png",
+        surpised = "FairwellHeaven/assets/Fairwell/Companion/surpised.png",
+        terrified = "FairwellHeaven/assets/Fairwell/Companion/terrified.png",
     }
     local images = {}
 
@@ -1287,7 +1297,7 @@ function MainUI:_CreateCompanion(Hub)
     -- Asset downloads happen in the background so the main window can
     -- render immediately even when GitHub/custom-asset APIs are slow.
     task.spawn(function()
-        for _, state in ipairs({"Idle", "ALERT", "Ctalking", "Cthinking", "Yippe", "uhoh", "Tapped", "Scared", "confused", "nervous"}) do
+        for _, state in ipairs({"Idle", "ALERT", "Ctalking", "Cthinking", "Yippe", "uhoh", "Tapped", "Scared", "confused", "nervous", "hiding", "hurt", "relief", "surpised", "terrified"}) do
             loadAsset(state)
         end
     end)
