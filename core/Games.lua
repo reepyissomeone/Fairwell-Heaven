@@ -7,7 +7,7 @@ Games.DOORS = {
 	Name = "DOORS",
 
 	-- Roblox DOORS place.
-	PlaceId = 2440500124
+	PlaceId = 6516141723
 }
 
 function Games:Detect()
