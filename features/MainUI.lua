@@ -1416,31 +1416,44 @@ function MainUI:Start(Hub)
     self.Gui = gui
     self.Hidden = false
 
-    -- Dedicated floating mobile toggle. This is separate from the main
-    -- window so it remains easy to find and use.
+    -- Floating mobile toggle lives in its OWN ScreenGui.
+    -- This keeps it visible even when the main window is hidden.
+    local oldToggleGui = playerGui:FindFirstChild("FairwellHeaven_Toggle")
+    if oldToggleGui then
+        oldToggleGui:Destroy()
+    end
+
+    local toggleGui = new("ScreenGui", {
+        Name = "FairwellHeaven_Toggle",
+        ResetOnSpawn = false,
+        IgnoreGuiInset = true,
+        DisplayOrder = 1000005,
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    }, playerGui)
+
     local toggle = new("TextButton", {
         Name = "FairwellToggle",
         AnchorPoint = Vector2.new(0, 0.5),
         Position = UDim2.new(0, 10, 0.5, 0),
-        Size = UDim2.fromOffset(52, 52),
+        Size = UDim2.fromOffset(58, 58),
         BackgroundColor3 = PANEL,
         BorderSizePixel = 0,
         Text = "FW",
         TextColor3 = WHITE,
-        TextSize = 14,
+        TextSize = 15,
         Font = Enum.Font.GothamBold,
         Active = true,
         ZIndex = 100
-    }, gui)
-    corner(toggle, 12)
-    stroke(toggle, BLUE, 0.05)
+    }, toggleGui)
+    corner(toggle, 14)
+    stroke(toggle, BLUE, 0.02)
 
     local toggleHint = label(
         toggle,
         "Hint",
         "MENU",
-        UDim2.new(0, 0, 1, -15),
-        UDim2.new(1, 0, 0, 12),
+        UDim2.new(0, 0, 1, -16),
+        UDim2.new(1, 0, 0, 13),
         7,
         GREY
     )
@@ -1450,6 +1463,7 @@ function MainUI:Start(Hub)
         self:SetVisible(not self.Hidden)
     end)
 
+    self.ToggleGui = toggleGui
     self.ToggleButton = toggle
 
     -- Companion assets are optional. Never let a custom-asset API or
@@ -1617,10 +1631,13 @@ function MainUI:Stop()
     self.CompanionSetState = nil
     self.CompanionNotify = nil
 
-    if self.ToggleButton then
+    if self.ToggleGui then
+        self.ToggleGui:Destroy()
+        self.ToggleGui = nil
+    elseif self.ToggleButton then
         self.ToggleButton:Destroy()
-        self.ToggleButton = nil
     end
+    self.ToggleButton = nil
 
     self.DragHandle = nil
     self.Hidden = false
