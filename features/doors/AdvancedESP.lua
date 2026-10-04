@@ -26,6 +26,12 @@ end
 local function Classify(Object)
     local Name = Normalize(Object.Name)
     local ParentName = Object.Parent and Normalize(Object.Parent.Name) or ""
+    if Object:IsA("Model") and Players:GetPlayerFromCharacter(Object) then
+        if Object ~= Players.LocalPlayer.Character then
+            return "PLAYER"
+        end
+        return nil
+    end
 
     if Name == "door" then return "DOOR" end
     if Name == "key" or string.find(Name, "key", 1, true) then return "KEY" end
@@ -62,6 +68,7 @@ local function ColorFor(Kind)
     if Kind == "GOLD" then return Color3.fromRGB(255, 190, 45) end
     if Kind == "HIDE" then return Color3.fromRGB(180, 150, 255) end
     if Kind == "OBJECTIVE" then return Color3.fromRGB(70, 230, 150) end
+    if Kind == "PLAYER" then return Color3.fromRGB(120, 210, 255) end
     return Color3.fromRGB(255, 75, 95)
 end
 
