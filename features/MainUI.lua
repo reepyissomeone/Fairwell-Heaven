@@ -1467,7 +1467,6 @@ function MainUI:Start(Hub)
                 end
             end)
     end
-    end
 
     Hub:Log("Main UI rebuilt for mobile.")
     return true
