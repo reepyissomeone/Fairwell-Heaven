@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// Main UI
---// Version 4.1
+--// Version 4.2
 --// Adds live DOORS information to Main > Status
 
 local Players = game:GetService("Players")
@@ -568,11 +568,7 @@ function MainUI.Start(self, Hub)
 	local PlayerGui =
 		Player:WaitForChild("PlayerGui")
 
-	local Old =
-		PlayerGui:FindFirstChild(
-			"FairwellHeaven_MainUI"
-		)
-
+	local Old = PlayerGui:FindFirstChild("FairwellHeaven_MainUI")
 	if Old then
 		Old:Destroy()
 	end
@@ -687,7 +683,7 @@ function MainUI.Start(self, Hub)
 	Version.BackgroundTransparency = 1
 
 	Version.Text =
-		"FAIRWELL HEAVEN • v4.1"
+		"FAIRWELL HEAVEN • v4.2"
 
 	Version.TextColor3 =
 		GREY
@@ -1002,6 +998,97 @@ function MainUI.Start(self, Hub)
 	StageStatus.ZIndex = 11
 	StageStatus.Parent = ChatStage
 
+	local Bubble = Instance.new("TextLabel")
+	Bubble.Name = "SpeechBubble"
+	Bubble.Position = UDim2.new(0, 194, 0, 46)
+	Bubble.Size = UDim2.new(1, -204, 0, 58)
+	Bubble.BackgroundColor3 = PANEL
+	Bubble.BackgroundTransparency = 0.02
+	Bubble.BorderSizePixel = 0
+	Bubble.Text = ""
+	Bubble.TextColor3 = WHITE
+	Bubble.TextSize = 11
+	Bubble.Font = Enum.Font.Gotham
+	Bubble.TextWrapped = true
+	Bubble.TextXAlignment = Enum.TextXAlignment.Left
+	Bubble.TextYAlignment = Enum.TextYAlignment.Center
+	Bubble.ZIndex = 8
+	Bubble.Parent = ChatStage
+
+	local BubblePadding = Instance.new("UIPadding")
+	BubblePadding.PaddingLeft = UDim.new(0, 10)
+	BubblePadding.PaddingRight = UDim.new(0, 10)
+	BubblePadding.PaddingTop = UDim.new(0, 6)
+	BubblePadding.PaddingBottom = UDim.new(0, 6)
+	BubblePadding.Parent = Bubble
+
+	local BubbleCorner = Instance.new("UICorner")
+	BubbleCorner.CornerRadius = UDim.new(0, 8)
+	BubbleCorner.Parent = Bubble
+
+	local BubbleStroke = Instance.new("UIStroke")
+	BubbleStroke.Color = BLUE
+	BubbleStroke.Transparency = 0.35
+	BubbleStroke.Parent = Bubble
+
+	local ChatMessages = Instance.new("ScrollingFrame")
+	ChatMessages.Name = "Messages"
+	ChatMessages.Position = UDim2.new(0, 194, 0, 112)
+	ChatMessages.Size = UDim2.new(1, -204, 0, 152)
+	ChatMessages.BackgroundColor3 = Color3.fromRGB(5, 4, 32)
+	ChatMessages.BackgroundTransparency = 0.15
+	ChatMessages.BorderSizePixel = 0
+	ChatMessages.ScrollBarThickness = 3
+	ChatMessages.ScrollBarImageColor3 = BLUE
+	ChatMessages.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	ChatMessages.CanvasSize = UDim2.new(0, 0, 0, 0)
+	ChatMessages.ZIndex = 7
+	ChatMessages.Parent = ChatStage
+
+	local ChatMessagesCorner = Instance.new("UICorner")
+	ChatMessagesCorner.CornerRadius = UDim.new(0, 7)
+	ChatMessagesCorner.Parent = ChatMessages
+
+	local ChatMessagesPadding = Instance.new("UIPadding")
+	ChatMessagesPadding.PaddingTop = UDim.new(0, 6)
+	ChatMessagesPadding.PaddingBottom = UDim.new(0, 6)
+	ChatMessagesPadding.PaddingLeft = UDim.new(0, 6)
+	ChatMessagesPadding.PaddingRight = UDim.new(0, 6)
+	ChatMessagesPadding.Parent = ChatMessages
+
+	local ChatMessagesLayout = Instance.new("UIListLayout")
+	ChatMessagesLayout.Padding = UDim.new(0, 5)
+	ChatMessagesLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	ChatMessagesLayout.Parent = ChatMessages
+
+	local function AddChatMessage(Author, Message, TextColor)
+		local Row = Instance.new("TextLabel")
+		Row.Name = "Message"
+		Row.Size = UDim2.new(1, -4, 0, 34)
+		Row.BackgroundTransparency = 1
+		Row.Text = tostring(Author) .. ": " .. tostring(Message)
+		Row.TextColor3 = TextColor or WHITE
+		Row.TextSize = 9
+		Row.Font = Enum.Font.Gotham
+		Row.TextWrapped = true
+		Row.TextXAlignment = Enum.TextXAlignment.Left
+		Row.TextYAlignment = Enum.TextYAlignment.Center
+		Row.LayoutOrder = math.floor(os.clock() * 1000)
+		Row.ZIndex = 8
+		Row.Parent = ChatMessages
+
+		task.defer(function()
+			if ChatMessages.Parent then
+				ChatMessages.CanvasPosition = Vector2.new(
+					0,
+					math.max(0, ChatMessages.AbsoluteCanvasSize.Y)
+				)
+			end
+		end)
+
+		return Row
+	end
+
 	local AvatarFrame = Instance.new("Frame")
 AvatarFrame.Name = "AvatarFrame"
 AvatarFrame.Position = UDim2.new(0, 10, 0, 46)
@@ -1224,7 +1311,7 @@ AvatarStroke.Parent = AvatarFrame
 
 	local ChatInput = Instance.new("TextBox")
 	ChatInput.Name = "Input"
-	ChatInput.Position = UDim2.new(0, 5, 0, 292)
+	ChatInput.Position = UDim2.new(0, 5, 0, 352)
 	ChatInput.Size = UDim2.new(1, -75, 0, 36)
 	ChatInput.BackgroundColor3 = PANEL
 	ChatInput.BorderSizePixel = 0
@@ -1246,9 +1333,35 @@ AvatarStroke.Parent = AvatarFrame
 	InputStroke.Color = BLUE
 	InputStroke.Parent = ChatInput
 
+	local function FairwellReply(Message)
+		local Lower = string.lower(tostring(Message))
+
+		local Replies = {
+			{"hello", "Hello. I was wondering when you'd show up."},
+			{"hi", "Hi. I'm Fairwell. What's going on?"},
+			{"hey", "Hey. I'm listening."},
+			{"who are you", "I'm Fairwell. The one sitting in the corner of this UI."},
+			{"fairwell", "You called? I'm right here."},
+			{"help", "Try /help if you want to see the chat commands."},
+			{"doors", "DOORS detected. Keep an eye on that next room."},
+			{"scary", "Good. It would be boring if everything felt safe."},
+			{"thank", "You're welcome."},
+			{"thanks", "You're welcome."},
+			{"bye", "See you later."}
+		}
+
+		for _, Entry in ipairs(Replies) do
+			if string.find(Lower, Entry[1], 1, true) then
+				return Entry[2]
+			end
+		end
+
+		return "I heard you. Tell me more."
+	end
+
 	local SendButton = Instance.new("TextButton")
 	SendButton.Name = "Send"
-	SendButton.Position = UDim2.new(1, -64, 0, 292)
+	SendButton.Position = UDim2.new(1, -64, 0, 352)
 	SendButton.Size = UDim2.new(0, 59, 0, 36)
 	SendButton.BackgroundColor3 = BLUE
 	SendButton.BackgroundTransparency = 0.1
@@ -2096,7 +2209,7 @@ AvatarStroke.Parent = AvatarFrame
 		end
 	end)
 
-	UserInputService.InputChanged:Connect(function(Input)
+	self.DragConnection = UserInputService.InputChanged:Connect(function(Input)
 		if not Dragging then
 			return
 		end
@@ -2293,7 +2406,7 @@ AvatarStroke.Parent = AvatarFrame
 	end
 
 	Hub:Log(
-		"Main UI v4.1 initialized with Fairwell artwork assets and startup reveal."
+		"Main UI v4.2 initialized with repaired Fairwell chat, artwork, and startup reveal."
 	)
 end
 
@@ -2351,6 +2464,11 @@ function MainUI.Stop(self)
 		self.StatusConnection = nil
 	end
 
+	if self.DragConnection then
+		self.DragConnection:Disconnect()
+		self.DragConnection = nil
+	end
+
 	if self.FairwellAnimationConnection then
 		self.FairwellAnimationConnection:Disconnect()
 		self.FairwellAnimationConnection = nil
@@ -2362,6 +2480,7 @@ function MainUI.Stop(self)
 	end
 
 	self.Status = nil
+	self.Hub = nil
 end
 
 return MainUI
