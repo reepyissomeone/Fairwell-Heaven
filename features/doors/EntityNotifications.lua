@@ -60,6 +60,46 @@ end
 
 local COOLDOWN = 2
 
+local function DetectStandalone(self, Object)
+    if not Object or not Object.Parent then return end
+
+    local Name = FindEntityName(Object)
+    if not Name then return end
+
+    -- Manually spawned/test entities may not be parented under DOORS'
+    -- Live Entities container. Only accept an actual Model for standalone
+    -- detection so random parts named "Rush" do not trigger Fairwell.
+    local Target = Object
+    if not Target:IsA("Model") then
+        Target = Object:FindFirstAncestorOfClass("Model")
+    end
+    if not Target then return end
+
+    local TargetName = FindEntityName(Target)
+    if TargetName ~= Name then
+        return
+    end
+
+    local Now = os.clock()
+    if self.LastAlert[Name] and Now - self.LastAlert[Name] < COOLDOWN then
+        return
+    end
+
+    self.LastAlert[Name] = Now
+    Notify(self.Hub, Name, Target)
+
+    task.delay(4, function()
+        if self.Hub and self.LastAlert[Name] == Now then
+            if not Target.Parent then
+                local Brain = self.Hub:GetFeature("Fairwell Companion Brain")
+                if Brain and type(Brain.OnEntityGone) == "function" then
+                    Brain:OnEntityGone(Name)
+                end
+            end
+        end
+    end)
+end
+
 local function IsInStairwell(Object)
     local currentRooms = Workspace:FindFirstChild("CurrentRooms")
     if not currentRooms then return false end
@@ -251,6 +291,7 @@ function EntityNotifications.Start(self, Hub)
     -- Catch Live Entities whether it is created directly under Workspace
     -- or inside another runtime container.
     table.insert(self.Connections, Workspace.DescendantAdded:Connect(function(Object)
+        -- First handle normal DOORS Live Entities containers.
         if NormalizeName(Object.Name) == "liveentities" then
             task.defer(function()
                 if self.Hub == Hub then
@@ -258,6 +299,15 @@ function EntityNotifications.Start(self, Hub)
                 end
             end)
         end
+
+        -- Also handle manually spawned/test entities that bypass Live Entities.
+        -- Defer one tick so a newly-created Model has time to receive its
+        -- descendants before we inspect it.
+        task.defer(function()
+            if self.Hub == Hub then
+                DetectStandalone(self, Object)
+            end
+        end)
     end))
 
     task.defer(function()
