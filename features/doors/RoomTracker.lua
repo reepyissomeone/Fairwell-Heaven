@@ -57,7 +57,7 @@ local function AnalyzeRoom(Room)
 		locker = 0,
 		book = 0,
 		painting = 0,
-		door = 0,
+		dupe = 0,
 		entity = 0
 	}
 
@@ -77,31 +77,16 @@ local function AnalyzeRoom(Room)
 		Count(Name, "locker")
 		Count(Name, "book")
 		Count(Name, "painting")
-		Count(Name, "door")
 
-		-- Entities are only recognized when their model is actually present
-		-- in the room. Child parts with names such as "Figure" are ignored.
-		if Object:IsA("Model") then
-			local IsEntityName =
-				Name == "rush"
-				or Name == "ambush"
-				or Name == "figure"
-				or Name == "halt"
-				or Name == "screech"
-				or Name == "dupe"
-				or Name == "timothy"
-
-			if IsEntityName then
-				Counts.entity += 1
-			end
+		if Object:IsA("Model") and (Name == "dupe" or string.match(Name, "^dupe[_%-%d]*$")) then
+			Counts.dupe += 1
 		end
-	end
 
-	-- Strong visual clues get priority over generic room comments.
-	if Counts.entity > 0 then
-		return "Uh... I don't think we're alone in here."
-	end
+nd
 
+	if Counts.dupe >= 2 then
+		return "There are a lot of doors in here... something feels off."
+	end
 	if Counts.book >= 3 then
 		return "A lot of books... hopefully one of them has instructions."
 	end
@@ -123,9 +108,6 @@ local function AnalyzeRoom(Room)
 	end
 
 
-	if Counts.door >= 2 then
-		return "Lots of doors. One of them has to be the right one."
-	end
 
 	local Comments = {
 		"This room looks suspiciously normal.",
