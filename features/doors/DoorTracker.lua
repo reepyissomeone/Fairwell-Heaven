@@ -1,6 +1,6 @@
 --// FAIRWELL HEAVEN
 --// DOORS Door Tracker
---// Handles doors that spawn after the room itself
+--// Handles late doors without rescanning on every descendant
 
 local Workspace = game:GetService("Workspace")
 
@@ -49,7 +49,20 @@ function DoorTracker.Start(self, Hub)
 
     self.DescendantConnection = Workspace.DescendantAdded:Connect(function(Object)
         local Room = Doors.CurrentRoom
-        if Room and Object:IsDescendantOf(Room) then self:Update(Hub, Room) end
+        if not Room then
+            return
+        end
+
+        -- Only rescan when a possible Door node is added. Scanning the
+        -- entire room for every spawned part/particle is unnecessarily expensive.
+        local Name = string.lower(tostring(Object.Name))
+        if Name ~= "door" and not string.find(Name, "door", 1, true) then
+            return
+        end
+
+        if Object:IsDescendantOf(Room) then
+            self:Update(Hub, Room)
+        end
     end)
 
     Hub:Log("DOORS Door Tracker started.")
