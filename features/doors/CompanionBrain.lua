@@ -128,6 +128,35 @@ function Brain:Perceive(eventType, data)
         importance = threat
     elseif eventType == "Damage" then
         threat, novelty, importance = 70, 35, 85
+    elseif eventType == "Hide" then
+        thought = join(pick({
+            "We're hidden.",
+            "That should keep us out of sight.",
+            "I'm staying quiet.",
+            "Good. We have cover."
+        }), pick({
+            "I'll remember this hiding spot.",
+            "Let's wait until the danger passes.",
+            "I'm watching for the right moment to move.",
+            "This is safer than standing in the open."
+        }))
+        expression, kind = "Hiding", "INFO"
+
+    elseif eventType == "EntityGone" then
+        local name = tostring(data.Name or "that thing")
+        thought = join(pick({
+            name .. " is gone.",
+            "That threat just disappeared.",
+            "We have a moment to breathe.",
+            "The danger passed."
+        }), pick({
+            "I'm remembering what worked.",
+            "Let's use the opening.",
+            "I'm keeping my guard up in case it returns.",
+            "That gives us some breathing room."
+        }))
+        expression, kind = "Relieved", "SUCCESS"
+
     elseif eventType == "Death" then
         threat, novelty, importance = 80, 20, 90
     elseif eventType == "Room" then
@@ -642,7 +671,7 @@ function Brain:OnEntityGone(name)
 
     if self:Cooldown("Gone:" .. name, 3) then
         local thought, expression, kind = self:GenerateThought("EntityGone", {Name=name})
-        self:React(thought, "Relieved", 3, "SUCCESS")
+        self:React(thought, expression, 3, kind)
     end
 end
 
@@ -653,7 +682,8 @@ function Brain:OnKey(object)
     self.SeenObjects[id] = true
 
     self:Remember("Keys", object:GetFullName())
-    self:React("A key! Keep that.", "Happy", 3, "SUCCESS")
+    local thought, expression, kind = self:GenerateThought("Item", {Item="a key", Name="key"})
+    self:React(thought, expression, 3, kind)
 end
 
 function Brain:OnItem(object)
@@ -708,36 +738,11 @@ function Brain:OnItem(object)
     self.SeenObjects[id] = true
     self:Remember("Items", object.Name)
 
-    local reactions = {
-        key = {"A key! That could be useful.", "Happy", "SUCCESS"},
-        coin = {"Money. Nice.", "Happy", "SUCCESS"},
-        lighter = {"A lighter. Good to have.", "Thinking", "INFO"},
-        crucifix = {"A Crucifix. Definitely keep that.", "Focused", "SUCCESS"},
-        lockpick = {"A lockpick. That might save us later.", "Thinking", "SUCCESS"},
-        vitamin = {"Vitamins. That could help us move faster.", "Happy", "SUCCESS"},
-        pill = {"Something useful. Let's keep it.", "Thinking", "SUCCESS"},
-        bandage = {"A bandage. Better to have one.", "Thinking", "SUCCESS"},
-        battery = {"A battery. We might need that.", "Happy", "SUCCESS"},
-        flashlight = {"A flashlight. Good.", "Happy", "SUCCESS"},
-        tablet = {"That looks useful.", "Thinking", "SUCCESS"},
-        scanner = {"A scanner? Interesting.", "Focused", "INFO"},
-        grenade = {"That's... probably useful.", "Suspicious", "INFO"},
-        taser = {"That could come in handy.", "Focused", "SUCCESS"}
-    }
-
-    local reaction
-    for keyword, value in pairs(reactions) do
-        if string.find(name, keyword, 1, true) then
-            reaction = value
-            break
-        end
-    end
-
-    if not reaction then
-        reaction = {"I found something: " .. tostring(object.Name), "Thinking", "INFO"}
-    end
-
-    self:React(reaction[1], reaction[2], 3, reaction[3])
+    local thought, expression, kind = self:GenerateThought("Item", {
+        Item=object.Name,
+        Name=object.Name
+    })
+    self:React(thought, expression, 3, kind)
 end
 
 function Brain:OnImportantObject(object)
@@ -763,20 +768,12 @@ function Brain:OnImportantObject(object)
     self.SeenObjects[id] = true
     self:Remember("ImportantItems", item)
 
-    local messages = {
-        Crucifix = "That's useful. Keep it.",
-        Lighter = "Good. Light could matter later.",
-        Vitamins = "Vitamins. That could help us move faster.",
-        Bandage = "A bandage. Keep it in case we need it.",
-        Lockpick = "A lockpick. That could save us some trouble."
-    }
+    local thought, expression, kind = self:GenerateThought("Item", {
+        Item=item,
+        Name=item
+    })
+    self:React(thought, expression, 3, kind)
 
-    self:React(
-        messages[item] or "That could be useful.",
-        "Thinking",
-        3,
-        "INFO"
-    )
 end
 
 function Brain:OnFlicker()
@@ -793,7 +790,8 @@ function Brain:OnHide()
     self:Remember("Hides", os.clock())
     self:SetMood(-4, "hiding")
     if self:Cooldown("Hide", 4) then
-        self:React("Good. Stay hidden.", "Hiding", 3)
+        local thought, expression, kind = self:GenerateThought("Hide", {})
+        self:React(thought, "Hiding", 3, kind)
     end
 end
 
