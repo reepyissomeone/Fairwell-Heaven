@@ -93,13 +93,41 @@ local function Notify(Hub, Name, Object)
     end
 end
 
+local function GetLiveEntities()
+    -- DOORS stores active spawned entities in this container.
+    -- Only scan this container so parts/children named after another entity
+    -- cannot accidentally trigger the wrong reaction.
+    for _, child in ipairs(Workspace:GetChildren()) do
+        local n = NormalizeName(child.Name)
+        if n == "liveentities" then
+            return child
+        end
+    end
+    return nil
+end
+
+local function GetEntityRoot(LiveEntities, Object)
+    if not LiveEntities or not Object or Object == LiveEntities then
+        return nil
+    end
+
+    local root = Object
+    while root.Parent and root.Parent ~= LiveEntities do
+        root = root.Parent
+    end
+
+    return root.Parent == LiveEntities and root or nil
+end
+
 local function Detect(self, Object)
-    if not Object or not Object.Parent then
+    local LiveEntities = GetLiveEntities()
+    local Root = GetEntityRoot(LiveEntities, Object)
+
+    if not Root or not Root.Parent then
         return
     end
 
-    local Name = FindEntityName(Object)
-
+    local Name = FindEntityName(Root)
     if not Name then
         return
     end
@@ -110,18 +138,23 @@ local function Detect(self, Object)
     end
 
     self.LastAlert[Name] = Now
-    Notify(self.Hub, Name, Object)
+    Notify(self.Hub, Name, Root)
 
     -- Keep entity state in sync so Fairwell can react again after an entity leaves.
     task.delay(4, function()
         if self.Hub and self.LastAlert[Name] == Now then
+            local live = GetLiveEntities()
             local stillThere = false
-            for _, candidate in ipairs(Workspace:GetDescendants()) do
-                if FindEntityName(candidate) == Name then
-                    stillThere = true
-                    break
+
+            if live then
+                for _, candidate in ipairs(live:GetChildren()) do
+                    if FindEntityName(candidate) == Name then
+                        stillThere = true
+                        break
+                    end
                 end
             end
+
             if not stillThere then
                 local Brain = self.Hub:GetFeature("Fairwell Companion Brain")
                 if Brain and type(Brain.OnEntityGone) == "function" then
@@ -133,7 +166,12 @@ local function Detect(self, Object)
 end
 
 local function ScanExisting(self)
-    for _, Object in ipairs(Workspace:GetDescendants()) do
+    local LiveEntities = GetLiveEntities()
+    if not LiveEntities then
+        return
+    end
+
+    for _, Object in ipairs(LiveEntities:GetChildren()) do
         Detect(self, Object)
     end
 end
@@ -148,8 +186,37 @@ function EntityNotifications.Start(self, Hub)
     self.Hub = Hub
     self.Connections = {}
 
-    table.insert(self.Connections, Workspace.DescendantAdded:Connect(function(Object)
-        Detect(self, Object)
+    local LiveEntities = GetLiveEntities()
+
+    if LiveEntities then
+        table.insert(self.Connections, LiveEntities.ChildAdded:Connect(function(Object)
+            Detect(self, Object)
+        end))
+
+        -- Also catch entities that are inserted as a container and populated
+        -- a frame later.
+        table.insert(self.Connections, LiveEntities.DescendantAdded:Connect(function(Object)
+            Detect(self, Object)
+        end))
+    end
+
+    -- Catch Live Entities itself if DOORS creates it after the feature starts.
+    table.insert(self.Connections, Workspace.ChildAdded:Connect(function(Object)
+        if NormalizeName(Object.Name) == "liveentities" then
+            task.defer(function()
+                if self.Hub ~= Hub then return end
+
+                local live = Object
+                table.insert(self.Connections, live.ChildAdded:Connect(function(entity)
+                    Detect(self, entity)
+                end))
+                table.insert(self.Connections, live.DescendantAdded:Connect(function(descendant)
+                    Detect(self, descendant)
+                end))
+
+                ScanExisting(self)
+            end)
+        end
     end))
 
     task.defer(function()
@@ -158,7 +225,7 @@ function EntityNotifications.Start(self, Hub)
         end
     end)
 
-    Hub:Log("DOORS Entity Notifications started.")
+    Hub:Log("DOORS Entity Notifications started. Watching Live Entities.")
 end
 
 function EntityNotifications.Stop(self)
