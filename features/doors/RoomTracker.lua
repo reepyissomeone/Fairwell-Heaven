@@ -57,7 +57,6 @@ local function AnalyzeRoom(Room)
 		locker = 0,
 		book = 0,
 		painting = 0,
-		light = 0,
 		door = 0,
 		entity = 0
 	}
@@ -78,7 +77,6 @@ local function AnalyzeRoom(Room)
 		Count(Name, "locker")
 		Count(Name, "book")
 		Count(Name, "painting")
-		Count(Name, "light")
 		Count(Name, "door")
 
 		-- Entities are only recognized when their model is actually present
@@ -124,9 +122,6 @@ local function AnalyzeRoom(Room)
 		return "These paintings are staring at me. I don't like that."
 	end
 
-	if Counts.light == 0 then
-		return "It's pretty dark in here..."
-	end
 
 	if Counts.door >= 2 then
 		return "Lots of doors. One of them has to be the right one."
