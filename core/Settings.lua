@@ -17,8 +17,7 @@ local Settings = {
 				XOffset = 0,
 				YScale = 0.5,
 				YOffset = 0
-			},
-			Collapsed = false
+			}
 		},
 
 		Features = {}
