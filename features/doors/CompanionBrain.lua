@@ -255,6 +255,84 @@ function Brain:OnKey(object)
     self:React("A key! Keep that.", "Happy", 3, "SUCCESS")
 end
 
+function Brain:OnItem(object)
+    if not object or not object.Parent or not object.Name then return end
+
+    -- Only react to actual pickup-like objects. This keeps room geometry,
+    -- doors, furniture, entity parts, and decorative models quiet.
+    local isTool = object:IsA("Tool")
+    local isModel = object:IsA("Model")
+    local isPart = object:IsA("BasePart")
+    if not (isTool or isModel or isPart) then return end
+
+    local name = normalize(object.Name)
+    local id = object:GetDebugId()
+    if self.SeenObjects[id] then return end
+
+    -- Never treat these as inventory items.
+    local blocked = {
+        door=true, room=true, locker=true, wardrobe=true, closet=true,
+        table=true, chair=true, bed=true, wall=true, floor=true, ceiling=true,
+        handle=true, knob=true, hinge=true, book=true, painting=true
+    }
+    if blocked[name] then return end
+
+    local hasPrompt = object:FindFirstChildWhichIsA("ProximityPrompt", true) ~= nil
+    local knownItem = string.find(name, "key", 1, true)
+        or string.find(name, "coin", 1, true)
+        or string.find(name, "lighter", 1, true)
+        or string.find(name, "crucifix", 1, true)
+        or string.find(name, "lockpick", 1, true)
+        or string.find(name, "vitamin", 1, true)
+        or string.find(name, "pill", 1, true)
+        or string.find(name, "bandage", 1, true)
+        or string.find(name, "battery", 1, true)
+        or string.find(name, "flashlight", 1, true)
+        or string.find(name, "flashlight", 1, true)
+        or string.find(name, "tablet", 1, true)
+        or string.find(name, "scanner", 1, true)
+        or string.find(name, "grenade", 1, true)
+        or string.find(name, "taser", 1, true)
+
+    if not knownItem and not isTool and not hasPrompt then
+        return
+    end
+
+    self.SeenObjects[id] = true
+    self:Remember("Items", object.Name)
+
+    local reactions = {
+        key = {"A key! That could be useful.", "Happy", "SUCCESS"},
+        coin = {"Money. Nice.", "Happy", "SUCCESS"},
+        lighter = {"A lighter. Good to have.", "Thinking", "INFO"},
+        crucifix = {"A Crucifix. Definitely keep that.", "Focused", "SUCCESS"},
+        lockpick = {"A lockpick. That might save us later.", "Thinking", "SUCCESS"},
+        vitamin = {"Vitamins. That could help us move faster.", "Happy", "SUCCESS"},
+        pill = {"Something useful. Let's keep it.", "Thinking", "SUCCESS"},
+        bandage = {"A bandage. Better to have one.", "Thinking", "SUCCESS"},
+        battery = {"A battery. We might need that.", "Happy", "SUCCESS"},
+        flashlight = {"A flashlight. Good.", "Happy", "SUCCESS"},
+        tablet = {"That looks useful.", "Thinking", "SUCCESS"},
+        scanner = {"A scanner? Interesting.", "Focused", "INFO"},
+        grenade = {"That's... probably useful.", "Suspicious", "INFO"},
+        taser = {"That could come in handy.", "Focused", "SUCCESS"}
+    }
+
+    local reaction
+    for keyword, value in pairs(reactions) do
+        if string.find(name, keyword, 1, true) then
+            reaction = value
+            break
+        end
+    end
+
+    if not reaction then
+        reaction = {"I found something: " .. tostring(object.Name), "Thinking", "INFO"}
+    end
+
+    self:React(reaction[1], reaction[2], 3, reaction[3])
+end
+
 function Brain:OnImportantObject(object)
     if not object or not object.Name then return end
     local name = normalize(object.Name)
@@ -322,6 +400,7 @@ function Brain:ScanObject(object)
     end
 
     self:OnImportantObject(object)
+    self:OnItem(object)
 end
 
 function Brain:WatchFlicker(object)
