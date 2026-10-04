@@ -74,6 +74,25 @@ local function safeFeatureName(name)
     return "Feature_" .. tostring(name):gsub("[^%w_]", "_")
 end
 
+-- Cross-platform button binder. Activated is the primary event for touch,
+-- while MouseButton1Click is a compatibility fallback for older executors.
+local function bindButton(button, callback)
+    local busy = false
+    local function fire()
+        if busy or not button.Parent then return end
+        busy = true
+        task.defer(function()
+            busy = false
+        end)
+        callback()
+    end
+
+    button.Activated:Connect(fire)
+    pcall(function()
+        button.MouseButton1Click:Connect(fire)
+    end)
+end
+
 local function isDoorsFeature(info)
     return info
         and info.Feature
@@ -205,10 +224,8 @@ function MainUI:_CreateFeatureButton(Hub, info, list, order)
 
     refresh()
 
-    button.Activated:Connect(function()
+    bindButton(button, function()
         local enabled = Hub:IsEnabled(name)
-
-        -- Do not let a failed enable make the button claim it is ON.
         self:_SetFeature(Hub, name, not enabled)
         refresh()
     end)
@@ -631,7 +648,7 @@ function MainUI:_CreateGamePage(Hub)
 
     local taps, lastTap, unlocked = 0, 0, false
 
-    title.Activated:Connect(function()
+    bindButton(title, function()
         local now=os.clock()
         if now-lastTap>2.5 then taps=0 end
         lastTap=now
@@ -646,7 +663,7 @@ function MainUI:_CreateGamePage(Hub)
         end
     end)
 
-    save.Activated:Connect(function()
+    bindButton(save, function()
         if not unlocked then return end
         local name=featureName.Text:gsub("^%s+",""):gsub("%s+$","")
         local request=prompt.Text:gsub("^%s+",""):gsub("%s+$","")
@@ -802,7 +819,7 @@ function MainUI:_CreateSettingsPage(Hub)
 
     local unload = new("TextButton", {
         Name = "UnloadFairwell",
-        Position = UDim2.fromOffset(5, 52),
+        Position = UDim2.fromOffset(5, 80),
         Size = UDim2.new(1, -10, 0, 44),
         BackgroundColor3 = RED,
         BorderSizePixel = 0,
@@ -890,7 +907,7 @@ function MainUI:_CreateSettingsPage(Hub)
         visibilityStroke.Color = visible and GREEN or BLUE
     end
 
-    visibilityButton.Activated:Connect(function()
+    bindButton(visibilityButton, function()
         self:SetVisible(self.Hidden)
         refreshVisibility()
     end)
@@ -941,7 +958,7 @@ function MainUI:_CreateSettingsPage(Hub)
 
         refresh()
 
-        button.Activated:Connect(function()
+        bindButton(button, function()
             local enabled = Hub:IsEnabled(featureName)
             self:_SetFeature(Hub, featureName, not enabled)
             refresh()
@@ -967,7 +984,7 @@ function MainUI:_CreateSettingsPage(Hub)
     }, page)
     corner(reset, 7)
 
-    reset.Activated:Connect(function()
+    bindButton(reset, function()
         if settings and settings.Reset then
             settings:Reset()
         end
@@ -1059,7 +1076,7 @@ function MainUI:_CreateVisualPage(Hub)
 
             refresh()
 
-            button.Activated:Connect(function()
+            bindButton(button, function()
                 self:_SetFeature(Hub, info.Name, not Hub:IsEnabled(info.Name))
                 refresh()
             end)
@@ -1394,7 +1411,7 @@ function MainUI:_CreateChatPage(Hub)
         end)
     end
 
-    send.Activated:Connect(sendMessage)
+    bindButton(send, sendMessage)
     input.FocusLost:Connect(function(enterPressed)
         if enterPressed then sendMessage() end
     end)
@@ -2001,7 +2018,7 @@ function MainUI:Start(Hub)
     )
     toggleHint.TextXAlignment = Enum.TextXAlignment.Center
 
-    toggle.Activated:Connect(function()
+    bindButton(toggle, function()
         self:SetVisible(self.Hidden)
     end)
 
@@ -2108,29 +2125,29 @@ function MainUI:Start(Hub)
     self:_UpdateStatus(Hub)
 
     -- Tab buttons are wired once here. Pages are never duplicated.
-    self.Tabs.MainTab.Activated:Connect(function()
+    bindButton(self.Tabs.MainTab, function()
         self:_Switch("Main")
     end)
-    self.Tabs.DevTab.Activated:Connect(function()
+    bindButton(self.Tabs.DevTab, function()
         self:_Switch("Logs")
     end)
-    self.Tabs.GameTab.Activated:Connect(function()
+    bindButton(self.Tabs.GameTab, function()
         self:_Switch("Game")
     end)
-    self.Tabs.FairwellChatTab.Activated:Connect(function()
+    bindButton(self.Tabs.FairwellChatTab, function()
         self:_Switch("Chat")
     end)
-    self.Tabs.VisualTab.Activated:Connect(function()
+    bindButton(self.Tabs.VisualTab, function()
         self:_Switch("Visual")
     end)
-    self.Tabs.SettingsTab.Activated:Connect(function()
+    bindButton(self.Tabs.SettingsTab, function()
         self:_Switch("Settings")
     end)
 
     self:_Switch("Main")
     self:_StartDragging()
 
-    close.Activated:Connect(function()
+    bindButton(close, function()
         self:SetVisible(false)
     end)
 
