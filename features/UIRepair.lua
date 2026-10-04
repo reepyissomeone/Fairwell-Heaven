@@ -164,8 +164,6 @@ return {
             and Gui.Window:FindFirstChild("Content")
             and Gui.Window.Content:FindFirstChild("SettingsScroll")
 
-        local Settings = Hub:GetService("Settings")
-
         local function addToggle(text, feature, y, default)
             if not SettingsScroll or SettingsScroll:FindFirstChild("Repair_" .. feature) then return end
 
