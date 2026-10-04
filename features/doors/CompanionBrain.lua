@@ -189,6 +189,202 @@ function Brain:AIThink(eventType, data)
     return true, intent, perception
 end
 
+function Brain:GenerateThought(eventType, data, perception, intent)
+    data = data or {}
+    perception = perception or self:Perceive(eventType, data)
+    intent = intent or self:ChooseIntent(perception, eventType, data)
+
+    -- Local generative language: Fairwell builds a new thought from
+    -- context, memory, mood, personality and random grammar each time.
+    -- No external API or preset sentence is required.
+    local mood = self:GetMood()
+    local profile = self.PlayerProfile or {}
+    local room = self.LastRoom
+    local function pick(list)
+        return list[math.random(1, #list)]
+    end
+    local function join(a, b)
+        if not a or a == "" then return b end
+        if not b or b == "" then return a end
+        return a .. " " .. b
+    end
+
+    local thought
+    local expression = "Thinking"
+    local kind = "INFO"
+
+    if eventType == "Entity" then
+        local name = tostring(data.Name or "something")
+        local opinion = self.EntityOpinions[name] or {Fear=0, Annoyance=0, Respect=0, Encounters=0}
+        local encounters = tonumber(data.Encounters or opinion.Encounters or 1) or 1
+        local danger = perception.Threat >= 80
+        local openings = danger
+            and {"There it is.", "Okay, I see it.", "That's not good.", "I recognize that."}
+            or {"I noticed it.", "There is something here.", "I know that one.", "That again."}
+        local observations = {
+            "It still feels dangerous.",
+            "We should give it space.",
+            "I'm starting to understand its pattern.",
+            "I don't trust it yet.",
+            "We've learned something from the last encounter.",
+            "I want to see what it does before we commit.",
+            "At least we know what we're dealing with now."
+        }
+        if opinion.Fear >= 55 then
+            observations[#observations + 1] = "I really don't want to find out what happens if we make a mistake."
+        elseif opinion.Respect >= 20 then
+            observations[#observations + 1] = "It's predictable when we stay focused."
+        end
+        thought = join(pick(openings), pick(observations))
+        if encounters >= 4 then
+            thought = join(thought, pick({
+                "We've seen this enough times to have a plan.",
+                "Experience helps.",
+                "Same threat, different room.",
+                "I remember how this usually goes."
+            }))
+        elseif encounters == 1 then
+            thought = join(thought, "This is my first read on it.")
+        end
+        expression = danger and (opinion.Fear >= 55 and "Nervous" or "Alert") or "Suspicious"
+        kind = danger and "WARNING" or "INFO"
+
+    elseif eventType == "Room" then
+        local number = tonumber(data.Number)
+        local visits = tonumber(self.RoomVisits[number] or 1) or 1
+        local oldEvents = self.Memory.RoomEvents and self.Memory.RoomEvents[number]
+        local rememberedEvents = oldEvents and #oldEvents or 0
+        local openings = data.Revisit
+            and {"I've been here before.", "This room feels familiar.", "I remember this place.", "We've seen this room already."}
+            or {"New room.", "I haven't seen this room before.", "Let's see what this room gives us.", "Something about this room is different."}
+        local observations = {
+            "I'm keeping track of what we find.",
+            "I want to remember the useful details.",
+            "Let's not assume every room is safe.",
+            "We should pay attention before moving on."
+        }
+        if number == 50 then
+            observations[#observations + 1] = "The library is important. I remember that much."
+        elseif number == 100 then
+            observations[#observations + 1] = "This part of the run feels different."
+        elseif rememberedEvents > 2 then
+            observations[#observations + 1] = "I've got a few memories from this room already."
+        end
+        thought = join(pick(openings), pick(observations))
+        if visits >= 3 then
+            thought = join(thought, "We've passed through here " .. tostring(visits) .. " times.")
+        end
+        expression = data.Revisit and "Suspicious" or "Thinking"
+
+    elseif eventType == "Damage" then
+        thought = join(pick({
+            "That hurt.",
+            "Okay, that was damage.",
+            "I did not like that.",
+            "Something just went very wrong."
+        }), pick({
+            "I need to be more careful.",
+            "Let's learn from that before it happens again.",
+            "I'm adjusting my expectations.",
+            "That changes how cautious I want to be."
+        }))
+        expression, kind = "Hurt", "ERROR"
+
+    elseif eventType == "Death" then
+        local name = tostring(data.Player or "someone")
+        thought = join(pick({
+            name .. " is gone.",
+            name .. " didn't make it.",
+            "We just lost " .. name .. ".",
+            "That ended badly for " .. name .. "."
+        }), pick({
+            "I'm remembering what happened.",
+            "I don't want us repeating that mistake.",
+            "That gives me another thing to watch for.",
+            "I'm adding that outcome to my memory."
+        }))
+        expression, kind = "Thinking", "WARNING"
+
+    elseif eventType == "Flicker" then
+        thought = join(pick({
+            "The lights changed.",
+            "That flicker got my attention.",
+            "Something just affected the lights.",
+            "I don't like that signal."
+        }), pick({
+            "I'm watching for what follows.",
+            "Let's be ready for a threat.",
+            "I'm not assuming it's harmless.",
+            "Something usually feels different after that."
+        }))
+        expression, kind = "Nervous", "WARNING"
+
+    elseif eventType == "Tap" then
+        local count = tonumber(data.Count or self.TapIndex or 1) or 1
+        thought = join(pick({
+            "You're still there.",
+            "I noticed that.",
+            "You have my attention.",
+            "Okay, I'm listening.",
+            "You really wanted my attention."
+        }), pick({
+            "I'm trying to think.",
+            "I remember you doing that before.",
+            "I'll keep watching.",
+            "Let's get back to the run."
+        }))
+        if count >= 12 then
+            thought = join(thought, "You've tapped me " .. tostring(count) .. " times.")
+        end
+        expression = "Tapped"
+
+    elseif eventType == "Mood" then
+        thought = join(pick({
+            "My mood just changed.",
+            "I'm reacting differently now.",
+            "I'm noticing how I feel about this run."
+        }), pick({
+            "I'll let that affect how I make decisions.",
+            "That probably means I should pay closer attention.",
+            "I'm keeping that feeling in mind."
+        }))
+        expression = mood == "Panicked" and "Panicking"
+            or mood == "Nervous" and "Nervous"
+            or mood == "Uneasy" and "Suspicious"
+            or "Thinking"
+
+    elseif eventType == "Item" then
+        local item = tostring(data.Item or data.Name or "something useful")
+        thought = join("I found " .. item .. ".", pick({
+            "I'll remember that.",
+            "That could matter later.",
+            "I'm keeping track of it.",
+            "That changes what we have available."
+        }))
+        expression, kind = "Thinking", "SUCCESS"
+
+    else
+        thought = join("I noticed something.", pick({
+            "I'm thinking about what it means.",
+            "I'll remember it.",
+            "Let's see what happens next."
+        }))
+    end
+
+    if mood == "Panicked" and eventType ~= "Tap" then
+        thought = join(thought, pick({"I'm trying not to panic.", "I need to stay focused.", "I really don't like this."}))
+        expression = "Panicking"
+    elseif mood == "Nervous" and eventType ~= "Tap" then
+        thought = join(thought, pick({"I'm staying alert.", "Something feels off.", "I'm not relaxing yet."}))
+        if expression == "Thinking" then expression = "Nervous" end
+    elseif mood == "Uneasy" then
+        thought = join(thought, "Something about this still feels wrong.")
+        if expression == "Thinking" then expression = "Suspicious" end
+    end
+
+    return thought, expression, kind
+end
+
 function Brain:LearnPlayer(eventType)
     self.PlayerProfile[eventType] = (self.PlayerProfile[eventType] or 0) + 1
     if eventType == "Damage" then
@@ -229,17 +425,8 @@ function Brain:SetMood(delta, reason)
     self.MoodName = moodName
 
     if changed and reason and self:Cooldown("MoodShift", 6) then
-        local lines = {
-            Calm = "Okay. We're doing fine.",
-            Worried = "I don't like how this run is going.",
-            Uneasy = "Something about this place feels wrong.",
-            Nervous = "I'm getting a little nervous.",
-            Panicked = "I REALLY don't like this."
-        }
-        self:React(lines[moodName], moodName == "Panicked" and "Panicking"
-            or moodName == "Nervous" and "Nervous"
-            or moodName == "Calm" and "Thinking"
-            or "Suspicious", 3, "INFO")
+        local thought, expression = self:GenerateThought("Mood", {Mood=moodName})
+        self:React(thought, expression, 3, "INFO")
     end
 end
 
@@ -338,27 +525,11 @@ end
 function Brain:OnTap()
     self.TapIndex += 1
     self:LearnPlayer("Tap")
-    self:AIThink("Tap", {Count=self.TapIndex})
+    local shouldSpeak = self:AIThink("Tap", {Count=self.TapIndex})
+    if not shouldSpeak then return end
 
-    local lines = {
-        {"Hey.","Talking"},{"What?","Confused"},{"You keep poking me.","Tapped"},
-        {"I'm watching.","Thinking"},{"We have a game to finish.","Nervous"},
-        {"...yes?","Talking"},{"Don't distract me.","Alert"},
-        {"I'm trying to remember what happened.","Thinking"}
-    }
-
-    if self.TapIndex >= 12 and math.random(1,4) == 1 then
-        self:React("You really like pressing that button, huh?","Tapped",3)
-        return
-    end
-    if math.random(1,18) == 1 then
-        local rare={{"I remember you.","Suspicious"},{"Don't tap me again.","Hurt"},{"Something feels wrong.","Nervous"}}
-        local pick=rare[math.random(1,#rare)]
-        self:React(pick[1],pick[2],3)
-        return
-    end
-    local pick=lines[((self.TapIndex-1)%#lines)+1]
-    self:React(pick[1],pick[2],3)
+    local thought, expression = self:GenerateThought("Tap", {Count=self.TapIndex})
+    self:React(thought, expression, 3, "INFO")
 end
 
 function Brain:OnRoom(room)
@@ -373,43 +544,17 @@ function Brain:OnRoom(room)
     self.LastRoom = number
     self:RememberRoomEvent(number, "Entered")
     self:Remember("Rooms", number)
+
     local shouldSpeak = self:AIThink("Room", {Number=number, Revisit=wasVisited})
+    if not shouldSpeak then return end
 
-    -- Returning to a room makes Fairwell reference what it remembers.
-    if wasVisited and shouldSpeak and self:Cooldown("RoomRepeat:" .. tostring(number), 8) then
-        local line
-        if visits >= 3 then
-            line = "Room " .. tostring(number) .. "... we've been through here " .. tostring(visits) .. " times."
-        else
-            line = "We've been in Room " .. tostring(number) .. " before..."
-        end
-        self:SetMood(-2, "familiar room")
-        self:React(line, "Suspicious", 3, "INFO")
-        return
-    end
-
-    local lower = normalize(room.Name)
-    if lower == "seek" or lower == "seekroom" then
-        self:SetMood(12, "Seek room")
-        self:React("Good luck. Stay focused.", "Focused", 4, "WARNING")
-        return
-    end
-
-    if number == 50 then
-        self:SetMood(8, "Library")
-        self:React("This is the library. Be careful. I remember this place.", "Listening", 5, "WARNING")
-        return
-    end
-
-    if number == 100 then
-        self:SetMood(8, "Room 100")
-        self:React("Something feels different up here... I remember this part.", "Suspicious", 4, "WARNING")
-        return
-    end
-
-    if number % 10 == 0 and shouldSpeak then
-        self:React("Room " .. tostring(number) .. ". Stay alert.", "Thinking", 3)
-    end
+    local thought, expression, kind = self:GenerateThought(
+        "Room",
+        {Number=number, Revisit=wasVisited},
+        self:Perceive("Room", {Number=number, Revisit=wasVisited}),
+        wasVisited and "MEMORY_REFERENCE" or "OBSERVATION"
+    )
+    self:React(thought, expression, wasVisited and 4 or 3, kind)
 end
 
 function Brain:FocusCameraOnEntity(object)
@@ -470,32 +615,18 @@ function Brain:OnEntity(name, object)
     local fearGain={Rush=18,Ambush=24,Seek=16,Figure=14,Screech=7,Creak=5,Halt=9,Eyes=7,Dupe=3,Grumble=12,Giggle=5,Sally=4}
     opinion.Fear=math.clamp(opinion.Fear+(fearGain[name] or 4),0,100)
 
-    local shouldSpeak,intent=self:AIThink("Entity",{Name=name,Object=object,Encounters=encounters})
+    local shouldSpeak,intent,perception=self:AIThink("Entity",{Name=name,Object=object,Encounters=encounters})
     if name=="Screech" or name=="Creak" then self:FocusCameraOnEntity(object) end
+    if not shouldSpeak then return end
 
-    local personalities={
-        Rush={{"That thing is FAST. MOVE!","Hiding"},{"Rush again... I really hate that thing.","Nervous"},{"Rush. Of course. We know the drill.","Focused"}},
-        Ambush={{"Ambush?! It can come back. DON'T relax.","Hiding"},{"Not Ambush again...","Nervous"},{"Ambush. Stay ready for the second pass.","Focused"}},
-        Seek={{"Seek is here. KEEP MOVING.","Danger"},{"The chase again. Don't stop.","Nervous"},{"We know this chase. Keep moving.","Focused"}},
-        Figure={{"Figure. Quiet. Don't let it find us.","Nervous"},{"Figure again. Stay quiet.","Focused"},{"We know how this works. Stay quiet.","Focused"}},
-        Screech={{"LOOK THERE!","Shocked"},{"Screech again. I heard it.","Nervous"},{"I know that sound. Watch for it.","Focused"}},
-        Creak={{"CREAK?! What was that?","Confused"},{"That noise again...","Suspicious"},{"Creak. Just keep an eye on it.","Focused"}},
-        Halt={{"...Halt. Don't panic.","Confused"},{"Halt again. Follow the signs.","Focused"},{"We know what Halt wants. Keep moving.","Focused"}},
-        Eyes={{"Don't look at it.","Suspicious"},{"Eyes again. Look away.","Nervous"},{"Eyes. Same rule: don't look.","Focused"}},
-        Dupe={{"Wait. Something is wrong with this door.","Confused"},{"Another fake door. Check it first.","Suspicious"},{"Dupe. Trust the room number, not the door.","Focused"}},
-        Grumble={{"That thing is too close.","Nervous"},{"Grumble again. Keep your distance.","Nervous"},{"Grumble. We know the danger zone.","Focused"}},
-        Giggle={{"I heard something laugh.","Shocked"},{"That laugh again...","Suspicious"},{"Giggle. Ignore it and keep going.","Focused"}},
-        Sally={{"SALLY?! I don't trust that thing.","Suspicious"},{"Sally again... seriously?","Nervous"},{"Sally. I'm still watching that thing.","Suspicious"}}
-    }
-
-    local personality=personalities[name]
-    if not personality or not shouldSpeak then return end
-    local tier=encounters==1 and 1 or (encounters>=4 and 3 or 2)
-    local message,expression=personality[tier][1],personality[tier][2]
-    if tier==3 and (name=="Rush" or name=="Ambush" or name=="Seek") then
+    if encounters >= 4 and (name=="Rush" or name=="Ambush" or name=="Seek") then
         opinion.Respect=math.min(100,opinion.Respect+3)
     end
-    self:React(message,expression,4,intent=="WARNING" and "WARNING" or "INFO")
+
+    local thought,expression,kind=self:GenerateThought("Entity",{
+        Name=name,Object=object,Encounters=encounters
+    },perception,intent)
+    self:React(thought,expression,4,kind)
 end
 
 function Brain:OnEntityGone(name)
@@ -510,17 +641,8 @@ function Brain:OnEntityGone(name)
     self:SetMood(-(recovery[name] or 2), "entity gone")
 
     if self:Cooldown("Gone:" .. name, 3) then
-        local lines = {
-            Rush = "Rush is gone. Breathe.",
-            Ambush = "It's gone. Watch for another pass.",
-            Seek = "The chase is over. Keep going.",
-            Figure = "Figure is gone. Stay quiet.",
-            Screech = "Screech is gone. Finally.",
-            Creak = "That thing is gone. Keep moving.",
-            Halt = "Halt is gone. We're okay.",
-            Eyes = "Eyes is gone. Don't look back."
-        }
-        self:React(lines[name] or "It's gone. Keep going.", "Relieved", 3, "SUCCESS")
+        local thought, expression, kind = self:GenerateThought("EntityGone", {Name=name})
+        self:React(thought, "Relieved", 3, "SUCCESS")
     end
 end
 
@@ -659,9 +781,12 @@ end
 
 function Brain:OnFlicker()
     if not self:Cooldown("Flicker", 5) then return end
-    self:AIThink("Flicker", {})
+    local shouldSpeak, intent, perception = self:AIThink("Flicker", {})
     self:SetMood(5, "flicker")
-    self:React("The lights are flickering...", "Nervous", 3, "WARNING")
+    if shouldSpeak then
+        local thought, expression, kind = self:GenerateThought("Flicker", {}, perception, intent)
+        self:React(thought, expression, 3, kind)
+    end
 end
 
 function Brain:OnHide()
@@ -677,56 +802,26 @@ function Brain:OnDamage()
     self:LearnPlayer("Damage")
     self:AIThink("Damage", {})
     self:SetMood(10, "damage")
-    self:React("OW! Are you okay?!", "Hurt", 3, "ERROR")
+    local thought, expression, kind = self:GenerateThought("Damage", {})
+    self:React(thought, expression, 3, kind)
 end
 
 function Brain:OnPlayerDeath(player)
     if not player or player == Players.LocalPlayer then return end
     if not self:Cooldown("PlayerDeath", 2.5) then return end
 
-    local lines = {
-        {"Welp. They didn't make it.", "Thinking", "INFO"},
-        {"And there goes another one.", "Suspicious", "WARNING"},
-        {"Ouch. That looked expensive.", "Confused", "INFO"},
-        {"Well... that's one way to leave.", "Thinking", "INFO"},
-        {"Should we mention that they died?", "Suspicious", "INFO"},
-        {"I was going to say good luck.", "Confused", "INFO"},
-        {"Okay. Maybe don't do whatever THEY did.", "Nervous", "WARNING"},
-        {"Noted. Definitely avoiding that.", "Thinking", "WARNING"},
-        {"Wow. They really committed to that mistake.", "Suspicious", "INFO"},
-        {"That went spectacularly wrong.", "Confused", "WARNING"},
-        {"I think the hallway won.", "Thinking", "INFO"},
-        {"Well, that was unfortunate.", "Cthinking", "INFO"},
-        {"They had a plan. It was a bad one.", "Suspicious", "INFO"},
-        {"I would laugh, but we're next.", "Nervous", "WARNING"},
-        {"And I thought WE were doing badly.", "Confused", "INFO"},
-        {"Maybe don't copy that strategy.", "Thinking", "WARNING"},
-        {"They really said 'watch this' and meant it.", "Suspicious", "INFO"},
-        {"That could have gone better. Obviously.", "Confused", "INFO"},
-        {"Another successful demonstration of what not to do.", "Thinking", "INFO"},
-        {"Well... at least they were confident.", "Suspicious", "INFO"},
-        {"I'm adding that to the list of bad ideas.", "Thinking", "INFO"},
-        {"That was painful to watch.", "Hurt", "INFO"},
-        {"Okay, everyone pretend we didn't see that.", "Confused", "INFO"},
-        {"They've officially become hallway decoration.", "Suspicious", "WARNING"},
-        {"I have several questions. Mostly 'why?'", "Confused", "INFO"},
-        {"Congratulations. You found the worst possible outcome.", "Suspicious", "WARNING"},
-        {"They lasted longer than I expected.", "Thinking", "INFO"},
-        {"Well... that's one less person to worry about.", "Suspicious", "INFO"},
-        {"Maybe the next person should read the instructions.", "Thinking", "INFO"},
-        {"I feel like that was avoidable.", "Confused", "INFO"},
-        {"The door remains undefeated.", "Suspicious", "INFO"},
-        {"Not to be rude, but... yikes.", "Thinking", "INFO"},
-        {"That was almost impressive.", "Suspicious", "INFO"},
-        {"I vote we don't do that.", "Nervous", "WARNING"},
-        {"And THAT is why I keep saying be careful.", "Thinking", "WARNING"}
-    }
-
-    local pick = lines[math.random(1, #lines)]
     self:Remember("Deaths", player.Name)
-    self:AIThink("Death", {Player=player.Name})
+    local shouldSpeak, intent, perception = self:AIThink("Death", {Player=player.Name})
     self:SetMood(7, "player death")
-    self:React(pick[1], pick[2], 3.5, pick[3])
+    if not shouldSpeak then return end
+
+    local thought, expression, kind = self:GenerateThought(
+        "Death",
+        {Player=player.Name},
+        perception,
+        intent
+    )
+    self:React(thought, expression, 3.5, kind)
 end
 
 function Brain:ScanObject(object)
