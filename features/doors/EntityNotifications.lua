@@ -19,15 +19,15 @@ local EntityNames = {
 }
 
 local EntitySprites = {
-    Rush = "ALERT",
-    Ambush = "Scared",
-    Seek = "nervous",
+    Rush = "Scared",
+    Ambush = "nervous",
+    Seek = "Scared",
     Halt = "confused",
-    Screech = "Tapped",
+    Screech = "Silent",
     Eyes = "Silent",
     Figure = "thinking",
     Dupe = "confused",
-    Grumble = "Scared",
+    Grumble = "nervous",
     Giggle = "talking"
 }
 
