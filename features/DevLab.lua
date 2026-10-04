@@ -136,7 +136,7 @@ function DevLab:Submit(requestData)
 
     local okRequest, response = pcall(function()
         return requestFunction({
-            Url = config.Endpoint,
+            Url = config.Endpoint .. "/request",
             Method = "POST",
             Headers = {
                 ["Content-Type"] = "application/json",
