@@ -922,7 +922,8 @@ function MainUI:CompanionNotify(title,msg,kind,duration)
 end
 
 function MainUI:SetVisible(visible)
-    visible = visible == true
+    visible = (visible == true)
+    self.MenuVisible = visible
     self.Hidden = not visible
 
     -- Only the actual Fairwell menu is toggled here.
@@ -965,6 +966,7 @@ function MainUI:Start(Hub)
 
     self.Hub=Hub
     self.Hidden=false
+    self.MenuVisible=true
     self.GameRevealed=false
     Hub.SuppressTopNotifications=false
 
@@ -1072,7 +1074,9 @@ function MainUI:Start(Hub)
         UDim2.new(0,0,1,-12),UDim2.new(1,0,0,10),6,GREY).TextXAlignment=Enum.TextXAlignment.Center
 
     tap(toggle,function()
-        self:SetVisible(not not self.Hidden)
+        -- Flip the stored menu state. Do not derive it from Gui.Enabled,
+        -- because the GUI may briefly be disabled during reloads.
+        self:SetVisible(not self.MenuVisible)
     end)
     self.ToggleGui=toggleGui
     self.ToggleButton=toggle
@@ -1138,6 +1142,7 @@ function MainUI:Stop()
     self.Tabs=nil
     self.ToggleButton=nil
     self.ToggleIndicator=nil
+    self.MenuVisible=nil
     self.DragHandle=nil
     self.CompanionBubble=nil
     if self.CompanionAnimationStop then pcall(self.CompanionAnimationStop) end
