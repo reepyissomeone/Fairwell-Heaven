@@ -56,13 +56,6 @@ local function FindEntityName(Object)
     return nil
 end
 
-local function IsLever(Object)
-    local Name = NormalizeName(Object.Name)
-    return Name == "lever"
-        or Name == "levers"
-        or string.find(Name, "lever", 1, true) ~= nil
-end
-
 local COOLDOWN = 2
 
 local function Notify(Hub, Name)
@@ -96,10 +89,6 @@ local function Detect(self, Object)
     end
 
     local Name = FindEntityName(Object)
-
-    if not Name and IsLever(Object) then
-        Name = "Lever"
-    end
 
     if not Name then
         return
