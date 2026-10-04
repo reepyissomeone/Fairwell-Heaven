@@ -11,9 +11,50 @@ local RoomTracker = {
 
 	CurrentRoomNumber = nil,
 
-	ChangedConnection = nil
+	ChangedConnection = nil,
+
+	SeekRoomToken = 0
 
 }
+
+local function IsSeekRoom(Room)
+	if not Room then
+		return false
+	end
+
+	local function LooksLikeSeek(Name)
+		Name = string.lower(tostring(Name or ""))
+		return Name == "seek"
+			or string.find(Name, "seekroom", 1, true) ~= nil
+			or string.find(Name, "seek_room", 1, true) ~= nil
+	end
+
+	if LooksLikeSeek(Room.Name) then
+		return true
+	end
+
+	for _, Object in ipairs(Room:GetDescendants()) do
+		if LooksLikeSeek(Object.Name) then
+			return true
+		end
+	end
+
+	return false
+end
+
+local function TellFairwellGoodLuck(Hub)
+	local MainUI = Hub:GetFeature("Main UI")
+	if not MainUI or type(MainUI.CompanionNotify) ~= "function" then
+		return
+	end
+
+	MainUI.CompanionNotify(
+		"FAIRWELL",
+		"Good luck.",
+		"INFO",
+		4
+	)
+end
 
 function RoomTracker.Start(self, Hub)
 
@@ -64,6 +105,27 @@ function RoomTracker.Start(self, Hub)
 					tostring(Number)
 				)
 
+				self.SeekRoomToken += 1
+				local Token = self.SeekRoomToken
+
+				task.spawn(function()
+					for _, Delay in ipairs({0, 0.25, 0.75, 1.5, 2.5}) do
+						if Delay > 0 then
+							task.wait(Delay)
+						end
+
+						if Token ~= self.SeekRoomToken then
+							return
+						end
+
+						if Doors.CurrentRoom == NewRoom
+							and IsSeekRoom(NewRoom) then
+							TellFairwellGoodLuck(Hub)
+							return
+						end
+					end
+				end)
+
 			end
 		)
 
@@ -84,6 +146,7 @@ function RoomTracker.Stop(self)
 	end
 
 	self.CurrentRoomNumber = nil
+	self.SeekRoomToken += 1
 
 end
 
