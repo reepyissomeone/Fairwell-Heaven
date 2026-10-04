@@ -72,6 +72,11 @@ function DoorTracker.Stop(self)
     if self.RoomConnection then self.RoomConnection:Disconnect(); self.RoomConnection=nil end
     if self.DescendantConnection then self.DescendantConnection:Disconnect(); self.DescendantConnection=nil end
     self.CurrentDoor = nil
+
+    local Doors = Hub and Hub:GetService("Doors")
+    if Doors then
+        Doors.CurrentDoor = nil
+    end
 end
 
 return DoorTracker
