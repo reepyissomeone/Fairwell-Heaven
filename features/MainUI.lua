@@ -472,6 +472,53 @@ function MainUI:_CreateSettingsPage(Hub)
     local y = 84
     local settings = Hub:GetService("Settings")
 
+    -- Main UI visibility is a UI control, not a feature toggle.
+    local visibilityButton = new("TextButton", {
+        Name = "ShowMainUI",
+        Position = UDim2.fromOffset(5, y),
+        Size = UDim2.new(1, -10, 0, 44),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        Text = "",
+        Active = true
+    }, page)
+    corner(visibilityButton, 7)
+    local visibilityStroke = stroke(visibilityButton, GREEN, 0.35)
+    local visibilityText = label(
+        visibilityButton,
+        "Text",
+        "SHOW MAIN UI",
+        UDim2.fromOffset(10, 0),
+        UDim2.new(1, -90, 1, 0),
+        11
+    )
+    visibilityText.Font = Enum.Font.GothamBold
+    local visibilityState = label(
+        visibilityButton,
+        "State",
+        "ON",
+        UDim2.new(1, -72, 0, 0),
+        UDim2.fromOffset(60, 44),
+        10,
+        GREEN
+    )
+    visibilityState.TextXAlignment = Enum.TextXAlignment.Center
+
+    local function refreshVisibility()
+        local visible = not self.Hidden
+        visibilityState.Text = visible and "ON" or "OFF"
+        visibilityState.TextColor3 = visible and GREEN or GREY
+        visibilityStroke.Color = visible and GREEN or BLUE
+    end
+
+    visibilityButton.Activated:Connect(function()
+        self:SetVisible(self.Hidden)
+        refreshVisibility()
+    end)
+
+    refreshVisibility()
+    y += 51
+
     local function addSetting(textValue, featureName)
         local button = new("TextButton", {
             Name = safeFeatureName(featureName),
@@ -1293,6 +1340,12 @@ function MainUI:_CreateCompanion(Hub)
     button.InputBegan:Connect(beginDrag)
     UserInputService.InputChanged:Connect(updateDrag)
 
+    -- MainUI may have been hidden before the companion finished loading.
+    gui.Enabled = self.Hidden == true
+    if not self.Hidden then
+        gui.Enabled = false
+    end
+
     return true
 end
 
@@ -1409,6 +1462,26 @@ function MainUI:Start(Hub)
         Font = Enum.Font.GothamBold
     }, top)
     corner(close, 7)
+
+    -- Dedicated mobile-friendly minimize/toggle button.
+    local minimize = new("TextButton", {
+        Name = "Minimize",
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -42, 0.5, 0),
+        Size = UDim2.fromOffset(28, 26),
+        BackgroundColor3 = PANEL2,
+        BorderSizePixel = 0,
+        Text = "−",
+        TextColor3 = WHITE,
+        TextSize = 16,
+        Font = Enum.Font.GothamBold,
+        Active = true
+    }, top)
+    corner(minimize, 7)
+
+    minimize.Activated:Connect(function()
+        self:SetVisible(false)
+    end)
 
     local content = new("Frame", {
         Name = "Content",
