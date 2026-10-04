@@ -1044,6 +1044,10 @@ function MainUI:_StartDragging()
     local window = self.Window
     local handle = self.DragHandle
 
+    if not window or not handle then
+        return
+    end
+
     local dragging = false
     local dragStart
     local startPosition
@@ -1081,6 +1085,14 @@ function MainUI:_StartDragging()
 
     handle.InputBegan:Connect(begin)
     UserInputService.InputChanged:Connect(update)
+
+    -- Also support touch movement directly from the drag surface.
+    handle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch then
+            update(input)
+        end
+    end)
 end
 
 
@@ -1437,7 +1449,22 @@ function MainUI:Start(Hub)
         BorderSizePixel = 0
     }, window)
 
-    self.DragHandle = top
+    -- Dedicated invisible touch surface for reliable mobile dragging.
+    -- It sits behind the title/minimize/close controls so those buttons
+    -- remain tappable while the rest of the top bar can be dragged.
+    local dragSurface = new("TextButton", {
+        Name = "DragSurface",
+        Size = UDim2.new(1, -74, 1, 0),
+        Position = UDim2.fromOffset(0, 0),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Text = "",
+        AutoButtonColor = false,
+        Active = true,
+        ZIndex = 1
+    }, top)
+
+    self.DragHandle = dragSurface
 
     label(
         top,
