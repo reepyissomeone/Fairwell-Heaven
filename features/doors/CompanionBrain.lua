@@ -199,7 +199,7 @@ function Brain:OnEntity(name, object)
         Ambush = {"HIDE AGAIN! IT'S COMING BACK!", "Hiding", "WARNING"},
         Seek = {"Don't stop. Keep moving.", "Danger", "WARNING"},
         Figure = {"Quiet. Don't let it find us.", "Nervous", "WARNING"},
-        Screech = {"WHAT WAS THAT?!", "Shocked", "WARNING"},
+        Screech = {"LOOK THERE!", "Shocked", "WARNING"},
         Creak = {"CREAK?!", "Confused", "WARNING"},
         Halt = {"...What is it doing?", "Confused", "WARNING"},
         Eyes = {"Don't look at it.", "Suspicious", "WARNING"},
