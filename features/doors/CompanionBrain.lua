@@ -223,6 +223,87 @@ function Brain:GenerateThought(eventType, data, perception, intent)
     perception = perception or self:Perceive(eventType, data)
     intent = intent or self:ChooseIntent(perception, eventType, data)
 
+    -- Prefer a real language model when configured. The local generator below
+    -- remains the safety net when no provider/key is available.
+    local realAI = self.Hub and self.Hub:GetFeature("Fairwell Thought AI")
+    if realAI and type(realAI.Generate) == "function" and type(realAI.IsAvailable) == "function" then
+        local context = {
+            Event = eventType,
+            EventData = data,
+            Mood = self:GetMood(),
+            MoodValue = self.Mood or 0,
+            Room = self.LastRoom,
+            PlayerProfile = self.PlayerProfile or {},
+            EntityOpinions = self.EntityOpinions or {},
+            EntityEncounters = self.EntityEncounters or {},
+            RoomVisits = self.RoomVisits or {},
+            Memory = {
+                Rooms = #(self.Memory.Rooms or {}),
+                Entities = #(self.Memory.Entities or {}),
+                Keys = #(self.Memory.Keys or {}),
+                ImportantItems = #(self.Memory.ImportantItems or {}),
+                Hides = #(self.Memory.Hides or {}),
+                Deaths = #(self.Memory.Deaths or {})
+            },
+            RecentEvents = {}
+        }
+
+        for index = math.max(1, #(self.RecentEvents or {}) - 5), #(self.RecentEvents or {}) do
+            local event = self.RecentEvents[index]
+            if event then
+                table.insert(context.RecentEvents, {
+                    Type = event.Type,
+                    Importance = event.Importance,
+                    TimeAgo = math.max(0, os.clock() - (event.Time or os.clock()))
+                })
+            end
+        end
+
+        local okAvailable, available = pcall(function()
+            return realAI:IsAvailable()
+        end)
+
+        if okAvailable and available then
+            local okThought, thought = pcall(function()
+                return realAI:Generate(context)
+            end)
+
+            if okThought and type(thought) == "string" and thought ~= "" then
+                local expression = "Thinking"
+                if eventType == "Entity" then
+                    expression = perception.Threat >= 80 and "Alert" or "Suspicious"
+                elseif eventType == "Damage" then
+                    expression = "Hurt"
+                elseif eventType == "Death" then
+                    expression = "Thinking"
+                elseif eventType == "Flicker" then
+                    expression = "Nervous"
+                elseif eventType == "Hide" then
+                    expression = "Hiding"
+                elseif eventType == "EntityGone" then
+                    expression = "Relieved"
+                elseif eventType == "Tap" then
+                    expression = "Tapped"
+                elseif perception.Mood >= 55 then
+                    expression = "Panicking"
+                elseif perception.Mood >= 20 then
+                    expression = "Nervous"
+                end
+
+                local kind = "INFO"
+                if intent == "WARNING" or eventType == "Entity" or eventType == "Flicker" then
+                    kind = "WARNING"
+                elseif intent == "PROTECT" or eventType == "Damage" then
+                    kind = "ERROR"
+                elseif eventType == "EntityGone" or intent == "MEMORY" then
+                    kind = "SUCCESS"
+                end
+
+                return thought, expression, kind
+            end
+        end
+    end
+
     -- Local generative language: Fairwell builds a new thought from
     -- context, memory, mood, personality and random grammar each time.
     -- No external API or preset sentence is required.
