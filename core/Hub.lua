@@ -1,11 +1,11 @@
 --// FAIRWELL HEAVEN
 --// Core Hub
---// Version 0.4.2
+--// Version 0.4.3
 
 local Hub = {}
 
 Hub.Name = "Fairwell Heaven"
-Hub.Version = "0.4.1"
+Hub.Version = "0.4.3"
 Hub.Prefix = "[Fairwell Heaven]"
 
 Hub.Features = {}
