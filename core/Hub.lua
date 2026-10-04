@@ -135,6 +135,19 @@ function Hub:Notify(title, message, kind, duration)
 	local playerGui = player:FindFirstChildOfClass("PlayerGui")
 	if not playerGui then return false end
 
+	-- Fairwell is the notification UI while the companion is active.
+	-- Fire the companion event, then suppress and remove the normal card.
+	if self.SuppressTopNotifications == true then
+		if self.NotificationEvent then
+			self.NotificationEvent:Fire(title, message, kind, duration)
+		end
+		local existing = playerGui:FindFirstChild("FairwellHeaven_Notifications")
+		if existing then
+			existing:Destroy()
+		end
+		return true
+	end
+
 	local gui = playerGui:FindFirstChild("FairwellHeaven_Notifications")
 	if not gui then
 		gui = Instance.new("ScreenGui")
@@ -180,12 +193,13 @@ function Hub:Notify(title, message, kind, duration)
 		self.NotificationEvent:Fire(title, message, kind, duration)
 	end
 
-	-- When Fairwell is visible as the companion, he replaces the normal
-	-- top-right notification card. This prevents both notifications from
-	-- appearing at the same time.
+	-- Also guard against the companion becoming active between the initial
+	-- check and card creation.
 	local playerGuiNow = player:FindFirstChildOfClass("PlayerGui")
 	local companion = playerGuiNow and playerGuiNow:FindFirstChild("FairwellHeaven_Companion")
 	if companion and companion.Enabled == true then
+		local existing = playerGuiNow:FindFirstChild("FairwellHeaven_Notifications")
+		if existing then existing:Destroy() end
 		return true
 	end
 
