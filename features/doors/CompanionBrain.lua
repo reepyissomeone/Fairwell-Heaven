@@ -212,6 +212,8 @@ function Brain:OnEntity(name, object)
     if reaction then
         if name == "Screech" then
             self:FocusCameraOnEntity(object)
+        elseif name == "Creak" then
+            self:FocusCameraOnEntity(object)
         end
         self:React(reaction[1], reaction[2], 4, reaction[3])
     end
