@@ -673,7 +673,7 @@ function MainUI.Start(self, Hub)
 	Version.BackgroundTransparency = 1
 
 	Version.Text =
-		"FAIRWELL HEAVEN • v4.2"
+		"FAIRWELL HEAVEN • v4.4"
 
 	Version.TextColor3 =
 		GREY
