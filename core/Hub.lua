@@ -568,15 +568,14 @@ function Hub:Shutdown()
 
 	self._ShuttingDown = true
 
-	-- Invalidate any background updater or runtime loops owned by this Hub.
-	-- The next loader run will allocate the next runtime id.
+	-- Invalidate background loops only when this Hub owns the current runtime.
 	pcall(function()
 		local Env = _G
 		if type(getgenv) == "function" then
 			Env = getgenv()
 		end
 		local CurrentId = tonumber(Env.__FAIRWELL_HEAVEN_RUNTIME_ID)
-		if CurrentId then
+		if CurrentId and self._RuntimeId and CurrentId == self._RuntimeId then
 			Env.__FAIRWELL_HEAVEN_RUNTIME_ID = CurrentId + 1
 		end
 	end)
