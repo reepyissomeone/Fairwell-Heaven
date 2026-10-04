@@ -573,26 +573,27 @@ function MainUI:_StartDrag()
     local startInput
     local startPos
 
-    handle.InputBegan:Connect(function(input)
+    self.DragConnections = self.DragConnections or {}
+    table.insert(self.DragConnections, handle.InputBegan:Connect(function(input)
         if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
             dragging=true
             startInput=input.Position
             startPos=window.Position
         end
-    end)
+    end))
 
-    UserInputService.InputChanged:Connect(function(input)
+    table.insert(self.DragConnections, UserInputService.InputChanged:Connect(function(input)
         if not dragging then return end
         if input.UserInputType~=Enum.UserInputType.MouseMovement and input.UserInputType~=Enum.UserInputType.Touch then return end
         local delta=input.Position-startInput
         window.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset+delta.X,startPos.Y.Scale,startPos.Y.Offset+delta.Y)
-    end)
+    end))
 
-    UserInputService.InputEnded:Connect(function(input)
+    table.insert(self.DragConnections, UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
             dragging=false
         end
-    end)
+    end))
 end
 
 function MainUI:_CompanionState(state)
@@ -891,6 +892,12 @@ function MainUI:_UpdateStatus(Hub)
 end
 
 function MainUI:Stop()
+    if self.DragConnections then
+        for _,connection in ipairs(self.DragConnections) do
+            pcall(function() connection:Disconnect() end)
+        end
+        self.DragConnections=nil
+    end
     if self.RefreshLoop then pcall(task.cancel,self.RefreshLoop) end
     self.RefreshLoop=nil
     if self.NotificationConnection then self.NotificationConnection:Disconnect() end
