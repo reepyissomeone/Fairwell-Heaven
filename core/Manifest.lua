@@ -21,6 +21,7 @@ return {
     "features/doors/RoomHUD.lua",
     "features/doors/RoomTimer.lua",
     "features/doors/EntityNotifications.lua",
+    "features/doors/ThoughtAI.lua",
     "features/doors/CompanionBrain.lua",
 
     -- Visual
