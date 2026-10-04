@@ -161,7 +161,8 @@ function Brain:OnEntity(name)
         Eyes = {"Don't look at it.", "Suspicious", "WARNING"},
         Dupe = {"Wait. Something is wrong with this door.", "Confused", "WARNING"},
         Grumble = {"That thing is too close.", "Nervous", "WARNING"},
-        Giggle = {"I heard something laugh.", "Shocked", "WARNING"}
+        Giggle = {"I heard something laugh.", "Shocked", "WARNING"},
+        Sally = {"SALLY?! I don't trust that thing.", "Suspicious", "WARNING"}
     }
 
     local reaction = reactions[name]
