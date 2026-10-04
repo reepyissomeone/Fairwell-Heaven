@@ -127,7 +127,7 @@ function MainUI:_CreateFeatureButton(Hub, info, list, order)
 
     local button = new("TextButton", {
         Name = safeFeatureName(name),
-        Size = UDim2.new(1, 0, 0, 54),
+        Size = UDim2.new(1, 0, 0, 36),
         BackgroundColor3 = PANEL,
         BorderSizePixel = 0,
         AutoButtonColor = true,
@@ -169,10 +169,10 @@ function MainUI:_CreateFeatureButton(Hub, info, list, order)
         Name = "State",
         AnchorPoint = Vector2.new(1, 0.5),
         Position = UDim2.new(1, -10, 0.5, 0),
-        Size = UDim2.fromOffset(70, 30),
+        Size = UDim2.fromOffset(58, 26),
         BackgroundColor3 = PANEL2,
         BorderSizePixel = 0,
-        TextSize = 10,
+        TextSize = 9,
         Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Center
     }, button)
@@ -250,7 +250,7 @@ function MainUI:_BuildFeatureList(Hub, force)
                 and "No features are currently registered."
                 or "No global features are available.",
             TextColor3 = GREY,
-            TextSize = 12,
+            TextSize = 9,
             Font = Enum.Font.Gotham,
             TextWrapped = true,
             TextXAlignment = Enum.TextXAlignment.Center,
@@ -286,10 +286,10 @@ function MainUI:_CreateFeaturePage(Hub)
     }, self.Content)
 
     new("UIPadding", {
-        PaddingLeft = UDim.new(0, 4),
-        PaddingRight = UDim.new(0, 4),
-        PaddingTop = UDim.new(0, 4),
-        PaddingBottom = UDim.new(0, 8)
+        PaddingLeft = UDim.new(0, 3),
+        PaddingRight = UDim.new(0, 3),
+        PaddingTop = UDim.new(0, 3),
+        PaddingBottom = UDim.new(0, 5)
     }, page)
 
     label(
@@ -414,7 +414,7 @@ function MainUI:_CreateTabs()
     local tabs = new("Frame", {
         Name = "Tabs",
         Position = UDim2.new(0, 0, 0, 0),
-        Size = UDim2.new(1, 0, 0, 44),
+        Size = UDim2.new(1, 0, 0, 36),
         BackgroundColor3 = PANEL,
         BorderSizePixel = 0
     }, self.Window)
@@ -442,7 +442,7 @@ function MainUI:_CreateTabs()
             BorderSizePixel = 0,
             Text = data[2],
             TextColor3 = GREY,
-            TextSize = 10,
+            TextSize = 9,
             Font = Enum.Font.GothamBold,
             LayoutOrder = data[3],
             Active = true
@@ -536,7 +536,7 @@ function MainUI:_CreateSettingsPage(Hub)
         BorderSizePixel = 0,
         Text = "RESET FEATURE SETTINGS",
         TextColor3 = WHITE,
-        TextSize = 11,
+        TextSize = 9,
         Font = Enum.Font.GothamBold
     }, page)
     corner(reset, 7)
@@ -763,7 +763,7 @@ function MainUI:Start(Hub)
         Name = "Window",
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromScale(0.92, 0.78),
+        Size = UDim2.fromScale(0.72, 0.72),
         BackgroundColor3 = BACKGROUND,
         BorderSizePixel = 0,
         ClipsDescendants = true
@@ -773,15 +773,15 @@ function MainUI:Start(Hub)
 
     local constraint = new("UISizeConstraint", {
         Name = "MobileSize",
-        MinSize = Vector2.new(300, 390),
-        MaxSize = Vector2.new(900, 720)
+        MinSize = Vector2.new(260, 330),
+        MaxSize = Vector2.new(700, 620)
     }, window)
 
     self.Window = window
 
     local top = new("Frame", {
         Name = "TopBar",
-        Size = UDim2.new(1, 0, 0, 44),
+        Size = UDim2.new(1, 0, 0, 36),
         BackgroundColor3 = PANEL,
         BorderSizePixel = 0
     }, window)
@@ -802,12 +802,12 @@ function MainUI:Start(Hub)
         Name = "Close",
         AnchorPoint = Vector2.new(1, 0.5),
         Position = UDim2.new(1, -8, 0.5, 0),
-        Size = UDim2.fromOffset(32, 30),
+        Size = UDim2.fromOffset(28, 26),
         BackgroundColor3 = Color3.fromRGB(65, 20, 35),
         BorderSizePixel = 0,
         Text = "×",
         TextColor3 = WHITE,
-        TextSize = 20,
+        TextSize = 13,
         Font = Enum.Font.GothamBold
     }, top)
     corner(close, 7)
@@ -892,7 +892,7 @@ function MainUI:Start(Hub)
                         .. "\\n"
                         .. tostring(message or ""),
                     TextColor3 = WHITE,
-                    TextSize = 10,
+                    TextSize = 9,
                     Font = Enum.Font.Gotham,
                     TextWrapped = true,
                     ZIndex = 50
