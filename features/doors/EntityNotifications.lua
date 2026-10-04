@@ -117,6 +117,13 @@ local function Notify(self, name, object)
     if brain and type(brain.OnEntity) == "function" then
         brain:OnEntity(name, object)
     end
+
+    local memory = self.Hub and self.Hub:GetFeature("DOORS Threat Memory")
+    if memory and type(memory.Record) == "function" then
+        local Doors = self.Hub:GetService("Doors")
+        local room = Doors and Doors.CurrentRoom and tonumber(Doors.CurrentRoom.Name) or nil
+        memory:Record(name, room, "Encounter")
+    end
 end
 
 local function MarkDetected(self, name, object)
