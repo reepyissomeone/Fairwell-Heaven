@@ -11,7 +11,7 @@ local DevLab = {
     Game = "GLOBAL",
 
     -- Set this through getgenv() on your own runtime.
-    -- Never put API keys, Discord tokens, or webhook secrets here.
+    -- Never put API keys, Discord tokens, admin keys, or passwords here.
     OwnerUserId = 0,
     Endpoint = "",
     SessionToken = ""
@@ -57,9 +57,15 @@ function DevLab:Authenticate(password)
     end
 
     local okEncode, body = pcall(function()
-        return HttpService:JSONEncode({Password = password, UserId = Players.LocalPlayer and Players.LocalPlayer.UserId})
+        return HttpService:JSONEncode({
+            Password = password,
+            UserId = Players.LocalPlayer and Players.LocalPlayer.UserId
+        })
     end)
-    if not okEncode then return false, "Could not encode authentication request." end
+
+    if not okEncode then
+        return false, "Could not encode authentication request."
+    end
 
     local okRequest, response = pcall(function()
         return requestFunction({
@@ -69,7 +75,10 @@ function DevLab:Authenticate(password)
             Body = body
         })
     end)
-    if not okRequest then return false, "Authentication request failed." end
+
+    if not okRequest then
+        return false, "Authentication request failed."
+    end
 
     local statusCode = tonumber(response and (response.StatusCode or response.Status))
     if not statusCode or statusCode < 200 or statusCode >= 300 then
@@ -109,6 +118,10 @@ function DevLab:Submit(requestData)
         return false, "Dev bridge endpoint is not configured yet."
     end
 
+    if self.SessionToken == "" then
+        return false, "Dev Lab is locked. Enter the current bot-generated password first."
+    end
+
     if type(requestData) ~= "table" then
         return false, "Invalid request."
     end
@@ -140,7 +153,7 @@ function DevLab:Submit(requestData)
             Method = "POST",
             Headers = {
                 ["Content-Type"] = "application/json",
-                ["Authorization"] = self.SessionToken ~= "" and ("Bearer " .. self.SessionToken) or ""
+                ["Authorization"] = "Bearer " .. self.SessionToken
             },
             Body = body
         })
@@ -152,6 +165,10 @@ function DevLab:Submit(requestData)
 
     local statusCode = tonumber(response and (response.StatusCode or response.Status))
     if statusCode and (statusCode < 200 or statusCode >= 300) then
+        if statusCode == 401 then
+            self.SessionToken = ""
+            return false, "Dev Lab session expired. Enter the latest bot-generated password."
+        end
         return false, "Bridge returned HTTP " .. tostring(statusCode) .. "."
     end
 
