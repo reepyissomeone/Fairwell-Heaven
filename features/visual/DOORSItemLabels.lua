@@ -71,7 +71,7 @@ end
 
 function ItemLabels.Start(self, Hub)
     local Settings = Hub:GetService("Settings")
-    if Settings and Settings:GetFeatureEnabled(self.Name, false) == false then return end
+    if Settings and Settings:GetFeatureEnabled(self.Name, false) == false then return false end
     local Doors = Hub:GetService("Doors")
     if not Doors then return end
     self:ScanRoom(Doors.CurrentRoom)
