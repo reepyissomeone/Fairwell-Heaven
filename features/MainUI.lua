@@ -720,10 +720,11 @@ end
 function MainUI:_CreateTabs()
     local tabs = new("Frame", {
         Name = "Tabs",
-        Position = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0, 0, 0, 36),
         Size = UDim2.new(1, 0, 0, 36),
         BackgroundColor3 = PANEL,
-        BorderSizePixel = 0
+        BorderSizePixel = 0,
+        ZIndex = 20
     }, self.Window)
 
     local layout = new("UIListLayout", {
@@ -753,7 +754,9 @@ function MainUI:_CreateTabs()
             TextSize = 9,
             Font = Enum.Font.GothamBold,
             LayoutOrder = data[3],
-            Active = true
+            Active = true,
+            Interactable = true,
+            ZIndex = 21
         }, tabs)
 
         self.Tabs[data[1]] = button
@@ -2086,8 +2089,8 @@ function MainUI:Start(Hub)
 
     local content = new("Frame", {
         Name = "Content",
-        Position = UDim2.fromOffset(0, 44),
-        Size = UDim2.new(1, 0, 1, -44),
+        Position = UDim2.fromOffset(0, 80),
+        Size = UDim2.new(1, 0, 1, -80),
         BackgroundTransparency = 1
     }, window)
 
