@@ -28,6 +28,8 @@ return {
     "features/doors/DupeDetector.lua",
     "features/doors/EntityRadar.lua",
     "features/doors/JumpscareMute.lua",
+    "features/doors/DoorDirectionHUD.lua",
+    "features/doors/InteractableRadar.lua",
     "features/doors/ThoughtAI.lua",
     "features/doors/CompanionBrain.lua",
 
