@@ -170,6 +170,8 @@ function Brain:Perceive(eventType, data)
         threat, novelty, importance = 35, 30, 50
     elseif eventType == "Tap" then
         novelty, importance = 10, 5
+    elseif eventType == "Chat" then
+        novelty, importance = 10, 25
     end
 
     return {Threat=threat, Novelty=novelty, Importance=importance, Mood=self.Mood or 0, MoodName=self:GetMood()}
@@ -179,7 +181,7 @@ function Brain:ShouldSpeak(perception, eventType)
     if not perception then return false end
     local score = perception.Importance + perception.Threat * 0.65 + perception.Novelty * 0.25
     score += math.max(0, self.Mood or 0) * 0.12
-    local minimum = {Entity=48, Damage=58, Death=55, Room=62, Item=52, Flicker=48, Tap=0}
+    local minimum = {Entity=48, Damage=58, Death=55, Room=62, Item=52, Flicker=48, Tap=0, Chat=0}
     if eventType == "Tap" then return true end
     if os.clock() - (self.LastSpeechAt or 0) < 1.0 and score < 90 then return false end
     return score >= (minimum[eventType] or 55)
@@ -202,7 +204,7 @@ function Brain:ChooseIntent(perception, eventType, data)
         return perception.Novelty >= 40 and "OBSERVATION" or "SILENCE"
     elseif eventType == "Flicker" then
         return "WARNING"
-    elseif eventType == "Tap" then
+    elseif eventType == "Tap" or eventType == "Chat" then
         return "CONVERSATION"
     end
     return "OBSERVATION"
@@ -473,6 +475,66 @@ function Brain:GenerateThought(eventType, data, perception, intent)
         }))
         expression, kind = "Thinking", "SUCCESS"
 
+    elseif eventType == "Chat" then
+        local message = tostring(data.Message or "")
+        local lower = string.lower(message)
+        local playerName = tostring(Players.LocalPlayer and Players.LocalPlayer.Name or "you")
+        local recent = self.RecentEvents and self.RecentEvents[#self.RecentEvents]
+
+        local direct = {
+            ["how are you"] = {"I'm doing alright.","I'm here. A little more alert than usual.","I'm fine. Just watching everything around us."},
+            ["are you okay"] = {"Yeah. I'm okay.","I'm still here. That's what matters.","I'm alright. Don't worry about me."},
+            ["what are you doing"] = {"Watching the run.","Keeping track of things.","Trying to notice the stuff you might miss."},
+            ["what do you think"] = {"I'm still deciding.","Give me a second to think about that.","I have a few thoughts, but I'm not settled on one yet."},
+            ["i'm bored"] = {"Then we should probably do something about that.","Bored already? I might have an idea.","I noticed. That's usually when trouble starts."},
+            ["im bored"] = {"Then we should probably do something about that.","Bored already? I might have an idea.","I noticed. That's usually when trouble starts."}
+        }
+
+        local function chatPick(list)
+            return list[math.random(1, #list)]
+        end
+
+        local options = direct[lower]
+        if options then
+            thought = chatPick(options)
+        elseif string.find(lower, "thank", 1, true) then
+            thought = chatPick({"You're welcome.","Anytime.","Yeah. I've got you.","Don't make it weird. You're welcome."})
+        elseif string.find(lower, "sorry", 1, true) then
+            thought = chatPick({"It's fine.","You don't need to apologize.","We're good. Keep moving."})
+        elseif string.find(lower, "scared", 1, true) or string.find(lower, "afraid", 1, true) or string.find(lower, "terrified", 1, true) then
+            thought = join(chatPick({"I get it.","Yeah. This place does that.","You're not the only one who feels that way."}), chatPick({"Stay close and pay attention.","We'll take it one room at a time.","Just don't let the fear make the decisions for us."}))
+            expression, kind = "Nervous", "WARNING"
+        elseif string.find(lower, "hello", 1, true) or string.find(lower, "hi", 1, true) or string.find(lower, "hey", 1, true) then
+            thought = chatPick({"Hey, " .. playerName .. ".","Hi. I'm listening.","Hey. You're back."})
+            expression = "Ctalking"
+        elseif string.find(lower, "who are you", 1, true) or string.find(lower, "what are you", 1, true) then
+            thought = chatPick({"I'm Fairwell. I watch, remember, and occasionally worry too much.","I'm Fairwell. Think of me as the voice in the corner that actually pays attention.","Fairwell. I'm here to keep you company and keep track of the weird stuff."})
+        else
+            local openers = {"Hmm.","Okay.","I hear you.","Interesting.","Yeah.","Fair point."}
+            local closers = {"Tell me what you're thinking.","I'm listening.","Let's see where this goes.","I'll keep that in mind.","I'm not ignoring you.","We can figure it out."}
+            thought = join(chatPick(openers), chatPick(closers))
+            if self.LastRoom and math.random() < 0.6 then
+                thought = join(thought, "We're around room " .. tostring(self.LastRoom) .. ".")
+            elseif self.MoodName and self.MoodName ~= "Calm" and math.random() < 0.7 then
+                thought = join(thought, "I'm feeling " .. string.lower(self.MoodName) .. " about this run.")
+            elseif recent and recent.Type and recent.Type ~= "Chat" and math.random() < 0.6 then
+                thought = join(thought, "I'm still thinking about what just happened.")
+            end
+            if #message > 90 then
+                thought = join(thought, "You had a lot to say there.")
+            elseif string.find(lower, "?", 1, true) then
+                thought = join(thought, chatPick({"I might need more context before I answer that.","That's a good question.","I'm still working that one out."}))
+            end
+        end
+
+        if mood == "Panicked" then
+            expression, kind = "terrified", "WARNING"
+        elseif mood == "Nervous" and expression == "Thinking" then
+            expression = "nervous"
+        elseif expression == "Thinking" then
+            expression = "Ctalking"
+        end
+
     else
         thought = join("I noticed something.", pick({
             "I'm thinking about what it means.",
@@ -481,7 +543,7 @@ function Brain:GenerateThought(eventType, data, perception, intent)
         }))
     end
 
-    if mood == "Panicked" and eventType ~= "Tap" then
+    if mood == "Panicked" and eventType ~= "Tap" and eventType ~= "Chat" then
         thought = join(thought, pick({"I'm trying not to panic.", "I need to stay focused.", "I really don't like this."}))
         expression = "Panicking"
     elseif mood == "Nervous" and eventType ~= "Tap" then
