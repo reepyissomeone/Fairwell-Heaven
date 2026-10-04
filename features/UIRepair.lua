@@ -46,6 +46,113 @@ return {
             end
         end
 
+        -- Build a visible FEATURES section on the main page so every user-facing feature is discoverable.
+        local MainScroll = Gui:FindFirstChild("Window")
+            and Gui.Window:FindFirstChild("Content")
+            and Gui.Window.Content:FindFirstChild("MainScroll")
+        local Settings = Hub:GetService("Settings")
+
+        if MainScroll and not MainScroll:FindFirstChild("Repair_FeaturesSection") then
+            local Section = Instance.new("Frame")
+            Section.Name = "Repair_FeaturesSection"
+            Section.Position = UDim2.new(0, 5, 0, 430)
+            Section.Size = UDim2.new(1, -10, 0, 230)
+            Section.BackgroundColor3 = Color3.fromRGB(10, 8, 55)
+            Section.BackgroundTransparency = 0.04
+            Section.BorderSizePixel = 0
+            Section.ZIndex = 3
+            Section.Parent = MainScroll
+
+            local Title = Instance.new("TextLabel")
+            Title.Size = UDim2.new(1, -16, 0, 30)
+            Title.Position = UDim2.fromOffset(8, 6)
+            Title.BackgroundTransparency = 1
+            Title.Text = "FEATURES"
+            Title.TextColor3 = Color3.fromRGB(27, 147, 227)
+            Title.TextSize = 15
+            Title.Font = Enum.Font.GothamBold
+            Title.TextXAlignment = Enum.TextXAlignment.Left
+            Title.ZIndex = 4
+            Title.Parent = Section
+
+            local Hint = Instance.new("TextLabel")
+            Hint.Size = UDim2.new(1, -16, 0, 22)
+            Hint.Position = UDim2.fromOffset(8, 34)
+            Hint.BackgroundTransparency = 1
+            Hint.Text = "Tap a feature to turn it ON or OFF."
+            Hint.TextColor3 = Color3.fromRGB(170, 170, 185)
+            Hint.TextSize = 10
+            Hint.Font = Enum.Font.Gotham
+            Hint.TextXAlignment = Enum.TextXAlignment.Left
+            Hint.ZIndex = 4
+            Hint.Parent = Section
+
+            local List = Instance.new("ScrollingFrame")
+            List.Name = "FeatureList"
+            List.Position = UDim2.fromOffset(6, 60)
+            List.Size = UDim2.new(1, -12, 1, -66)
+            List.BackgroundTransparency = 1
+            List.BorderSizePixel = 0
+            List.ScrollBarThickness = 4
+            List.AutomaticCanvasSize = Enum.AutomaticSize.Y
+            List.ZIndex = 4
+            List.Parent = Section
+
+            local Layout = Instance.new("UIListLayout")
+            Layout.Padding = UDim.new(0, 5)
+            Layout.SortOrder = Enum.SortOrder.LayoutOrder
+            Layout.Parent = List
+
+            local skip = {
+                ["Main UI"] = true,
+                ["Loading Screen"] = true,
+                ["UI Repair"] = true,
+                ["Mini Notification Test"] = true,
+                ["Test Feature"] = true
+            }
+
+            local Features = Hub:GetFeatures()
+            table.sort(Features, function(a, b) return a.Name < b.Name end)
+
+            local order = 0
+            for _, Info in ipairs(Features) do
+                if not skip[Info.Name] then
+                    order += 1
+                    local Button = Instance.new("TextButton")
+                    Button.Name = "Feature_" .. tostring(order)
+                    Button.Size = UDim2.new(1, -4, 0, 34)
+                    Button.BackgroundColor3 = Color3.fromRGB(6, 4, 43)
+                    Button.BorderSizePixel = 0
+                    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    Button.TextSize = 11
+                    Button.Font = Enum.Font.Gotham
+                    Button.TextXAlignment = Enum.TextXAlignment.Left
+                    Button.ZIndex = 5
+                    Button.Parent = List
+
+                    local Stroke = Instance.new("UIStroke")
+                    Stroke.Color = Color3.fromRGB(27, 147, 227)
+                    Stroke.Thickness = 1
+                    Stroke.Parent = Button
+
+                    local function Refresh()
+                        local Enabled = Hub:IsEnabled(Info.Name)
+                        Button.Text = "  " .. Info.Name .. "    [" .. (Enabled and "ON" or "OFF") .. "]"
+                    end
+                    Refresh()
+
+                    Button.MouseButton1Click:Connect(function()
+                        local Enabled = Hub:IsEnabled(Info.Name)
+                        if Settings then
+                            Settings:SetFeatureEnabled(Info.Name, not Enabled, true)
+                        end
+                        if Enabled then Hub:Disable(Info.Name) else Hub:Enable(Info.Name) end
+                        Refresh()
+                    end)
+                end
+            end
+        end
+
         local SettingsScroll = Gui:FindFirstChild("Window")
             and Gui.Window:FindFirstChild("Content")
             and Gui.Window.Content:FindFirstChild("SettingsScroll")
