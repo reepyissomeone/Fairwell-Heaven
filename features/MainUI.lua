@@ -673,7 +673,7 @@ function MainUI.Start(self, Hub)
 	Version.BackgroundTransparency = 1
 
 	Version.Text =
-		"FAIRWELL HEAVEN • v4.2"
+		"FAIRWELL HEAVEN • v4.5"
 
 	Version.TextColor3 =
 		GREY
@@ -812,7 +812,7 @@ function MainUI.Start(self, Hub)
 		Instance.new("TextButton")
 
 	MainTab.Size =
-		UDim2.new(1/4, 0, 1, 0)
+		UDim2.new(1/5, 0, 1, 0)
 
 	MainTab.BackgroundTransparency = 1
 
@@ -833,10 +833,10 @@ function MainUI.Start(self, Hub)
 		Instance.new("TextButton")
 
 	DevTab.Position =
-		UDim2.new(1/4, 0, 0, 0)
+		UDim2.new(1/5, 0, 0, 0)
 
 	DevTab.Size =
-		UDim2.new(1/4, 0, 1, 0)
+		UDim2.new(1/5, 0, 1, 0)
 
 	DevTab.BackgroundTransparency = 1
 
@@ -868,6 +868,22 @@ function MainUI.Start(self, Hub)
 	ChatTab.Font = Enum.Font.GothamBold
 	ChatTab.ZIndex = 16
 	ChatTab.Parent = Tabs
+
+	--==================================================
+	-- VISUAL TAB
+	--==================================================
+
+	local VisualTab = Instance.new("TextButton")
+	VisualTab.Name = "VisualTab"
+	VisualTab.Position = UDim2.new(3/5, 0, 0, 0)
+	VisualTab.Size = UDim2.new(1/5, 0, 1, 0)
+	VisualTab.BackgroundTransparency = 1
+	VisualTab.Text = "VISUAL"
+	VisualTab.TextColor3 = GREY
+	VisualTab.TextSize = 12
+	VisualTab.Font = Enum.Font.GothamBold
+	VisualTab.ZIndex = 16
+	VisualTab.Parent = Tabs
 
 	--==================================================
 	-- CONTENT
@@ -2148,6 +2164,142 @@ AvatarStroke.Parent = AvatarFrame
 	self.DevLogRefresh = RefreshDevLogs
 
 	--==================================================
+	-- VISUAL PAGE
+	--==================================================
+
+	local VisualScroll = Instance.new("ScrollingFrame")
+	VisualScroll.Name = "VisualScroll"
+	VisualScroll.Position = UDim2.new(0, 8, 0, 8)
+	VisualScroll.Size = UDim2.new(1, -16, 1, -16)
+	VisualScroll.BackgroundTransparency = 1
+	VisualScroll.BorderSizePixel = 0
+	VisualScroll.ScrollBarThickness = 4
+	VisualScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	VisualScroll.Visible = false
+	VisualScroll.Parent = Content
+
+	local VisualTitle = MakeLabel(
+		VisualScroll,
+		"VisualTitle",
+		"FAIRWELL VISUALS",
+		UDim2.new(1, -10, 0, 30),
+		UDim2.new(0, 5, 0, 5)
+	)
+	VisualTitle.TextColor3 = BLUE
+	VisualTitle.Font = Enum.Font.GothamBold
+	VisualTitle.TextSize = 16
+
+	local VisualInfo = MakeLabel(
+		VisualScroll,
+		"VisualInfo",
+		"Overlays, HUDs, markers, and DOORS visual helpers.",
+		UDim2.new(1, -10, 0, 24),
+		UDim2.new(0, 5, 0, 36)
+	)
+VisualInfo.TextColor3 = GREY
+VisualInfo.TextSize = 10
+
+	local VisualSettingsService = Hub:GetService("Settings")
+
+	local function SaveVisualFeature(Name, Enabled)
+		if not VisualSettingsService then return end
+		VisualSettingsService:SetFeatureEnabled(Name, Enabled, true)
+		if Enabled then
+			Hub:Enable(Name)
+		else
+			Hub:Disable(Name)
+		end
+	end
+
+	local function MakeVisualToggle(Text, FeatureName, Y, DefaultEnabled)
+		local Button = Instance.new("TextButton")
+		Button.Position = UDim2.new(0, 5, 0, Y)
+		Button.Size = UDim2.new(1, -10, 0, 38)
+		Button.BackgroundColor3 = PANEL
+		Button.BorderSizePixel = 0
+		Button.TextColor3 = WHITE
+		Button.TextSize = 12
+		Button.Font = Enum.Font.Gotham
+		Button.TextXAlignment = Enum.TextXAlignment.Left
+		Button.Parent = VisualScroll
+
+		local Stroke = Instance.new("UIStroke")
+		Stroke.Color = BLUE
+		Stroke.Thickness = 1
+		Stroke.Parent = Button
+
+		local function Refresh()
+			local Enabled = DefaultEnabled
+			if VisualSettingsService then
+				Enabled = VisualSettingsService:GetFeatureEnabled(FeatureName, DefaultEnabled)
+			end
+			Button.Text = "  " .. Text .. "    [" .. (Enabled and "ON" or "OFF") .. "]"
+		end
+
+		Refresh()
+
+		Button.MouseButton1Click:Connect(function()
+			local Enabled = DefaultEnabled
+			if VisualSettingsService then
+				Enabled = VisualSettingsService:GetFeatureEnabled(FeatureName, DefaultEnabled)
+			end
+			SaveVisualFeature(FeatureName, not Enabled)
+			Refresh()
+		end)
+
+		return Button
+	end
+
+	MakeVisualToggle("FPS COUNTER", "VISUAL FPS Counter", 68, true)
+	MakeVisualToggle("CLOCK", "VISUAL Clock", 112, true)
+	MakeVisualToggle("CROSSHAIR", "VISUAL Crosshair", 156, false)
+	MakeVisualToggle("PERFORMANCE HUD", "VISUAL Performance HUD", 200, false)
+	MakeVisualToggle("DOORS ITEM LABELS", "VISUAL DOORS Item Labels", 244, false)
+	MakeVisualToggle("DOORS ENTITY MARKERS", "VISUAL DOORS Entity Markers", 288, false)
+	MakeVisualToggle("DOORS HIGHLIGHTS", "DOORS Highlights", 332, true)
+	MakeVisualToggle("ENTITY NOTIFICATIONS", "DOORS Entity Notifications", 376, true)
+	MakeVisualToggle("ROOM HUD", "DOORS Room HUD", 420, true)
+
+	local EnableAllVisuals = Instance.new("TextButton")
+	EnableAllVisuals.Position = UDim2.new(0, 5, 0, 472)
+	EnableAllVisuals.Size = UDim2.new(0.5, -8, 0, 38)
+	EnableAllVisuals.BackgroundColor3 = BLUE
+	EnableAllVisuals.BackgroundTransparency = 0.1
+	EnableAllVisuals.BorderSizePixel = 0
+	EnableAllVisuals.Text = "ENABLE VISUALS"
+	EnableAllVisuals.TextColor3 = WHITE
+	EnableAllVisuals.TextSize = 11
+	EnableAllVisuals.Font = Enum.Font.GothamBold
+	EnableAllVisuals.Parent = VisualScroll
+
+	local DisableAllVisuals = EnableAllVisuals:Clone()
+	DisableAllVisuals.Name = "DisableAllVisuals"
+	DisableAllVisuals.Position = UDim2.new(0.5, 3, 0, 472)
+	DisableAllVisuals.Text = "DISABLE VISUALS"
+	DisableAllVisuals.BackgroundColor3 = PANEL
+	DisableAllVisuals.Parent = VisualScroll
+
+	local VisualFeatureDefaults = {
+		["VISUAL FPS Counter"] = true,
+		["VISUAL Clock"] = true,
+		["VISUAL Crosshair"] = false,
+		["VISUAL Performance HUD"] = false,
+		["VISUAL DOORS Item Labels"] = false,
+		["VISUAL DOORS Entity Markers"] = false,
+		["DOORS Highlights"] = true,
+		["DOORS Entity Notifications"] = true,
+		["DOORS Room HUD"] = true
+	}
+
+	EnableAllVisuals.MouseButton1Click:Connect(function()
+		for Name in pairs(VisualFeatureDefaults) do SaveVisualFeature(Name, true) end
+	end)
+
+	DisableAllVisuals.MouseButton1Click:Connect(function()
+		for Name in pairs(VisualFeatureDefaults) do SaveVisualFeature(Name, false) end
+	end)
+
+	--==================================================
 	-- SETTINGS PAGE
 	--==================================================
 
@@ -2155,10 +2307,10 @@ AvatarStroke.Parent = AvatarFrame
 		Instance.new("TextButton")
 
 	SettingsTab.Position =
-		UDim2.new(3/4, 0, 0, 0)
+		UDim2.new(4/5, 0, 0, 0)
 
 	SettingsTab.Size =
-		UDim2.new(1/4, 0, 1, 0)
+		UDim2.new(1/5, 0, 1, 0)
 
 	SettingsTab.BackgroundTransparency = 1
 	SettingsTab.Text = "SETTINGS"
@@ -2219,7 +2371,8 @@ AvatarStroke.Parent = AvatarFrame
 		end
 	end
 
-	local function MakeToggle(Text, FeatureName, Y)
+	local function MakeToggle(Text, FeatureName, Y, DefaultEnabled)
+		DefaultEnabled = DefaultEnabled == nil and true or DefaultEnabled
 		local Button =
 			Instance.new("TextButton")
 
@@ -2282,38 +2435,20 @@ AvatarStroke.Parent = AvatarFrame
 		return Button
 	end
 
-	MakeToggle(
-		"DOORS HIGHLIGHTS",
-		"DOORS Highlights",
-		48
-	)
-
-	MakeToggle(
-		"ENTITY NOTIFICATIONS",
-		"DOORS Entity Notifications",
-		92
-	)
-
-	MakeToggle(
-		"ROOM HUD",
-		"DOORS Room HUD",
-		136
-	)
-
 	local IntervalLabel =
 		MakeLabel(
 			SettingsScroll,
 			"IntervalLabel",
 			"Update Check Interval (seconds)",
 			UDim2.new(1, -10, 0, 24),
-			UDim2.new(0, 5, 0, 184)
+			UDim2.new(0, 5, 0, 48)
 		)
 
 	local IntervalBox =
 		Instance.new("TextBox")
 
 	IntervalBox.Position =
-		UDim2.new(0, 5, 0, 210)
+		UDim2.new(0, 5, 0, 74)
 
 	IntervalBox.Size =
 		UDim2.new(1, -10, 0, 38)
@@ -2371,7 +2506,7 @@ AvatarStroke.Parent = AvatarFrame
 		Instance.new("TextButton")
 
 	ResetButton.Position =
-		UDim2.new(0, 5, 0, 258)
+		UDim2.new(0, 5, 0, 122)
 
 	ResetButton.Size =
 		UDim2.new(1, -10, 0, 38)
@@ -2426,6 +2561,11 @@ AvatarStroke.Parent = AvatarFrame
 		Hub:Enable("DOORS Highlights")
 		Hub:Enable("DOORS Entity Notifications")
 		Hub:Enable("DOORS Room HUD")
+
+		for Name, Enabled in pairs(VisualFeatureDefaults) do
+			SettingsService:SetFeatureEnabled(Name, Enabled, true)
+			if Enabled then Hub:Enable(Name) else Hub:Disable(Name) end
+		end
 	end)
 
 	--==================================================
@@ -2436,11 +2576,13 @@ AvatarStroke.Parent = AvatarFrame
 		MainScroll.Visible = true
 		DevScroll.Visible = false
 		ChatScroll.Visible = false
+		VisualScroll.Visible = false
 		SettingsScroll.Visible = false
 
 		MainTab.TextColor3 = BLUE
 		DevTab.TextColor3 = GREY
 		ChatTab.TextColor3 = GREY
+		VisualTab.TextColor3 = GREY
 		SettingsTab.TextColor3 = GREY
 	end)
 
@@ -2448,11 +2590,13 @@ AvatarStroke.Parent = AvatarFrame
 		MainScroll.Visible = false
 		DevScroll.Visible = true
 		ChatScroll.Visible = false
+		VisualScroll.Visible = false
 		SettingsScroll.Visible = false
 
 		MainTab.TextColor3 = GREY
 		DevTab.TextColor3 = BLUE
 		ChatTab.TextColor3 = GREY
+		VisualTab.TextColor3 = GREY
 		SettingsTab.TextColor3 = GREY
 	end)
 
@@ -2460,11 +2604,27 @@ AvatarStroke.Parent = AvatarFrame
 		MainScroll.Visible = false
 		DevScroll.Visible = false
 		ChatScroll.Visible = true
+		VisualScroll.Visible = false
 		SettingsScroll.Visible = false
 
 		MainTab.TextColor3 = GREY
 		DevTab.TextColor3 = GREY
 		ChatTab.TextColor3 = BLUE
+		VisualTab.TextColor3 = GREY
+		SettingsTab.TextColor3 = GREY
+	end)
+
+	VisualTab.MouseButton1Click:Connect(function()
+		MainScroll.Visible = false
+		DevScroll.Visible = false
+		ChatScroll.Visible = false
+		VisualScroll.Visible = true
+		SettingsScroll.Visible = false
+
+		MainTab.TextColor3 = GREY
+		DevTab.TextColor3 = GREY
+		ChatTab.TextColor3 = GREY
+		VisualTab.TextColor3 = BLUE
 		SettingsTab.TextColor3 = GREY
 	end)
 
@@ -2472,11 +2632,13 @@ AvatarStroke.Parent = AvatarFrame
 		MainScroll.Visible = false
 		DevScroll.Visible = false
 		ChatScroll.Visible = false
+		VisualScroll.Visible = false
 		SettingsScroll.Visible = true
 
 		MainTab.TextColor3 = GREY
 		DevTab.TextColor3 = GREY
 		ChatTab.TextColor3 = GREY
+		VisualTab.TextColor3 = GREY
 		SettingsTab.TextColor3 = BLUE
 	end)
 
@@ -2750,7 +2912,7 @@ AvatarStroke.Parent = AvatarFrame
 	end
 
 	Hub:Log(
-		"Main UI v4.4 initialized with Fairwell chat, artwork, and minimized notification animation."
+		"Main UI v4.5 initialized with Fairwell chat, visual controls, and minimized notification animation."
 	)
 end
 
