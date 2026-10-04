@@ -67,10 +67,19 @@ local function AnalyzeRoom(Room)
 			end
 		end
 
-		if string.find(Name, "rush", 1, true)
-			or string.find(Name, "ambush", 1, true)
-			or string.find(Name, "seek", 1, true)
-			or string.find(Name, "figure", 1, true) then
+		-- Only count unmistakable entity instances.
+		-- Normal room assets can contain words like "Seek" or "Figure",
+		-- so substring matching here causes false positives.
+		local IsEntityName =
+			Name == "rush"
+			or Name == "ambush"
+			or Name == "figure"
+			or Name == "halt"
+			or Name == "screech"
+			or Name == "dupe"
+			or Name == "timothy"
+
+		if IsEntityName then
 			Counts.entity += 1
 		end
 	end
