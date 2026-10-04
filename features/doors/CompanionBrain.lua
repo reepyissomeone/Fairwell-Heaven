@@ -144,7 +144,50 @@ function Brain:OnRoom(room)
     end
 end
 
-function Brain:OnEntity(name)
+function Brain:FocusCameraOnEntity(object)
+    if not object or not object.Parent then return end
+
+    local camera = Workspace.CurrentCamera
+    if not camera then return end
+
+    local target
+    if object:IsA("Model") then
+        local ok, cf = pcall(function()
+            return object:GetPivot()
+        end)
+        if ok and cf then
+            target = cf.Position
+        end
+    elseif object:IsA("BasePart") then
+        target = object.Position
+    else
+        local part = object:FindFirstChildWhichIsA("BasePart", true)
+        if part then target = part.Position end
+    end
+
+    if not target then return end
+
+    -- Screech should grab Fairwell's attention immediately.
+    -- Briefly take control of the camera, look directly at Screech,
+    -- then return control to the normal DOORS camera.
+    local previousType = camera.CameraType
+    local previousSubject = camera.CameraSubject
+    local currentPosition = camera.CFrame.Position
+
+    camera.CameraType = Enum.CameraType.Scriptable
+    camera.CFrame = CFrame.lookAt(currentPosition, target)
+
+    task.delay(0.85, function()
+        if camera and camera.Parent then
+            camera.CameraType = previousType
+            if previousSubject and previousSubject.Parent then
+                camera.CameraSubject = previousSubject
+            end
+        end
+    end)
+end
+
+function Brain:OnEntity(name, object)
     name = tostring(name)
     if not self:Cooldown("Entity:" .. name, 2.5) then return end
 
@@ -167,6 +210,9 @@ function Brain:OnEntity(name)
 
     local reaction = reactions[name]
     if reaction then
+        if name == "Screech" then
+            self:FocusCameraOnEntity(object)
+        end
         self:React(reaction[1], reaction[2], 4, reaction[3])
     end
 end
