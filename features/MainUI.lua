@@ -5,6 +5,7 @@
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
 local MainUI = {
     Name = "Main UI",
@@ -1137,6 +1138,41 @@ function MainUI:_CreateCompanion(Hub)
         ZIndex = 20
     }, holder)
 
+    local squish = new("UIScale", {
+        Scale = 1
+    }, button)
+
+    local squishBusy = false
+    local function playSquish()
+        if squishBusy or not squish.Parent then
+            return
+        end
+
+        squishBusy = true
+        squish.Scale = 1
+
+        local down = TweenService:Create(
+            squish,
+            TweenInfo.new(0.07, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Scale = 0.88}
+        )
+        local up = TweenService:Create(
+            squish,
+            TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+            {Scale = 1}
+        )
+
+        down:Play()
+        down.Completed:Wait()
+        if not squish.Parent then
+            squishBusy = false
+            return
+        end
+        up:Play()
+        up.Completed:Wait()
+        squishBusy = false
+    end
+
     local bubble = new("TextLabel", {
         Name = "Notification",
         AnchorPoint = Vector2.new(1, 1),
@@ -1328,6 +1364,7 @@ function MainUI:_CreateCompanion(Hub)
     -- Tapping Fairwell does NOT open the main menu.
     -- FW is the only control that toggles the menu.
     button.Activated:Connect(function()
+        task.spawn(playSquish)
         if self.CompanionTap then
             self.CompanionTap()
         end
