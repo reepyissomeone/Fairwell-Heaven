@@ -13,7 +13,8 @@ local DevLab = {
     -- Set this through getgenv() on your own runtime.
     -- Never put API keys, Discord tokens, or webhook secrets here.
     OwnerUserId = 0,
-    Endpoint = ""
+    Endpoint = "",
+    SessionToken = ""
 }
 
 local function getConfig()
@@ -22,7 +23,8 @@ local function getConfig()
 
     return {
         OwnerUserId = tonumber(config.OwnerUserId or DevLab.OwnerUserId or 0) or 0,
-        Endpoint = tostring(config.Endpoint or DevLab.Endpoint or "")
+        Endpoint = tostring(config.Endpoint or DevLab.Endpoint or ""),
+        SessionToken = tostring(config.SessionToken or DevLab.SessionToken or "")
     }
 end
 
@@ -33,6 +35,54 @@ function DevLab:IsAuthorized()
     return player ~= nil
         and config.OwnerUserId > 0
         and tonumber(player.UserId) == config.OwnerUserId
+end
+
+function DevLab:Authenticate(password)
+    if type(password) ~= "string" or password == "" then
+        return false, "Enter your Dev Lab password."
+    end
+
+    local config = getConfig()
+    if config.Endpoint == "" then
+        return false, "Dev bridge endpoint is not configured yet."
+    end
+
+    local requestFunction =
+        (type(request) == "function" and request)
+        or (type(http_request) == "function" and http_request)
+        or (syn and type(syn.request) == "function" and syn.request)
+
+    if not requestFunction then
+        return false, "HTTP request support is unavailable."
+    end
+
+    local okEncode, body = pcall(function()
+        return HttpService:JSONEncode({Password = password, UserId = Players.LocalPlayer and Players.LocalPlayer.UserId})
+    end)
+    if not okEncode then return false, "Could not encode authentication request." end
+
+    local okRequest, response = pcall(function()
+        return requestFunction({
+            Url = config.Endpoint .. "/auth",
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = body
+        })
+    end)
+    if not okRequest then return false, "Authentication request failed." end
+
+    local statusCode = tonumber(response and (response.StatusCode or response.Status))
+    if not statusCode or statusCode < 200 or statusCode >= 300 then
+        return false, "Incorrect password or authentication rejected."
+    end
+
+    local decoded = HttpService:JSONDecode(response.Body or "{}")
+    if type(decoded) ~= "table" or type(decoded.token) ~= "string" or decoded.token == "" then
+        return false, "Authentication response was invalid."
+    end
+
+    self.SessionToken = decoded.token
+    return true, "Dev Lab unlocked."
 end
 
 function DevLab:GetStatus()
@@ -89,7 +139,8 @@ function DevLab:Submit(requestData)
             Url = config.Endpoint,
             Method = "POST",
             Headers = {
-                ["Content-Type"] = "application/json"
+                ["Content-Type"] = "application/json",
+                ["Authorization"] = self.SessionToken ~= "" and ("Bearer " .. self.SessionToken) or ""
             },
             Body = body
         })
@@ -122,6 +173,7 @@ end
 
 function DevLab:Stop()
     self.Hub = nil
+    self.SessionToken = ""
 end
 
 return DevLab
