@@ -250,7 +250,7 @@ local function StartAutoUpdater(Hub)
 			if SavedInterval then
 				return math.clamp(
 					SavedInterval,
-					30,
+					5,
 					3600
 				)
 			end
