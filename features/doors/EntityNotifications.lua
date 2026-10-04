@@ -14,7 +14,7 @@ local EntityNotifications = {
 
 local EntityNames = {
     rush="Rush", ambush="Ambush", seek="Seek", halt="Halt",
-    screech="Screech", eyes="Eyes", figure="Figure", dupe="Dupe",
+    screech="Screech", creak="Creak", eyes="Eyes", figure="Figure", dupe="Dupe",
     grumble="Grumble", giggle="Giggle", sally="Sally"
 }
 
@@ -24,6 +24,7 @@ local EntitySprites = {
     Seek = "terrified",
     Halt = "confused",
     Screech = "surpised",
+    Creak = "confused",
     Eyes = "confused",
     Figure = "nervous",
     Dupe = "confused",
@@ -59,9 +60,36 @@ end
 
 local COOLDOWN = 2
 
-local function Notify(Hub, Name)
-    -- Entity detection is intentionally silent.
+local function IsInStairwell(Object)
+    local currentRooms = Workspace:FindFirstChild("CurrentRooms")
+    if not currentRooms then return false end
+
+    local room = Object:FindFirstAncestorWhichIsA("Model")
+    while room and room.Parent ~= currentRooms do
+        room = room.Parent and room.Parent:FindFirstAncestorWhichIsA("Model")
+    end
+
+    if room and string.find(string.lower(room.Name), "stairwell", 1, true) then
+        return true
+    end
+
+    -- Some Stairwell builds use a folder/model outside CurrentRooms.
+    local parent = Object.Parent
+    while parent and parent ~= Workspace do
+        if string.find(string.lower(parent.Name), "stairwell", 1, true) then
+            return true
+        end
+        parent = parent.Parent
+    end
+
+    return false
+end
+
+local function Notify(Hub, Name, Object)
+    -- Creak is specific to the Stairwell. Other entity detection remains global.
     -- Fairwell's Companion Brain handles the actual reaction/hint.
+    if Name == "Creak" and not IsInStairwell(Object) then return end
+
     local Brain = Hub and Hub:GetFeature("Fairwell Companion Brain")
     if Brain and type(Brain.OnEntity) == "function" then
         Brain:OnEntity(Name, Object)
@@ -85,7 +113,7 @@ local function Detect(self, Object)
     end
 
     self.LastAlert[Name] = Now
-    Notify(self.Hub, Name)
+    Notify(self.Hub, Name, Object)
 
     -- Keep entity state in sync so Fairwell can react again after an entity leaves.
     task.delay(4, function()
