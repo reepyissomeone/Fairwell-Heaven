@@ -180,6 +180,15 @@ function Hub:Notify(title, message, kind, duration)
 		self.NotificationEvent:Fire(title, message, kind, duration)
 	end
 
+	-- When Fairwell is visible as the companion, he replaces the normal
+	-- top-right notification card. This prevents both notifications from
+	-- appearing at the same time.
+	local playerGuiNow = player:FindFirstChildOfClass("PlayerGui")
+	local companion = playerGuiNow and playerGuiNow:FindFirstChild("FairwellHeaven_Companion")
+	if companion and companion.Enabled == true then
+		return true
+	end
+
 	local card = Instance.new("Frame")
 	card.Size = UDim2.new(1, 0, 0, 82)
 	card.BackgroundColor3 = Color3.fromRGB(9, 10, 18)
