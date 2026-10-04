@@ -1176,9 +1176,13 @@ function MainUI:_CreateCompanion(Hub)
         end
     end
 
-    for _, state in ipairs({"Idle", "ALERT", "Ctalking", "Cthinking", "Yippe", "uhoh"}) do
-        loadAsset(state)
-    end
+    -- Asset downloads happen in the background so the main window can
+    -- render immediately even when GitHub/custom-asset APIs are slow.
+    task.spawn(function()
+        for _, state in ipairs({"Idle", "ALERT", "Ctalking", "Cthinking", "Yippe", "uhoh"}) do
+            loadAsset(state)
+        end
+    end)
 
     local stateToken = 0
     local function setState(state, duration)
@@ -1342,7 +1346,16 @@ function MainUI:Start(Hub)
     self.Gui = gui
     self.Hidden = false
 
-    self:_CreateCompanion(Hub)
+    -- Companion assets are optional. Never let a custom-asset API or
+    -- network request block the main UI from appearing.
+    task.spawn(function()
+        local ok, err = pcall(function()
+            self:_CreateCompanion(Hub)
+        end)
+        if not ok then
+            Hub:Warn("Companion startup failed:", err)
+        end
+    end)
 
     local window = new("Frame", {
         Name = "Window",
