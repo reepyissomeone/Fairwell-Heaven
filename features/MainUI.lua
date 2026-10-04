@@ -2932,26 +2932,6 @@ VisualInfo.TextSize = 10
 				)
 
 			Tween:Play()
-
-			local Settings = Hub:GetService("Settings")
-
-			if Settings then
-				local Position = Window.Position
-
-				Settings:Set(
-					"Window",
-					{
-						Position = {
-							XScale = Position.X.Scale,
-							XOffset = Position.X.Offset,
-							YScale = Position.Y.Scale,
-							YOffset = Position.Y.Offset
-						},
-						Collapsed = self.Collapsed == true
-					},
-					true
-				)
-			end
 		end
 	end)
 
@@ -3017,27 +2997,6 @@ VisualInfo.TextSize = 10
 
 		end
 
-		if WindowSettings.Collapsed == true then
-
-			self.Collapsed = true
-			ToggleButton.Text = "+"
-			SetNormalNotificationsVisible(false)
-
-			Window.Size =
-				UDim2.fromOffset(
-					270,
-					48
-				)
-
-			Window.Position =
-				UDim2.new(
-					0.5,
-					0,
-					1,
-					-12
-				)
-
-		end
 
 	end
 
