@@ -53,9 +53,8 @@ local function OnDescendant(self, Object)
     self.Protected[Object] = Entity
     TryNeutralize(Object)
 
-    if self.Hub and self.Hub.Notify then
-        self.Hub:Notify("DOORS • PROTECTION", Entity .. " detected", "WARNING", 2)
-    end
+    -- Entity notifications are owned by Fairwell Companion Brain.
+    -- Do not emit a second generic entity-detected alert here.
 end
 
 function Protection.Start(self, Hub)
