@@ -873,12 +873,29 @@ function MainUI:CompanionNotify(title,msg,kind,duration)
 end
 
 function MainUI:SetVisible(visible)
-    self.Hidden=visible~=true
-    if self.Gui then self.Gui.Enabled=visible==true end
-    if self.ToggleButton then self.ToggleButton.Visible=true end
+    visible = visible == true
+    self.Hidden = not visible
 
+    -- Only the actual Fairwell menu is toggled here.
+    -- The FW control itself always remains available.
+    if self.Gui then
+        self.Gui.Enabled = visible
+    end
+
+    if self.ToggleButton and self.ToggleButton.Parent then
+        self.ToggleButton.Visible = true
+        self.ToggleButton.Text = visible and "FW" or "FW"
+        self.ToggleButton.BackgroundColor3 = visible and PANEL2 or PANEL
+        local indicator = self.ToggleIndicator
+        if indicator then
+            indicator.Text = visible and "ON" or "OFF"
+            indicator.TextColor3 = visible and GREEN or GREY
+        end
+    end
+
+    -- Companion is intentionally independent from the menu toggle.
     if self.CompanionGui then
-        self.CompanionGui.Enabled=self.Hidden
+        self.CompanionGui.Enabled = true
     end
 end
 
@@ -982,19 +999,31 @@ function MainUI:Start(Hub)
     },pg)
     local toggle=make("TextButton",{
         Name="FW",
-        Position=UDim2.new(0,10,0.5,-30),
-        Size=UDim2.fromOffset(58,60),
-        BackgroundColor3=PANEL,
+        Position=UDim2.new(0,10,0.5,-34),
+        Size=UDim2.fromOffset(68,68),
+        BackgroundColor3=PANEL2,
         BorderSizePixel=0,
         Text="FW",
         TextColor3=WHITE,
-        TextSize=15,
+        TextSize=16,
         Font=Enum.Font.GothamBold,
-        Active=true
+        Active=true,
+        AutoButtonColor=false
     },toggleGui)
     round(toggle,14); line(toggle,BLUE,0.05)
-    text(toggle,"Hint","MENU",UDim2.new(0,0,1,-17),UDim2.new(1,0,0,13),7,GREY).TextXAlignment=Enum.TextXAlignment.Center
-    tap(toggle,function() self:SetVisible(self.Hidden) end)
+
+    local indicator=text(toggle,"Indicator","ON",
+        UDim2.new(0,0,1,-25),UDim2.new(1,0,0,13),8,GREEN)
+    indicator.TextXAlignment=Enum.TextXAlignment.Center
+    indicator.Font=Enum.Font.GothamBold
+    self.ToggleIndicator=indicator
+
+    text(toggle,"Hint","TOGGLE",
+        UDim2.new(0,0,1,-12),UDim2.new(1,0,0,10),6,GREY).TextXAlignment=Enum.TextXAlignment.Center
+
+    tap(toggle,function()
+        self:SetVisible(not not self.Hidden)
+    end)
     self.ToggleGui=toggleGui
     self.ToggleButton=toggle
 
@@ -1058,6 +1087,7 @@ function MainUI:Stop()
     self.Pages=nil
     self.Tabs=nil
     self.ToggleButton=nil
+    self.ToggleIndicator=nil
     self.DragHandle=nil
     self.CompanionBubble=nil
     self.CompanionSetState=nil
