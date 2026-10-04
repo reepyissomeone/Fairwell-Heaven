@@ -1420,13 +1420,25 @@ function MainUI:_CreateChatPage(Hub)
 end
 
 function MainUI:_Switch(pageName)
-    for name, page in pairs(self.Pages or {}) do
-        page.Visible = name == pageName
+    local pages = self.Pages
+    if not pages then
+        return false
     end
 
-    for name, button in pairs(self.Tabs or {}) do
-        button.TextColor3 = GREY
+    local target = pages[pageName]
+    if not target or not target.Parent then
+        return false
     end
+
+    -- Always clear every page first. This prevents two pages from being
+    -- visible if a page was recreated or a stale Visible value survived.
+    for _, page in pairs(pages) do
+        if page and page.Parent then
+            page.Visible = false
+        end
+    end
+
+    target.Visible = true
 
     local tabMap = {
         Main = "MainTab",
@@ -1434,15 +1446,22 @@ function MainUI:_Switch(pageName)
         Chat = "FairwellChatTab",
         Game = "GameTab",
         Visual = "VisualTab",
-        Settings = "SettingsTab",
-        }
+        Settings = "SettingsTab"
+    }
+
+    for _, button in pairs(self.Tabs or {}) do
+        if button and button.Parent then
+            button.TextColor3 = GREY
+        end
+    end
 
     local tab = self.Tabs and self.Tabs[tabMap[pageName]]
-    if tab then
+    if tab and tab.Parent then
         tab.TextColor3 = BLUE
     end
 
     self.CurrentPage = pageName
+    return true
 end
 
 function MainUI:_UpdateStatus(Hub)
@@ -2124,25 +2143,47 @@ function MainUI:Start(Hub)
     self:_BuildFeatureList(Hub, true)
     self:_UpdateStatus(Hub)
 
-    -- Tab buttons are wired once here. Pages are never duplicated.
-    bindButton(self.Tabs.MainTab, function()
-        self:_Switch("Main")
-    end)
-    bindButton(self.Tabs.DevTab, function()
-        self:_Switch("Logs")
-    end)
-    bindButton(self.Tabs.GameTab, function()
-        self:_Switch("Game")
-    end)
-    bindButton(self.Tabs.FairwellChatTab, function()
-        self:_Switch("Chat")
-    end)
-    bindButton(self.Tabs.VisualTab, function()
-        self:_Switch("Visual")
-    end)
-    bindButton(self.Tabs.SettingsTab, function()
-        self:_Switch("Settings")
-    end)
+    -- Tab navigation gets its own touch-first handler.
+    -- Do not route tabs through the feature-button binder: tab switching
+    -- must remain independent from feature toggles and companion input.
+    local tabRoutes = {
+        MainTab = "Main",
+        DevTab = "Logs",
+        GameTab = "Game",
+        FairwellChatTab = "Chat",
+        VisualTab = "Visual",
+        SettingsTab = "Settings"
+    }
+
+    local tabBusy = {}
+    local function bindTab(tab, pageName)
+        if not tab then return end
+
+        local function switch()
+            if tabBusy[tab] then return end
+            tabBusy[tab] = true
+            self:_Switch(pageName)
+            task.defer(function()
+                tabBusy[tab] = nil
+            end)
+        end
+
+        -- Activated handles normal Roblox touch/mouse/gamepad activation.
+        tab.Activated:Connect(switch)
+
+        -- InputBegan is an explicit touch fallback for mobile executors
+        -- that swallow GuiButton.Activated on custom TextButtons.
+        tab.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch
+                or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                switch()
+            end
+        end)
+    end
+
+    for tabName, pageName in pairs(tabRoutes) do
+        bindTab(self.Tabs[tabName], pageName)
+    end
 
     self:_Switch("Main")
     self:_StartDragging()
