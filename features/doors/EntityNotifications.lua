@@ -1,329 +1,201 @@
 --// FAIRWELL HEAVEN
 --// DOORS Entity Notifications
---// Reliable entity detection for spawned AND already-loaded entities
+--// Rebuilt entity detector: model-first, container-aware, debounced
 
 local Workspace = game:GetService("Workspace")
 
 local EntityNotifications = {
     Name = "DOORS Entity Notifications",
-    Description = "Reacts when common DOORS entities appear.",
+    Description = "Detects DOORS entities from runtime models and containers.",
     Game = "DOORS",
     Connections = {},
-    LastAlert = {}
+    LastAlert = {},
+    Detected = {}
 }
 
-local EntityNames = {
-    rush="Rush", rushmoving="Rush", ambush="Ambush", seek="Seek", halt="Halt",
-    screech="Screech", creak="Creak", eyes="Eyes", figure="Figure", dupe="Dupe",
-    grumble="Grumble", giggle="Giggle", sally="Sally"
+local ENTITY_ALIASES = {
+    rush = "Rush",
+    rushmoving = "Rush",
+    ambush = "Ambush",
+    seek = "Seek",
+    halt = "Halt",
+    screech = "Screech",
+    creak = "Creak",
+    eyes = "Eyes",
+    figure = "Figure",
+    dupe = "Dupe",
+    grumble = "Grumble",
+    giggle = "Giggle",
+    sally = "Sally"
 }
 
-local EntitySprites = {
-    Rush = "hiding",
-    Ambush = "hiding",
-    Seek = "terrified",
-    Halt = "confused",
-    Screech = "surpised",
-    Creak = "confused",
-    Eyes = "confused",
-    Figure = "nervous",
-    Dupe = "confused",
-    Grumble = "nervous",
-    Giggle = "confused",
-    Sally = "surpised"
-}
+local COOLDOWN = 1.25
 
-local function NormalizeName(Name)
-    return string.lower(tostring(Name):gsub("[%s_%-%./]", ""))
+local function Normalize(value)
+    return string.lower(tostring(value or "")):gsub("[%s_%-%./]", "")
 end
 
-local function FindEntityName(Object)
-    local Name = NormalizeName(Object.Name)
-
-    if Name == "figure" or Name == "dupe" then
-        return Object:IsA("Model") and EntityNames[Name] or nil
+local function IsEntityName(value)
+    local n = Normalize(value)
+    if ENTITY_ALIASES[n] then
+        return ENTITY_ALIASES[n]
     end
 
-    if EntityNames[Name] then
-        return EntityNames[Name]
-    end
-
-    for Key, DisplayName in pairs(EntityNames) do
-        if Key ~= "figure" and Key ~= "dupe"
-            and string.find(Name, Key, 1, true) then
-            return DisplayName
+    -- Runtime variants such as RushMoving, Rush_Model, etc.
+    for alias, display in pairs(ENTITY_ALIASES) do
+        if #alias >= 5 and string.find(n, alias, 1, true) then
+            return display
         end
     end
 
     return nil
 end
 
-local COOLDOWN = 2
+local function GetRootModel(object)
+    if not object then return nil end
+    if object:IsA("Model") then return object end
+    return object:FindFirstAncestorOfClass("Model")
+end
 
-local function ResolveStandaloneEntity(Object)
-    if not Object or not Object.Parent then return nil, nil end
+local function ResolveEntity(object)
+    if not object or not object.Parent then
+        return nil, nil
+    end
 
-    -- Prefer the nearest Model that is itself named like the entity.
-    local cursor = Object
+    -- 1. The object itself.
+    local direct = IsEntityName(object.Name)
+    if direct and (object:IsA("Model") or object:IsA("Folder")) then
+        return direct, object
+    end
+
+    -- 2. Walk upward. This catches Workspace.RushMoving descendants.
+    local cursor = object
     while cursor and cursor ~= Workspace do
-        if cursor:IsA("Model") then
-            local directName = FindEntityName(cursor)
-            if directName then
-                return directName, cursor
-            end
+        local name = IsEntityName(cursor.Name)
+        if name and cursor:IsA("Model") then
+            return name, cursor
         end
         cursor = cursor.Parent
     end
 
-    -- Some spawned entities use a generic Model name and put "Rush",
-    -- "Ambush", etc. on a child. Resolve that child back to its Model.
-    local model = Object:IsA("Model") and Object or Object:FindFirstAncestorOfClass("Model")
+    -- 3. Search the nearest model's descendants.
+    local model = GetRootModel(object)
     if not model then return nil, nil end
 
-    for _, descendant in ipairs(model:GetDescendants()) do
-        local descendantName = NormalizeName(descendant.Name)
-        local displayName = EntityNames[descendantName]
-        if displayName then
-            if displayName ~= "Figure" and displayName ~= "Dupe" then
-                return displayName, model
-            elseif descendant:IsA("Model") then
-                return displayName, descendant
+    local modelName = IsEntityName(model.Name)
+    if modelName then
+        return modelName, model
+    end
+
+    for _, child in ipairs(model:GetDescendants()) do
+        local name = IsEntityName(child.Name)
+        if name then
+            if child:IsA("Model") then
+                return name, child
             end
+            return name, model
         end
     end
 
     return nil, nil
 end
 
-local function DetectStandalone(self, Object)
-    if not Object or not Object.Parent then return end
-
-    local Name, Target = ResolveStandaloneEntity(Object)
-    if not Name or not Target or not Target.Parent then return end
-
-    -- Only announce the entity once. DescendantAdded can fire many times
-    -- while the same entity model is being assembled.
-    self.DetectedObjects = self.DetectedObjects or {}
-    if self.DetectedObjects[Target] then
-        return
+local function Notify(self, name, object)
+    local brain = self.Hub and self.Hub:GetFeature("Fairwell Companion Brain")
+    if brain and type(brain.OnEntity) == "function" then
+        brain:OnEntity(name, object)
     end
+end
 
-    local Now = os.clock()
-    if self.LastAlert[Name] and Now - self.LastAlert[Name] < COOLDOWN then
-        return
-    end
+local function MarkDetected(self, name, object)
+    if not name or not object or not object.Parent then return end
 
-    self.DetectedObjects[Target] = true
-    self.LastAlert[Name] = Now
-    Notify(self.Hub, Name, Target)
+    self.Detected[object] = true
+    self.LastAlert[name] = os.clock()
 
-    task.delay(4, function()
+    Notify(self, name, object)
+
+    task.delay(5, function()
         if not self.Hub then return end
 
-        if not Target.Parent then
-            self.DetectedObjects[Target] = nil
+        if not object.Parent then
+            self.Detected[object] = nil
 
-            local Brain = self.Hub:GetFeature("Fairwell Companion Brain")
-            if Brain and type(Brain.OnEntityGone) == "function" then
-                Brain:OnEntityGone(Name)
+            local brain = self.Hub:GetFeature("Fairwell Companion Brain")
+            if brain and type(brain.OnEntityGone) == "function" then
+                brain:OnEntityGone(name)
             end
         end
     end)
 end
 
-local function ScanStandaloneExisting(self)
-    -- Scan actual entity roots already present in Workspace. This is
-    -- especially important for DOORS RushMoving, which can exist before
-    -- Fairwell finishes starting.
-    local seen = {}
+local function TryDetect(self, object)
+    local name, target = ResolveEntity(object)
+    if not name or not target then return end
+    if self.Detected[target] then return end
 
-    for _, Object in ipairs(Workspace:GetDescendants()) do
-        local normalized = NormalizeName(Object.Name)
+    local last = self.LastAlert[name]
+    if last and os.clock() - last < COOLDOWN then
+        return
+    end
 
-        -- Loose matching: inspect anything that looks even remotely like
-        -- a known entity name. This catches renamed/variant runtime models.
-        local possible = normalized == "rushmoving"
-            or normalized == "rush"
-            or normalized == "ambush"
-            or normalized == "seek"
-            or normalized == "halt"
-            or normalized == "screech"
-            or normalized == "creak"
-            or normalized == "eyes"
-            or normalized == "figure"
-            or normalized == "dupe"
-            or normalized == "grumble"
-            or normalized == "giggle"
-            or normalized == "sally"
-            or string.find(normalized, "rush", 1, true)
-            or string.find(normalized, "ambush", 1, true)
-            or string.find(normalized, "seek", 1, true)
-            or string.find(normalized, "screech", 1, true)
-            or string.find(normalized, "halt", 1, true)
-            or string.find(normalized, "grumble", 1, true)
-            or string.find(normalized, "giggle", 1, true)
-            or string.find(normalized, "sally", 1, true)
+    MarkDetected(self, name, target)
+end
 
-        if possible then
-            local EntityName, Target = ResolveStandaloneEntity(Object)
-            if EntityName and Target and not seen[Target] then
-                seen[Target] = true
-                DetectStandalone(self, Target)
-            end
+local function ScanTree(self, root)
+    if not root then return end
+
+    -- Check models/folders first instead of every BasePart.
+    if root:IsA("Model") or root:IsA("Folder") then
+        TryDetect(self, root)
+    end
+
+    for _, child in ipairs(root:GetDescendants()) do
+        if child:IsA("Model") or child:IsA("Folder") then
+            TryDetect(self, child)
         end
     end
 end
 
-local function IsInStairwell(Object)
-    local currentRooms = Workspace:FindFirstChild("CurrentRooms")
-    if not currentRooms then return false end
-
-    local room = Object:FindFirstAncestorWhichIsA("Model")
-    while room and room.Parent ~= currentRooms do
-        room = room.Parent and room.Parent:FindFirstAncestorWhichIsA("Model")
-    end
-
-    if room and string.find(string.lower(room.Name), "stairwell", 1, true) then
-        return true
-    end
-
-    -- Some Stairwell builds use a folder/model outside CurrentRooms.
-    local parent = Object.Parent
-    while parent and parent ~= Workspace do
-        if string.find(string.lower(parent.Name), "stairwell", 1, true) then
-            return true
-        end
-        parent = parent.Parent
-    end
-
-    return false
-end
-
-local function Notify(Hub, Name, Object)
-    -- Fairwell's Companion Brain handles the actual reaction/hint.
-    local Brain = Hub and Hub:GetFeature("Fairwell Companion Brain")
-    if Brain and type(Brain.OnEntity) == "function" then
-        Brain:OnEntity(Name, Object)
-    end
-end
-
-local function GetLiveEntities()
-    -- DOORS may place Live Entities directly under Workspace or inside
-    -- another runtime container. Find the actual container by name without
-    -- scanning unrelated entity objects.
+local function FindLiveEntities()
     local direct = Workspace:FindFirstChild("Live Entities")
         or Workspace:FindFirstChild("LiveEntities")
-    if direct then
-        return direct
-    end
 
-    for _, descendant in ipairs(Workspace:GetDescendants()) do
-        if NormalizeName(descendant.Name) == "liveentities" then
-            return descendant
+    if direct then return direct end
+
+    for _, object in ipairs(Workspace:GetDescendants()) do
+        if Normalize(object.Name) == "liveentities" then
+            return object
         end
     end
 
     return nil
 end
 
-local function FindEntityInRoot(Root)
-    local direct = FindEntityName(Root)
-    if direct then
-        return direct, Root
-    end
+local function HookContainer(self, container)
+    if not container or self.Hooked[container] then return end
+    self.Hooked[container] = true
 
-    -- Some entity containers have a generic root name and put the actual
-    -- entity name on a descendant. Prefer exact matches for reliability.
-    for _, descendant in ipairs(Root:GetDescendants()) do
-        local normalized = NormalizeName(descendant.Name)
-        if EntityNames[normalized] then
-            local name = EntityNames[normalized]
-            if name == "Figure" or name == "Dupe" then
-                if descendant:IsA("Model") then
-                    return name, descendant
-                end
-            else
-                return name, descendant
+    table.insert(self.Connections, container.ChildAdded:Connect(function(object)
+        task.defer(function()
+            if self.Hub then
+                TryDetect(self, object)
+                ScanTree(self, object)
             end
-        end
-    end
+        end)
+    end))
 
-    return nil, nil
-end
-
-local function FindMatchingEntity(LiveEntities, WantedName)
-    if not LiveEntities then
-        return nil
-    end
-
-    for _, root in ipairs(LiveEntities:GetChildren()) do
-        local name = FindEntityInRoot(root)
-        if name == WantedName then
-            return root
-        end
-    end
-
-    return nil
-end
-
-local function GetEntityRoot(LiveEntities, Object)
-    if not LiveEntities or not Object or Object == LiveEntities then
-        return nil
-    end
-
-    local root = Object
-    while root.Parent and root.Parent ~= LiveEntities do
-        root = root.Parent
-    end
-
-    return root.Parent == LiveEntities and root or nil
-end
-
-local function Detect(self, Object)
-    local LiveEntities = GetLiveEntities()
-    local Root = GetEntityRoot(LiveEntities, Object)
-
-    if not Root or not Root.Parent then
-        return
-    end
-
-    local Name, Target = FindEntityInRoot(Root)
-    if not Name then
-        return
-    end
-
-    local Now = os.clock()
-    if self.LastAlert[Name] and Now - self.LastAlert[Name] < COOLDOWN then
-        return
-    end
-
-    self.LastAlert[Name] = Now
-    Notify(self.Hub, Name, Target or Root)
-
-    task.delay(4, function()
-        if self.Hub and self.LastAlert[Name] == Now then
-            local live = GetLiveEntities()
-            local stillThere = FindMatchingEntity(live, Name) ~= nil
-
-            if not stillThere then
-                local Brain = self.Hub:GetFeature("Fairwell Companion Brain")
-                if Brain and type(Brain.OnEntityGone) == "function" then
-                    Brain:OnEntityGone(Name)
+    table.insert(self.Connections, container.DescendantAdded:Connect(function(object)
+        if object:IsA("Model") or object:IsA("Folder") then
+            task.defer(function()
+                if self.Hub then
+                    TryDetect(self, object)
                 end
-            end
+            end)
         end
-    end)
-end
+    end))
 
-local function ScanExisting(self)
-    local LiveEntities = GetLiveEntities()
-    if not LiveEntities then
-        return
-    end
-
-    for _, Object in ipairs(LiveEntities:GetChildren()) do
-        Detect(self, Object)
-    end
+    ScanTree(self, container)
 end
 
 function EntityNotifications.Start(self, Hub)
@@ -332,94 +204,61 @@ function EntityNotifications.Start(self, Hub)
         return
     end
 
-    self.LastAlert = {}
     self.Hub = Hub
     self.Connections = {}
-    self.HookedLiveContainers = {}
-    self.DetectedObjects = {}
+    self.LastAlert = {}
+    self.Detected = {}
+    self.Hooked = {}
 
-    local function HookLiveEntities(LiveEntities)
-        if not LiveEntities or self.HookedLiveContainers[LiveEntities] then
+    -- Existing containers/entities.
+    local live = FindLiveEntities()
+    if live then
+        HookContainer(self, live)
+    end
+
+    ScanTree(self, Workspace)
+
+    -- Future entities and containers.
+    table.insert(self.Connections, Workspace.DescendantAdded:Connect(function(object)
+        if not self.Hub then return end
+
+        local normalized = Normalize(object.Name)
+
+        if normalized == "liveentities" then
+            task.defer(function()
+                if self.Hub then
+                    HookContainer(self, object)
+                end
+            end)
             return
         end
 
-        self.HookedLiveContainers[LiveEntities] = true
-
-        table.insert(self.Connections, LiveEntities.ChildAdded:Connect(function(Object)
-            Detect(self, Object)
-        end))
-
-        -- Catch entities whose root is created first and named later,
-        -- or whose actual Creak object is inserted one level deeper.
-        table.insert(self.Connections, LiveEntities.DescendantAdded:Connect(function(Object)
-            Detect(self, Object)
-        end))
-
-        ScanExisting(self)
-    end
-
-    local LiveEntities = GetLiveEntities()
-    if LiveEntities then
-        HookLiveEntities(LiveEntities)
-    end
-
-    -- Catch Live Entities whether it is created directly under Workspace
-    -- or inside another runtime container.
-    table.insert(self.Connections, Workspace.DescendantAdded:Connect(function(Object)
-        -- First handle normal DOORS Live Entities containers.
-        if NormalizeName(Object.Name) == "liveentities" then
+        -- Only process models/folders. Their descendants are handled by
+        -- ResolveEntity, avoiding thousands of unnecessary BasePart checks.
+        if object:IsA("Model") or object:IsA("Folder") then
             task.defer(function()
-                if self.Hub == Hub then
-                    HookLiveEntities(Object)
-                end
-            end)
-        end
-
-        -- Handle direct Workspace entities such as RushMoving.
-        -- Only inspect likely entity roots to avoid scanning every Part.
-        local normalized = NormalizeName(Object.Name)
-        if normalized == "rushmoving"
-            or EntityNames[normalized]
-            or normalized == "figure"
-            or normalized == "dupe"
-            or string.find(normalized, "rush", 1, true)
-            or string.find(normalized, "ambush", 1, true)
-            or string.find(normalized, "seek", 1, true)
-            or string.find(normalized, "screech", 1, true)
-            or string.find(normalized, "halt", 1, true)
-            or string.find(normalized, "grumble", 1, true)
-            or string.find(normalized, "giggle", 1, true)
-            or string.find(normalized, "sally", 1, true)
-        then
-            task.defer(function()
-                if self.Hub == Hub then
-                    DetectStandalone(self, Object)
+                if self.Hub then
+                    TryDetect(self, object)
+                    ScanTree(self, object)
                 end
             end)
         end
     end))
 
-    task.defer(function()
-        if self.Hub == Hub then
-            local live = GetLiveEntities()
-            if live then
-                HookLiveEntities(live)
-            end
-            ScanExisting(self)
-            ScanStandaloneExisting(self)
-        end
-    end)
-
-    Hub:Log("DOORS Entity Notifications started. Watching Live Entities.")
+    Hub:Log("DOORS Entity Notifications started. Model-first detection active.")
 end
 
 function EntityNotifications.Stop(self)
-    for _, Connection in ipairs(self.Connections or {}) do
-        Connection:Disconnect()
+    for _, connection in ipairs(self.Connections or {}) do
+        pcall(function()
+            connection:Disconnect()
+        end)
     end
+
     self.Connections = {}
-    table.clear(self.LastAlert)
-    self.DetectedObjects = {}
+    self.LastAlert = {}
+    self.Detected = {}
+    self.Hooked = {}
     self.Hub = nil
 end
 
