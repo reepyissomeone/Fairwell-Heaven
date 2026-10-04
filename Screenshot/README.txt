@@ -1,0 +1,1 @@
+Screenshot folder replacement/index. Images in this folder are used for visual inspection and UI debugging.
