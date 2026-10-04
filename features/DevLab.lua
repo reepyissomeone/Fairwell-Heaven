@@ -119,7 +119,7 @@ function DevLab:Submit(requestData)
     end
 
     if self.SessionToken == "" then
-        return false, "Dev Lab is locked. Enter the current bot-generated password first."
+        return false, "Dev Lab is locked. Enter the current Dev Lab password first."
     end
 
     if type(requestData) ~= "table" then
