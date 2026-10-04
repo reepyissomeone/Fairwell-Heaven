@@ -64,7 +64,7 @@ end
 
 function EntityMarkers.Start(self, Hub)
     local Settings = Hub:GetService("Settings")
-    if Settings and Settings:GetFeatureEnabled(self.Name, false) == false then return end
+    if Settings and Settings:GetFeatureEnabled(self.Name, false) == false then return false end
     self.Connection = Workspace.DescendantAdded:Connect(function(Object)
         local Name = Detect(Object)
         if Name then Add(self, Object, Name) end
