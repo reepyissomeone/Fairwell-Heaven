@@ -1225,9 +1225,6 @@ function MainUI:_CreateCompanion(Hub)
         Scared = base .. "Scared.png",
         confused = base .. "confused.png",
         nervous = base .. "nervous.png",
-        talking = base .. "talking.png",
-        thinking = base .. "thinking.png",
-        Silent = base .. "Silent.png"
     }
     local files = {
         Idle = "FairwellHeaven/assets/Fairwell/Companion/Idle.png",
@@ -1240,9 +1237,6 @@ function MainUI:_CreateCompanion(Hub)
         Scared = "FairwellHeaven/assets/Fairwell/Companion/Scared.png",
         confused = "FairwellHeaven/assets/Fairwell/Companion/confused.png",
         nervous = "FairwellHeaven/assets/Fairwell/Companion/nervous.png",
-        talking = "FairwellHeaven/assets/Fairwell/Companion/talking.png",
-        thinking = "FairwellHeaven/assets/Fairwell/Companion/thinking.png",
-        Silent = "FairwellHeaven/assets/Fairwell/Companion/Silent.png"
     }
     local images = {}
 
@@ -1293,7 +1287,7 @@ function MainUI:_CreateCompanion(Hub)
     -- Asset downloads happen in the background so the main window can
     -- render immediately even when GitHub/custom-asset APIs are slow.
     task.spawn(function()
-        for _, state in ipairs({"Idle", "ALERT", "Ctalking", "Cthinking", "Yippe", "uhoh", "Tapped", "Scared", "confused", "nervous", "talking", "thinking", "Silent"}) do
+        for _, state in ipairs({"Idle", "ALERT", "Ctalking", "Cthinking", "Yippe", "uhoh", "Tapped", "Scared", "confused", "nervous"}) do
             loadAsset(state)
         end
     end)
@@ -1375,6 +1369,10 @@ function MainUI:_CreateCompanion(Hub)
             return
         end
         setState("Tapped", 1.5)
+        local Brain = self.Hub and self.Hub:GetFeature("Fairwell Companion Brain")
+        if Brain and type(Brain.OnTap) == "function" then
+            Brain:OnTap()
+        end
     end
 
     -- Tapping Fairwell does NOT open the main menu.
