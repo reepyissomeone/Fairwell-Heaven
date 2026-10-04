@@ -1160,99 +1160,71 @@ function MainUI:_CreateChatPage(Hub)
 
     local base = "https://raw.githubusercontent.com/reepyissomeone/Fairwell-Heaven/main/assets/Fairwell/Companion/"
     local urls = {
-        Silent = base .. "Silent.png",
-        Talking = base .. "talking.png",
-        Thinking = base .. "thinking.png"
+        Idle=base.."Idle.png", Ctalking=base.."Ctalking.png", Cthinking=base.."Cthinking.png",
+        Yippe=base.."Yippe.png", uhoh=base.."uhoh.png", Tapped=base.."Tapped.png",
+        Scared=base.."Scared.png", confused=base.."confused.png", nervous=base.."nervous.png",
+        hiding=base.."hiding.png", hurt=base.."hurt.png", relief=base.."relief.png",
+        surpised=base.."surpised.png", terrified=base.."terrified.png", ALERT=base.."ALERT.png"
     }
     local files = {
-        Silent = "FairwellHeaven/assets/Fairwell/Companion/Silent.png",
-        Talking = "FairwellHeaven/assets/Fairwell/Companion/talking.png",
-        Thinking = "FairwellHeaven/assets/Fairwell/Companion/thinking.png"
+        Idle="FairwellHeaven/assets/Fairwell/Companion/Idle.png", Ctalking="FairwellHeaven/assets/Fairwell/Companion/Ctalking.png",
+        Cthinking="FairwellHeaven/assets/Fairwell/Companion/Cthinking.png", Yippe="FairwellHeaven/assets/Fairwell/Companion/Yippe.png",
+        uhoh="FairwellHeaven/assets/Fairwell/Companion/uhoh.png", Tapped="FairwellHeaven/assets/Fairwell/Companion/Tapped.png",
+        Scared="FairwellHeaven/assets/Fairwell/Companion/Scared.png", confused="FairwellHeaven/assets/Fairwell/Companion/confused.png",
+        nervous="FairwellHeaven/assets/Fairwell/Companion/nervous.png", hiding="FairwellHeaven/assets/Fairwell/Companion/hiding.png",
+        hurt="FairwellHeaven/assets/Fairwell/Companion/hurt.png", relief="FairwellHeaven/assets/Fairwell/Companion/relief.png",
+        surpised="FairwellHeaven/assets/Fairwell/Companion/surpised.png", terrified="FairwellHeaven/assets/Fairwell/Companion/terrified.png",
+        ALERT="FairwellHeaven/assets/Fairwell/Companion/ALERT.png"
     }
     local images = {}
-
     local function assetLoader()
-        if type(getcustomasset) == "function" then return getcustomasset end
-        if type(getsynasset) == "function" then return getsynasset end
-        if type(getcustomassetfromfile) == "function" then return getcustomassetfromfile end
+        if type(getcustomasset)=="function" then return getcustomasset end
+        if type(getsynasset)=="function" then return getsynasset end
+        if type(getcustomassetfromfile)=="function" then return getcustomassetfromfile end
         return nil
     end
-
     local function ensureFolder(path)
-        if type(makefolder) ~= "function" then return end
-        local current = ""
-        for part in string.gmatch(path, "[^/]+") do
-            current = current == "" and part or current .. "/" .. part
-            pcall(makefolder, current)
+        if type(makefolder)~="function" then return end
+        local current=""
+        for part in string.gmatch(path,"[^/]+") do
+            current=current=="" and part or current.."/"..part
+            pcall(makefolder,current)
         end
     end
-
     local function loadArtwork(state)
-        local loader = assetLoader()
-        if not loader then
-            Hub:Log("Custom asset loader unavailable; Fairwell artwork cannot display.", "WARN")
-            return
-        end
-        local path, url = files[state], urls[state]
-        local ok, result = pcall(function()
+        local loader=assetLoader()
+        if not loader then return end
+        local path,url=files[state],urls[state]
+        if not path or not url then return end
+        local ok,result=pcall(function()
             ensureFolder("FairwellHeaven/assets/Fairwell")
-            if type(isfile) == "function" and isfile(path) then
-                return loader(path)
-            end
-            if type(writefile) ~= "function" then error("writefile unavailable") end
-            local downloaded = game:HttpGet(url .. "?cache=" .. tostring(math.floor(os.clock() * 1000000)))
-            if type(downloaded) ~= "string" or downloaded == "" then error("download failed") end
-            writefile(path, downloaded)
+            if type(isfile)=="function" and isfile(path) then return loader(path) end
+            if type(writefile)~="function" then error("writefile unavailable") end
+            local downloaded=game:HttpGet(url.."?cache="..tostring(math.floor(os.clock()*1000000)))
+            if type(downloaded)~="string" or downloaded=="" then error("download failed") end
+            writefile(path,downloaded)
             return loader(path)
         end)
-        if ok and type(result) == "string" and result ~= "" then
-            images[state] = result
-        else
-            Hub:Log("Failed to load Fairwell " .. state .. " artwork.", "WARN")
-        end
+        if ok and type(result)=="string" and result~="" then images[state]=result end
     end
-
-    for _, state in ipairs({"Silent", "Talking", "Thinking"}) do
-        loadArtwork(state)
-    end
-
-    local status = stage:FindFirstChild("StageStatus")
+    task.spawn(function()
+        for _,state in ipairs({"Idle","Ctalking","Cthinking","Yippe","uhoh","Tapped","Scared","confused","nervous","hiding","hurt","relief","surpised","terrified","ALERT"}) do loadArtwork(state) end
+    end)
     local function setArtwork(state)
-        state = images[state] and state or (images.Silent and "Silent" or state)
-        if images[state] then artwork.Image = images[state] end
-        status.Text = state == "Talking" and "● TALKING" or state == "Thinking" and "● THINKING" or "● ONLINE"
+        state=images[state] and state or "Idle"
+        if images[state] then artwork.Image=images[state]
+        elseif images.Idle then artwork.Image=images.Idle end
+        status.Text="● "..string.upper(state)
     end
-    setArtwork("Silent")
-
-    local speechId = 0
-    local function speak(text)
-        speechId += 1
-        local id = speechId
-        setArtwork("Talking")
-        bubble.Text = tostring(text)
-        task.delay(math.max(1.5, math.min(5, #tostring(text) * 0.055)), function()
-            if id == speechId and stage.Parent then setArtwork("Silent") end
-        end)
-    end
-
-    local function addMessage(author, text, color)
-        local row = new("TextLabel", {
-            Name = "Message",
-            Size = UDim2.new(1, -4, 0, 30),
-            AutomaticSize = Enum.AutomaticSize.Y,
-            BackgroundTransparency = 1,
-            Text = tostring(author) .. ": " .. tostring(text),
-            TextColor3 = color or WHITE,
-            TextSize = 9,
-            Font = Enum.Font.Gotham,
-            TextWrapped = true,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextYAlignment = Enum.TextYAlignment.Center
-        }, messages)
-        task.defer(function()
-            if messages.Parent then
-                messages.CanvasPosition = Vector2.new(0, math.max(0, messages.AbsoluteCanvasSize.Y))
-            end
+    setArtwork("Idle")
+    local speechId=0
+    local function speak(text,state)
+        speechId+=1
+        local id=speechId
+        setArtwork(state or "Ctalking")
+        bubble.Text=tostring(text)
+        task.delay(math.max(1.5,math.min(6,#tostring(text)*0.055)),function()
+            if id==speechId and stage.Parent then setArtwork("Idle") end
         end)
     end
 
@@ -1288,30 +1260,20 @@ function MainUI:_CreateChatPage(Hub)
     }, page)
     corner(send, 6)
 
-    local function reply(message)
-        local lower = string.lower(message)
-        local replies = {
-            {"hello", "Hello. I was wondering when you'd show up."},
-            {"hi", "Hi. I'm Fairwell. What's going on?"},
-            {"hey", "Hey. I'm listening."},
-            {"who are you", "I'm Fairwell. The one sitting in the corner of this UI."},
-            {"fairwell", "You called? I'm right here."},
-            {"help", "Try /help if you want to see the chat commands."},
-            {"doors", "DOORS detected. Keep an eye on that next room."},
-            {"scary", "Good. It would be boring if everything felt safe."},
-            {"thanks", "You're welcome."},
-            {"thank", "You're welcome."},
-            {"bye", "See you later."}
-        }
-        for _, entry in ipairs(replies) do
-            if lower == entry[1] or string.find(lower, "%f[%a]" .. entry[1] .. "%f[%A]") then
-                return entry[2]
+    local function generateChatReply(message)
+        local brain=self.Hub and self.Hub:GetFeature("Fairwell Companion Brain")
+        if brain and type(brain.GenerateThought)=="function" then
+            local ok,thought,expression,kind=pcall(function()
+                return brain:GenerateThought("Chat",{Message=message})
+            end)
+            if ok and type(thought)=="string" and thought~="" then
+                return thought,expression or "Ctalking",kind or "INFO"
             end
         end
-        return "I heard you. Tell me more."
+        return "I hear you. Tell me more.","Cthinking","INFO"
     end
 
-    speak("Hey! I'm Fairwell. Talk to me.")
+    speak("Hey! I'm Fairwell. Talk to me.","Ctalking")
     addMessage("FAIRWELL", "Hey! I'm Fairwell. Talk to me.", BLUE)
 
     local function sendMessage()
@@ -1339,16 +1301,16 @@ function MainUI:_CreateChatPage(Hub)
         if lower == "im bored" then
             self:_RevealGameTab()
             local text = "Bored? ...Fine. I know a game."
-            speak(text)
+            speak(text, "Yippe")
             addMessage("FAIRWELL", text, BLUE)
             return
         end
 
-        setArtwork("Thinking")
-        task.delay(0.35, function()
+        setArtwork("Cthinking")
+        task.delay(0.25 + math.random() * 0.45, function()
             if not messages.Parent then return end
-            local response = reply(message)
-            speak(response)
+            local response, expression = generateChatReply(message)
+            speak(response, expression)
             addMessage("FAIRWELL", response, BLUE)
         end)
     end
