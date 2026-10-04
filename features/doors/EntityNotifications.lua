@@ -1,14 +1,14 @@
 --// FAIRWELL HEAVEN
 --// DOORS Entity Notifications
---// New-spawn detection with cooldown and no startup spam
+--// Reliable entity detection for spawned AND already-loaded entities
 
 local Workspace = game:GetService("Workspace")
 
 local EntityNotifications = {
     Name = "DOORS Entity Notifications",
-    Description = "Notifies when common DOORS entities appear.",
+    Description = "Reacts when common DOORS entities appear.",
     Game = "DOORS",
-    Connection = nil,
+    Connections = {},
     LastAlert = {}
 }
 
@@ -18,11 +18,7 @@ local EntityNames = {
     grumble="Grumble", giggle="Giggle"
 }
 
--- These names are the NEW companion sprites in:
--- assets/Fairwell/Companion/
--- Do not use the older Fairwell reaction sprites here.
 local EntitySprites = {
-    -- New face sprites currently in assets/Fairwell/Companion/
     Rush = "Scared",
     Ambush = "nervous",
     Seek = "Scared",
@@ -43,10 +39,7 @@ local function FindEntityName(Object)
     local Name = NormalizeName(Object.Name)
 
     if Name == "figure" or Name == "dupe" then
-        if Object:IsA("Model") then
-            return EntityNames[Name]
-        end
-        return nil
+        return Object:IsA("Model") and EntityNames[Name] or nil
     end
 
     if EntityNames[Name] then
@@ -94,48 +87,67 @@ local function Notify(Hub, Name)
             "WARNING",
             4
         )
-        return
     end
-
-    Hub:Warn("DOORS entity detected: " .. Name)
 end
 
 local function Detect(self, Object)
-    local Name = FindEntityName(Object)
-
-    if Name then
-        local Now = os.clock()
-        if self.LastAlert[Name] and Now - self.LastAlert[Name] < COOLDOWN then
-            return
-        end
-        self.LastAlert[Name] = Now
-        Notify(self.Hub, Name)
+    if not Object or not Object.Parent then
         return
     end
 
-    if IsLever(Object) then
-        local Now = os.clock()
-        if self.LastAlert.Lever and Now - self.LastAlert.Lever < COOLDOWN then
-            return
-        end
-        self.LastAlert.Lever = Now
-        Notify(self.Hub, "Lever")
+    local Name = FindEntityName(Object)
+
+    if not Name and IsLever(Object) then
+        Name = "Lever"
+    end
+
+    if not Name then
+        return
+    end
+
+    local Now = os.clock()
+    if self.LastAlert[Name] and Now - self.LastAlert[Name] < COOLDOWN then
+        return
+    end
+
+    self.LastAlert[Name] = Now
+    Notify(self.Hub, Name)
+end
+
+local function ScanExisting(self)
+    for _, Object in ipairs(Workspace:GetDescendants()) do
+        Detect(self, Object)
     end
 end
 
 function EntityNotifications.Start(self, Hub)
     local Settings = Hub:GetService("Settings")
-    if Settings and Settings:GetFeatureEnabled(self.Name, true) == false then return end
+    if Settings and Settings:GetFeatureEnabled(self.Name, true) == false then
+        return
+    end
+
     self.LastAlert = {}
     self.Hub = Hub
-    self.Connection = Workspace.DescendantAdded:Connect(function(Object)
+    self.Connections = {}
+
+    table.insert(self.Connections, Workspace.DescendantAdded:Connect(function(Object)
         Detect(self, Object)
+    end))
+
+    task.defer(function()
+        if self.Hub == Hub then
+            ScanExisting(self)
+        end
     end)
+
     Hub:Log("DOORS Entity Notifications started.")
 end
 
 function EntityNotifications.Stop(self)
-    if self.Connection then self.Connection:Disconnect(); self.Connection=nil end
+    for _, Connection in ipairs(self.Connections or {}) do
+        Connection:Disconnect()
+    end
+    self.Connections = {}
     table.clear(self.LastAlert)
     self.Hub = nil
 end
