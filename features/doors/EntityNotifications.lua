@@ -64,7 +64,7 @@ local function Notify(Hub, Name)
     -- Fairwell's Companion Brain handles the actual reaction/hint.
     local Brain = Hub and Hub:GetFeature("Fairwell Companion Brain")
     if Brain and type(Brain.OnEntity) == "function" then
-        Brain:OnEntity(Name)
+        Brain:OnEntity(Name, Object)
     end
 end
 
