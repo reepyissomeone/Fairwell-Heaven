@@ -642,13 +642,13 @@ function MainUI:_MakeTabs()
     local rail=make("Frame",{
         Name="Navigation",
         Position=UDim2.fromOffset(6,60),
-        Size=UDim2.fromOffset(62,1),
-        AutomaticSize=Enum.AutomaticSize.Y,
-        BackgroundTransparency=1
+        Size=UDim2.fromOffset(62,330),
+        BackgroundTransparency=1,
+        ClipsDescendants=true
     },self.Window)
 
     local list=make("UIListLayout",{
-        Padding=UDim.new(0,6),
+        Padding=UDim.new(0,5),
         SortOrder=Enum.SortOrder.LayoutOrder
     },rail)
 
@@ -665,7 +665,7 @@ function MainUI:_MakeTabs()
     for _,d in ipairs(definitions) do
         local b=make("TextButton",{
             Name=d[1],
-            Size=UDim2.fromOffset(62,48),
+            Size=UDim2.fromOffset(62,46),
             BackgroundColor3=PANEL,
             BorderSizePixel=0,
             Text=d[2],
@@ -774,6 +774,50 @@ function MainUI:_CreateCompanion()
     self.CompanionHolder=holder
     self.CompanionBubble=bubble
 
+    -- Small Fairwell idle animation: gentle breathing/bobbing so the
+    -- companion never feels like a static image.
+    local alive=true
+    self.CompanionAnimationStop=function()
+        alive=false
+    end
+
+    task.spawn(function()
+        local basePosition=holder.Position
+        while alive and holder.Parent do
+            local up=TweenService:Create(holder,
+                TweenInfo.new(0.8,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut),
+                {Position=basePosition+UDim2.fromOffset(0,-5)})
+            up:Play()
+            up.Completed:Wait()
+            if not alive or not holder.Parent then break end
+
+            local down=TweenService:Create(holder,
+                TweenInfo.new(0.8,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut),
+                {Position=basePosition})
+            down:Play()
+            down.Completed:Wait()
+        end
+    end)
+
+    -- Tiny tap reaction: squash, then return to normal.
+    local originalSize=image.Size
+    local originalPosition=image.Position
+    self.CompanionTapAnimation=function()
+        local squash=TweenService:Create(image,
+            TweenInfo.new(0.09,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+            {
+                Size=UDim2.fromOffset(94,88),
+                Position=UDim2.fromOffset(10,57)
+            })
+        squash:Play()
+        squash.Completed:Wait()
+        if not image.Parent then return end
+        TweenService:Create(image,
+            TweenInfo.new(0.16,Enum.EasingStyle.Back,Enum.EasingDirection.Out),
+            {Size=originalSize,Position=originalPosition}
+        ):Play()
+    end
+
     local base="https://raw.githubusercontent.com/reepyissomeone/Fairwell-Heaven/main/assets/Fairwell/Companion/"
     local paths={
         Idle="FairwellHeaven/assets/Fairwell/Companion/Idle.png",
@@ -850,6 +894,11 @@ function MainUI:_CreateCompanion()
     end
 
     tap(image,function()
+        task.spawn(function()
+            if self.CompanionTapAnimation then
+                pcall(self.CompanionTapAnimation)
+            end
+        end)
         self:_CompanionState("Tapped")
         bubble.Text="You tapped me."
         bubble.Visible=true
@@ -935,7 +984,8 @@ function MainUI:Start(Hub)
         Size=UDim2.fromScale(0.74,0.76),
         BackgroundColor3=BACKGROUND,
         BorderSizePixel=0,
-        Active=true
+        Active=true,
+        ClipsDescendants=true
     },gui)
     round(window,9); line(window,BLUE,0.08)
     make("UISizeConstraint",{MinSize=Vector2.new(285,340),MaxSize=Vector2.new(720,620)},window)
@@ -1090,6 +1140,9 @@ function MainUI:Stop()
     self.ToggleIndicator=nil
     self.DragHandle=nil
     self.CompanionBubble=nil
+    if self.CompanionAnimationStop then pcall(self.CompanionAnimationStop) end
+    self.CompanionAnimationStop=nil
+    self.CompanionTapAnimation=nil
     self.CompanionSetState=nil
     self.CompanionAssets=nil
     self.ChatPortraits=nil
