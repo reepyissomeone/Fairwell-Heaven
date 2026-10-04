@@ -257,15 +257,32 @@ function Brain:WatchHideObject(object)
     local n = normalize(object.Name)
     if n ~= "wardrobe" and n ~= "closet" and n ~= "hiding" and n ~= "hide" then return end
 
-    local touched = object:FindFirstChildWhichIsA("BasePart", true)
-    if not touched then return end
+    local player = Players.LocalPlayer
+    local function isLocalCharacterPart(hit)
+        return player and player.Character and hit and hit:IsDescendantOf(player.Character)
+    end
 
-    table.insert(self.Connections, touched.Touched:Connect(function(hit)
-        local player = Players.LocalPlayer
-        if player and player.Character and hit:IsDescendantOf(player.Character) then
-            self:OnHide()
+    -- Watch every physical part so multi-part wardrobes/closets work reliably.
+    for _, part in ipairs(object:GetDescendants()) do
+        if part:IsA("BasePart") then
+            table.insert(self.Connections, part.Touched:Connect(function(hit)
+                if isLocalCharacterPart(hit) then
+                    self:OnHide()
+                end
+            end))
         end
-    end))
+    end
+
+    -- DOORS hiding spots may also use a ProximityPrompt instead of touch detection.
+    for _, prompt in ipairs(object:GetDescendants()) do
+        if prompt:IsA("ProximityPrompt") then
+            table.insert(self.Connections, prompt.Triggered:Connect(function(triggeringPlayer)
+                if not triggeringPlayer or triggeringPlayer == player then
+                    self:OnHide()
+                end
+            end))
+        end
+    end
 end
 
 function Brain:Start(Hub)
