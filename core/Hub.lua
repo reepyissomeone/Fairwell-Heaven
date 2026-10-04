@@ -611,16 +611,17 @@ function Hub:Shutdown()
     if LocalPlayer then
         local PlayerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
         if PlayerGui then
+            local FairwellPrefix = "FairwellHeaven_"
             local FairwellNames = {
-                FairwellHeaven_MainUI = true,
-                FairwellHeaven_Toggle = true,
-                FairwellHeaven_Companion = true,
-                FairwellHeaven_RoomHUD = true,
+                FairwellMiniNotificationTester = true,
             }
 
+            -- Remove every Fairwell ScreenGui, including notifications,
+            -- prompts, loading screen, companion, visual HUDs, and menus.
             for _, Gui in ipairs(PlayerGui:GetChildren()) do
                 if FairwellNames[Gui.Name]
-                    or string.sub(Gui.Name, 1, 13) == "FairwellHeaven_"
+                    or string.sub(Gui.Name, 1, #FairwellPrefix) == FairwellPrefix
+                    or string.find(Gui.Name, "Fairwell", 1, true) == 1
                 then
                     pcall(function()
                         Gui:Destroy()
