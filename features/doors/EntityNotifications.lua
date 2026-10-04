@@ -19,11 +19,11 @@ local EntityNames = {
 }
 
 local EntitySprites = {
-    Rush = "Scared",
-    Ambush = "nervous",
-    Seek = "Scared",
+    Rush = "hiding",
+    Ambush = "hiding",
+    Seek = "terrified",
     Halt = "confused",
-    Screech = "Tapped",
+    Screech = "surpised",
     Eyes = "confused",
     Figure = "nervous",
     Dupe = "confused",
@@ -107,6 +107,25 @@ local function Detect(self, Object)
 
     self.LastAlert[Name] = Now
     Notify(self.Hub, Name)
+
+    -- Keep entity state in sync so Fairwell can react again after an entity leaves.
+    task.delay(4, function()
+        if self.Hub and self.LastAlert[Name] == Now then
+            local stillThere = false
+            for _, candidate in ipairs(Workspace:GetDescendants()) do
+                if FindEntityName(candidate) == Name then
+                    stillThere = true
+                    break
+                end
+            end
+            if not stillThere then
+                local Brain = self.Hub:GetFeature("Fairwell Companion Brain")
+                if Brain and type(Brain.OnEntityGone) == "function" then
+                    Brain:OnEntityGone(Name)
+                end
+            end
+        end
+    end)
 end
 
 local function ScanExisting(self)
