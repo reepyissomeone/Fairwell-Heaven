@@ -673,7 +673,7 @@ function MainUI.Start(self, Hub)
 	Version.BackgroundTransparency = 1
 
 	Version.Text =
-		"FAIRWELL HEAVEN • v4.4"
+		"FAIRWELL HEAVEN • v4.2"
 
 	Version.TextColor3 =
 		GREY
@@ -1166,19 +1166,21 @@ AvatarStroke.Parent = AvatarFrame
 		Arms = FAIRWELL_ASSET_BASE .. "Fairwellminiarms.png"
 	}
 
-	local FairwellArtworkFiles = {
-		Silent = "FairwellHeaven/assets/Fairwell/Silent.png",
-		Talking = "FairwellHeaven/assets/Fairwell/talking.png",
-		Thinking = "FairwellHeaven/assets/Fairwell/thinking.png"
-	}
 
 	local MiniArtworkFiles = {
 		Body = "FairwellHeaven/assets/Fairwell/Fairwellmini.png",
 		Arms = "FairwellHeaven/assets/Fairwell/Fairwellminiarms.png"
 	}
 
-	local FairwellArtworkImages = {}
+
 	local MiniArtworkImages = {}
+	local FairwellArtworkFiles = {
+		Silent = "FairwellHeaven/assets/Fairwell/Silent.png",
+		Talking = "FairwellHeaven/assets/Fairwell/talking.png",
+		Thinking = "FairwellHeaven/assets/Fairwell/thinking.png"
+	}
+
+	local FairwellArtworkImages = {}
 
 	local function GetCustomAssetLoader()
 		if type(getcustomasset) == "function" then
@@ -1263,7 +1265,6 @@ AvatarStroke.Parent = AvatarFrame
 		Hub:Log("Failed to load Fairwell " .. State .. " artwork: " .. tostring(AssetOrError), "WARN")
 		return false
 	end
-
 	local function DownloadMiniArtwork(Name)
 		local FilePath = MiniArtworkFiles[Name]
 		local Url = MiniArtworkUrls[Name]
@@ -1550,6 +1551,13 @@ AvatarStroke.Parent = AvatarFrame
 			ProcessMiniNotificationQueue()
 		end)
 	end
+
+
+	Hub:Log(
+		"Fairwell artwork system initialized"
+		.. (FairwellArtworkReady and " and chat is ready." or "."),
+		"SUCCESS"
+	)
 
 	local FairwellSpeechId = 0
 
@@ -2471,3 +2479,284 @@ AvatarStroke.Parent = AvatarFrame
 							XOffset = Position.X.Offset,
 							YScale = Position.Y.Scale,
 							YOffset = Position.Y.Offset
+						},
+						Collapsed = self.Collapsed == true
+					},
+					true
+				)
+
+			end
+
+		end
+	end)
+
+	self.DragConnection = UserInputService.InputChanged:Connect(function(Input)
+		if not Dragging then
+			return
+		end
+
+		if Input.UserInputType ~=
+			Enum.UserInputType.MouseMovement
+			and Input.UserInputType ~=
+			Enum.UserInputType.Touch then
+			return
+		end
+
+		local Delta =
+			Input.Position - DragStart
+
+		Window.Position =
+			UDim2.new(
+				StartPosition.X.Scale,
+				StartPosition.X.Offset + Delta.X,
+				StartPosition.Y.Scale,
+				StartPosition.Y.Offset + Delta.Y
+			)
+	end)
+
+	--==================================================
+	-- COLLAPSE
+	--==================================================
+
+	self.Collapsed = false
+	self.ExpandedSize = self.TargetSize
+	self.ExpandedPosition =
+		UDim2.fromScale(0.5, 0.5)
+
+	ToggleButton.MouseButton1Click:Connect(function()
+		if self.Collapsed then
+			self.Collapsed = false
+
+			ToggleButton.Text = "−"
+
+			local Tween =
+				TweenService:Create(
+					Window,
+					TweenInfo.new(
+						0.35,
+						Enum.EasingStyle.Quint,
+						Enum.EasingDirection.Out
+					),
+					{
+						Size =
+							self.ExpandedSize,
+
+						Position =
+							self.ExpandedPosition
+					}
+				)
+
+			Tween:Play()
+		else
+			self.ExpandedSize =
+				Window.Size
+
+			self.ExpandedPosition =
+				Window.Position
+
+			self.Collapsed = true
+
+			ToggleButton.Text = "+"
+
+			local Tween =
+				TweenService:Create(
+					Window,
+					TweenInfo.new(
+						0.35,
+						Enum.EasingStyle.Quint,
+						Enum.EasingDirection.Out
+					),
+					{
+						Size =
+							UDim2.fromOffset(
+								270,
+								48
+							),
+
+						Position =
+							UDim2.new(
+								0.5,
+								0,
+								1,
+								-12
+							)
+					}
+				)
+
+			Tween:Play()
+
+			local Settings = Hub:GetService("Settings")
+
+			if Settings then
+				local Position = Window.Position
+
+				Settings:Set(
+					"Window",
+					{
+						Position = {
+							XScale = Position.X.Scale,
+							XOffset = Position.X.Offset,
+							YScale = Position.Y.Scale,
+							YOffset = Position.Y.Offset
+						},
+						Collapsed = self.Collapsed == true
+					},
+					true
+				)
+			end
+		end
+	end)
+
+	--==================================================
+	-- LIVE STATUS
+	--==================================================
+
+	self.StatusConnection =
+		RunService.Heartbeat:Connect(function()
+			if not Gui.Parent then
+				return
+			end
+
+			if self.StatusTimer
+				and os.clock() - self.StatusTimer < 0.25 then
+				return
+			end
+
+			self.StatusTimer = os.clock()
+
+			self:UpdateStatus(Hub)
+			if self.DevLogRefresh then
+				self.DevLogRefresh()
+			end
+		end)
+
+	self.Gui = Gui
+	self.Window = Window
+
+	--------------------------------------------------
+	-- RESTORE PERSISTENT WINDOW SETTINGS
+	--------------------------------------------------
+
+	local Settings = Hub:GetService("Settings")
+
+	if Settings then
+
+		local WindowSettings =
+			Settings:Get("Window", {})
+
+		local SavedPosition =
+			WindowSettings.Position
+
+		if type(SavedPosition) == "table" then
+
+			Window.Position =
+				UDim2.new(
+					tonumber(SavedPosition.XScale) or 0.5,
+					tonumber(SavedPosition.XOffset) or 0,
+					tonumber(SavedPosition.YScale) or 0.5,
+					tonumber(SavedPosition.YOffset) or 0
+				)
+
+			self.ExpandedPosition =
+				Window.Position
+
+		end
+
+		if WindowSettings.Collapsed == true then
+
+			self.Collapsed = true
+			ToggleButton.Text = "+"
+
+			Window.Size =
+				UDim2.fromOffset(
+					270,
+					48
+				)
+
+			Window.Position =
+				UDim2.new(
+					0.5,
+					0,
+					1,
+					-12
+				)
+
+		end
+
+	end
+
+	Hub:Log(
+		"Main UI v4.4 initialized with Fairwell chat, artwork, and minimized notification animation."
+	)
+end
+
+function MainUI:Reveal()
+	if not self.Gui or not self.Gui.Parent then
+		return
+	end
+
+	self.Gui.Enabled = true
+
+	if self.Window then
+		local ExpandTween = TweenService:Create(
+			self.Window,
+			TweenInfo.new(0.65, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+			{
+				Size = self.TargetSize
+			}
+		)
+		ExpandTween:Play()
+	end
+end
+
+function MainUI.Stop(self)
+
+	local Hub = self.Hub
+
+	if Hub then
+		local Settings = Hub:GetService("Settings")
+
+		if Settings then
+			local Position =
+				self.Window
+				and self.Window.Position
+
+			if Position then
+				Settings:Set(
+					"Window",
+					{
+						Position = {
+							XScale = Position.X.Scale,
+							XOffset = Position.X.Offset,
+							YScale = Position.Y.Scale,
+							YOffset = Position.Y.Offset
+						},
+						Collapsed = self.Collapsed == true
+					},
+					true
+				)
+			end
+		end
+	end
+
+	if self.StatusConnection then
+		self.StatusConnection:Disconnect()
+		self.StatusConnection = nil
+	end
+
+	if self.DragConnection then
+		self.DragConnection:Disconnect()
+		self.DragConnection = nil
+	end
+
+
+	if self.Gui then
+		self.Gui:Destroy()
+		self.Gui = nil
+	end
+
+	self.Status = nil
+	self.Hub = nil
+end
+
+return MainUI
