@@ -1342,6 +1342,14 @@ AvatarStroke.Parent = AvatarFrame
 	-- When the main window is collapsed, Fairwell can temporarily appear
 	-- above the mini bar and speak the same message as Hub:Notify.
 
+	local MiniGui = Instance.new("ScreenGui")
+	MiniGui.Name = "FairwellMiniNotificationGui"
+	MiniGui.ResetOnSpawn = false
+	MiniGui.IgnoreGuiInset = true
+	MiniGui.DisplayOrder = 1000001
+	MiniGui.Enabled = true
+	MiniGui.Parent = PlayerGui
+
 	local MiniRoot = Instance.new("Frame")
 	MiniRoot.Name = "FairwellMiniNotification"
 	MiniRoot.AnchorPoint = Vector2.new(0.5, 1)
@@ -1349,7 +1357,7 @@ AvatarStroke.Parent = AvatarFrame
 	MiniRoot.BackgroundTransparency = 1
 	MiniRoot.Visible = false
 	MiniRoot.ZIndex = 60
-	MiniRoot.Parent = Gui
+	MiniRoot.Parent = MiniGui
 
 	local MiniScale = Instance.new("UIScale")
 	MiniScale.Scale = 0.86
@@ -1419,6 +1427,8 @@ AvatarStroke.Parent = AvatarFrame
 	local MiniNotificationToken = 0
 	local MiniArmsTween
 
+	local ProcessMiniNotificationQueue
+
 	local function UpdateMiniPosition()
 		if not Window or not Window.Parent then
 			return
@@ -1439,6 +1449,7 @@ AvatarStroke.Parent = AvatarFrame
 
 	local function HideMiniNotification(Immediate)
 		StopMiniAnimation()
+		MiniNotificationShowing = false
 
 		if not MiniRoot.Visible then
 			return
@@ -1459,17 +1470,33 @@ AvatarStroke.Parent = AvatarFrame
 		TweenService:Create(MiniBubble, FadeInfo, {BackgroundTransparency = 1, TextTransparency = 1}):Play()
 		TweenService:Create(MiniAvatar, FadeInfo, {ImageTransparency = 1}):Play()
 		TweenService:Create(MiniArms, FadeInfo, {ImageTransparency = 1}):Play()
+
 		task.delay(0.3, function()
-			MiniRoot.Visible = false
+			if MiniRoot.Parent then
+				MiniRoot.Visible = false
+			end
+			MiniScale.Scale = 0.86
+			MiniBubble.BackgroundTransparency = 0.02
+			MiniBubble.TextTransparency = 0
+			MiniAvatar.ImageTransparency = 0
+			MiniArms.ImageTransparency = 0
+			ProcessMiniNotificationQueue()
 		end)
 	end
 
 	local function ShowMiniNotification(TitleText, MessageText, Kind)
-		if not self.Collapsed or not Gui.Enabled then
-			return
+		if not self.Collapsed or not MiniGui.Enabled then
+			return false
 		end
-		if not MiniArtworkImages.Body or not MiniArtworkImages.Arms then
-			return
+
+		-- Prefer the dedicated mini artwork, but fall back to the main Fairwell
+		-- artwork so a single failed mini asset can never disable notifications.
+		local BodyImage = MiniArtworkImages.Body or FairwellArtworkImages.Silent
+		local ArmsImage = MiniArtworkImages.Arms
+
+		if not BodyImage or BodyImage == "" then
+			Hub:Log("Mini Fairwell notification skipped: no Fairwell artwork is available.", "WARN")
+			return false
 		end
 
 		MiniNotificationShowing = true
@@ -1488,44 +1515,60 @@ AvatarStroke.Parent = AvatarFrame
 		MiniBubble.BackgroundTransparency = 0.02
 		MiniBubble.TextTransparency = 0
 		MiniAvatar.ImageTransparency = 0
-		MiniArms.ImageTransparency = 0
+		MiniArms.ImageTransparency = ArmsImage and 0 or 1
 		MiniBubbleStroke.Color = Accent
 		MiniBubble.Text = string.upper(tostring(TitleText or "FAIRWELL")) .. "\n" .. tostring(MessageText or "")
-		MiniAvatar.Image = MiniArtworkImages.Body
-		MiniArms.Image = MiniArtworkImages.Arms
+		MiniAvatar.Image = BodyImage
+		MiniArms.Image = ArmsImage or ""
 		MiniArms.Rotation = 0
 
-		TweenService:Create(MiniScale, TweenInfo.new(0.42, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+		TweenService:Create(
+			MiniScale,
+			TweenInfo.new(0.42, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+			{Scale = 1}
+		):Play()
 
-		task.spawn(function()
-			while MiniRoot.Visible and MiniNotificationShowing and ThisToken == MiniNotificationToken do
-				MiniArmsTween = TweenService:Create(MiniArms, TweenInfo.new(0.42, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Rotation = -5})
-				MiniArmsTween:Play()
-			MiniArmsTween.Completed:Wait()
-				if ThisToken ~= MiniNotificationToken then break end
-				MiniArmsTween = TweenService:Create(MiniArms, TweenInfo.new(0.42, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Rotation = 5})
-				MiniArmsTween:Play()
-				MiniArmsTween.Completed:Wait()
-			end
-		end)
+		if ArmsImage then
+			task.spawn(function()
+				while MiniRoot.Visible and MiniNotificationShowing and ThisToken == MiniNotificationToken do
+					MiniArmsTween = TweenService:Create(
+						MiniArms,
+						TweenInfo.new(0.42, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+						{Rotation = -5}
+					)
+					MiniArmsTween:Play()
+					MiniArmsTween.Completed:Wait()
+					if ThisToken ~= MiniNotificationToken then break end
 
-		local Duration = math.clamp(1.8 + (#tostring(MessageText or "") * 0.035), 2.4, 5.5)
+					MiniArmsTween = TweenService:Create(
+						MiniArms,
+						TweenInfo.new(0.42, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+						{Rotation = 5}
+					)
+					MiniArmsTween:Play()
+					MiniArmsTween.Completed:Wait()
+				end
+			end)
+		end
+
+		local Duration = math.clamp(
+			1.8 + (#tostring(MessageText or "") * 0.035),
+			2.4,
+			5.5
+		)
+
 		task.delay(Duration, function()
 			if ThisToken ~= MiniNotificationToken then
 				return
 			end
 			HideMiniNotification(false)
-			task.delay(0.32, function()
-				if ThisToken == MiniNotificationToken then
-					MiniNotificationShowing = false
-					ProcessMiniNotificationQueue()
-				end
-			end)
 		end)
+
+		return true
 	end
 
-	local function ProcessMiniNotificationQueue()
-		if MiniNotificationShowing or not self.Collapsed then
+	ProcessMiniNotificationQueue = function()
+		if MiniNotificationShowing or not self.Collapsed or not MiniGui.Enabled then
 			return
 		end
 
@@ -1534,7 +1577,18 @@ AvatarStroke.Parent = AvatarFrame
 			return
 		end
 
-		ShowMiniNotification(Next.Title, Next.Message, Next.Kind)
+		if not ShowMiniNotification(Next.Title, Next.Message, Next.Kind) then
+			task.defer(ProcessMiniNotificationQueue)
+		end
+	end
+
+	local function QueueMiniNotification(TitleText, MessageText, Kind)
+		table.insert(MiniNotificationQueue, {
+			Title = TitleText,
+			Message = MessageText,
+			Kind = Kind
+		})
+		ProcessMiniNotificationQueue()
 	end
 
 	if Hub.NotificationEvent then
@@ -1542,16 +1596,9 @@ AvatarStroke.Parent = AvatarFrame
 			if not self.Collapsed then
 				return
 			end
-
-			table.insert(MiniNotificationQueue, {
-				Title = TitleText,
-				Message = MessageText,
-				Kind = Kind
-			})
-			ProcessMiniNotificationQueue()
+			QueueMiniNotification(TitleText, MessageText, Kind)
 		end)
 	end
-
 
 	Hub:Log(
 		"Fairwell artwork system initialized"
@@ -2527,6 +2574,11 @@ AvatarStroke.Parent = AvatarFrame
 		if self.Collapsed then
 			self.Collapsed = false
 
+			if MiniRoot and MiniRoot.Parent then
+				HideMiniNotification(true)
+				table.clear(MiniNotificationQueue)
+			end
+
 			ToggleButton.Text = "−"
 
 			local Tween =
@@ -2557,6 +2609,11 @@ AvatarStroke.Parent = AvatarFrame
 			self.Collapsed = true
 
 			ToggleButton.Text = "+"
+
+			if MiniGui and MiniGui.Parent then
+				UpdateMiniPosition()
+				ProcessMiniNotificationQueue()
+			end
 
 			local Tween =
 				TweenService:Create(
@@ -2604,6 +2661,13 @@ AvatarStroke.Parent = AvatarFrame
 					true
 				)
 			end
+		end
+	end)
+
+	-- Keep the independent mini notification anchored above the collapsed window.
+	self.MiniPositionConnection = RunService.Heartbeat:Connect(function()
+		if self.Collapsed and MiniRoot and MiniRoot.Parent then
+			UpdateMiniPosition()
 		end
 	end)
 
@@ -2742,6 +2806,20 @@ function MainUI.Stop(self)
 	if self.StatusConnection then
 		self.StatusConnection:Disconnect()
 		self.StatusConnection = nil
+	end
+
+	if self.MiniNotificationConnection then
+		self.MiniNotificationConnection:Disconnect()
+		self.MiniNotificationConnection = nil
+	end
+
+	if self.MiniPositionConnection then
+		self.MiniPositionConnection:Disconnect()
+		self.MiniPositionConnection = nil
+	end
+
+	if MiniGui and MiniGui.Parent then
+		MiniGui:Destroy()
 	end
 
 	if self.DragConnection then
