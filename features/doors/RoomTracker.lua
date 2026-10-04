@@ -42,7 +42,7 @@ local function IsSeekRoom(Room)
 	return false
 end
 
-local function TellFairwellGoodLuck(Hub)
+local function TellFairwell(Hub, Message, Duration)
 	local MainUI = Hub:GetFeature("Main UI")
 	if not MainUI or type(MainUI.CompanionNotify) ~= "function" then
 		return
@@ -50,9 +50,9 @@ local function TellFairwellGoodLuck(Hub)
 
 	MainUI.CompanionNotify(
 		"FAIRWELL",
-		"Good luck.",
+		Message,
 		"INFO",
-		4
+		Duration or 4
 	)
 end
 
@@ -118,10 +118,20 @@ function RoomTracker.Start(self, Hub)
 							return
 						end
 
-						if Doors.CurrentRoom == NewRoom
-							and IsSeekRoom(NewRoom) then
-							TellFairwellGoodLuck(Hub)
-							return
+						if Doors.CurrentRoom == NewRoom then
+							if Number == 50 then
+								TellFairwell(
+									Hub,
+									"I ain't good at reading but I'll see what I can do",
+									5
+								)
+								return
+							end
+
+							if IsSeekRoom(NewRoom) then
+								TellFairwell(Hub, "Good luck.", 4)
+								return
+							end
 						end
 					end
 				end)
