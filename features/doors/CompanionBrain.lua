@@ -1,10 +1,9 @@
 --// FAIRWELL HEAVEN
 --// Companion Brain
---// Memory, room awareness, event reactions, personality, anticipation and interaction.
+--// Event-driven memory, reactions, personality and player interaction.
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
-local RunService = game:GetService("RunService")
 
 local Brain = {
     Name = "Fairwell Companion Brain",
@@ -14,8 +13,10 @@ local Brain = {
     Memory = {},
     LastEvent = {},
     LastRoom = nil,
-    FlickerToken = 0,
-    TapIndex = 0
+    TapIndex = 0,
+    SeenObjects = {},
+    SeenEntities = {},
+    ActiveEntity = {}
 }
 
 local function normalize(name)
@@ -26,10 +27,10 @@ local function mainUI(self)
     return self.Hub and self.Hub:GetFeature("Main UI")
 end
 
-function Brain:Say(message, state, duration)
+function Brain:Say(message, state, duration, kind)
     local UI = mainUI(self)
     if UI and type(UI.CompanionNotify) == "function" then
-        UI.CompanionNotify("FAIRWELL", message, "INFO", duration or 4, state)
+        UI.CompanionNotify("FAIRWELL", message, kind or "INFO", duration or 4, state)
     end
 end
 
@@ -45,150 +46,195 @@ function Brain:Remember(kind, value)
     table.insert(self.Memory[kind], value)
 end
 
-function Brain:Count(kind)
-    return self.Memory[kind] and #self.Memory[kind] or 0
+function Brain:Expression(name)
+    -- Abstract expressions always resolve to sprites that actually exist.
+    local map = {
+        Suspicious = "confused",
+        Listening = "Cthinking",
+        Focused = "Cthinking",
+        Shocked = "surpised",
+        Panicking = "terrified",
+        Hiding = "hiding",
+        Relieved = "relief",
+        Hurt = "hurt",
+        Danger = "terrified",
+        Happy = "Yippe",
+        Talking = "Ctalking",
+        Thinking = "Cthinking",
+        Alert = "ALERT",
+        Nervous = "nervous",
+        Confused = "confused",
+        Tapped = "Tapped",
+        Idle = "Idle"
+    }
+    return map[name] or name
+end
+
+function Brain:React(message, expression, duration, kind)
+    local sprite = self:Expression(expression)
+    self:SetState(sprite, duration or 3)
+    self:Say(message, sprite, duration or 4, kind)
+end
+
+function Brain:Cooldown(key, seconds)
+    local now = os.clock()
+    local last = self.LastEvent[key]
+    if last and now - last < seconds then
+        return false
+    end
+    self.LastEvent[key] = now
+    return true
 end
 
 function Brain:OnTap()
     self.TapIndex += 1
-
     local lines = {
-        {"Hey.", "Ctalking"},
-        {"What?", "confused"},
+        {"Hey.", "Talking"},
+        {"What?", "Confused"},
         {"You keep poking me.", "Tapped"},
-        {"I'm watching.", "Cthinking"},
-        {"We have a game to finish.", "nervous"},
-        {"...yes?", "Ctalking"},
-        {"Don't distract me.", "ALERT"},
-        {"I'm trying to remember what happened.", "Cthinking"}
+        {"I'm watching.", "Thinking"},
+        {"We have a game to finish.", "Nervous"},
+        {"...yes?", "Talking"},
+        {"Don't distract me.", "Alert"},
+        {"I'm trying to remember what happened.", "Thinking"}
     }
 
-    -- Small chance of a rare response.
     if math.random(1, 18) == 1 then
         local rare = {
-            {"I remember you.", "Scared"},
-            {"Don't tap me again.", "uhoh"},
-            {"Something feels wrong.", "nervous"}
+            {"I remember you.", "Suspicious"},
+            {"Don't tap me again.", "Hurt"},
+            {"Something feels wrong.", "Nervous"}
         }
         local pick = rare[math.random(1, #rare)]
-        self:Say(pick[1], pick[2], 3)
+        self:React(pick[1], pick[2], 3)
         return
     end
 
     local pick = lines[((self.TapIndex - 1) % #lines) + 1]
-    self:Say(pick[1], pick[2], 3)
+    self:React(pick[1], pick[2], 3)
 end
 
 function Brain:OnRoom(room)
     if not room then return end
-
     local number = tonumber(room.Name)
     if not number or self.LastRoom == number then return end
 
     self.LastRoom = number
     self:Remember("Rooms", number)
 
-    -- Special rooms get priority.
-    local roomName = normalize(room.Name)
-    if roomName == "seek" or roomName == "seekroom" or roomName == "seekroom" then
-        self:SetState("nervous", 2)
-        self:Say("Good luck. Stay focused.", "nervous", 4)
+    local lower = normalize(room.Name)
+    if lower == "seek" or lower == "seekroom" or lower == "seekroom" then
+        self:React("Good luck. Stay focused.", "Focused", 4, "WARNING")
         return
     end
 
     if number == 50 then
-        self:SetState("Cthinking", 2)
-        self:Say("This is the library. Be careful.", "Cthinking", 5)
+        self:React("This is the library. Be careful.", "Listening", 5, "WARNING")
         return
     end
 
+    if number == 100 then
+        self:React("Something feels different up here.", "Suspicious", 4, "WARNING")
+        return
+    end
+
+    -- Only special rooms get automatic room dialogue. Normal rooms stay quiet.
     if number % 10 == 0 then
-        self:SetState("Cthinking", 2)
-        self:Say("Room " .. tostring(number) .. "... I wonder what's next.", "Cthinking", 4)
-    elseif math.random(1, 5) == 1 then
-        self:SetState("Ctalking", 2)
-        self:Say("Room " .. tostring(number) .. ". Keep looking.", "Ctalking", 3)
+        self:React("Room " .. tostring(number) .. ". Stay alert.", "Thinking", 3)
     end
 end
 
 function Brain:OnEntity(name)
     name = tostring(name)
+    if not self:Cooldown("Entity:" .. name, 2.5) then return end
+
     self:Remember("Entities", name)
+    self.ActiveEntity[name] = true
 
     local reactions = {
-        Rush = {"HIDE! NOW!", "Scared"},
-        Ambush = {"HIDE AGAIN! IT'S COMING BACK!", "nervous"},
-        Seek = {"Don't stop. Keep moving.", "Scared"},
-        Figure = {"Quiet. Don't let it find us.", "nervous"},
-        Screech = {"WHAT WAS THAT?!", "Tapped"},
-        Halt = {"...What is it doing?", "confused"},
-        Eyes = {"Don't look at it.", "confused"},
-        Dupe = {"Wait. Something is wrong with this door.", "confused"},
-        Grumble = {"That thing is too close.", "nervous"},
-        Giggle = {"I heard something laugh.", "confused"}
+        Rush = {"HIDE! NOW!", "Hiding", "WARNING"},
+        Ambush = {"HIDE AGAIN! IT'S COMING BACK!", "Hiding", "WARNING"},
+        Seek = {"Don't stop. Keep moving.", "Danger", "WARNING"},
+        Figure = {"Quiet. Don't let it find us.", "Nervous", "WARNING"},
+        Screech = {"WHAT WAS THAT?!", "Shocked", "WARNING"},
+        Halt = {"...What is it doing?", "Confused", "WARNING"},
+        Eyes = {"Don't look at it.", "Suspicious", "WARNING"},
+        Dupe = {"Wait. Something is wrong with this door.", "Confused", "WARNING"},
+        Grumble = {"That thing is too close.", "Nervous", "WARNING"},
+        Giggle = {"I heard something laugh.", "Shocked", "WARNING"}
     }
 
     local reaction = reactions[name]
-    if not reaction then return end
+    if reaction then
+        self:React(reaction[1], reaction[2], 4, reaction[3])
+    end
+end
 
-    self:SetState(reaction[2], 2.5)
-    self:Say(reaction[1], reaction[2], 4)
+function Brain:OnEntityGone(name)
+    name = tostring(name)
+    if not self.ActiveEntity[name] then return end
+    self.ActiveEntity[name] = nil
+    if self:Cooldown("Gone:" .. name, 3) then
+        self:React("It's gone. Keep going.", "Relieved", 3, "SUCCESS")
+    end
 end
 
 function Brain:OnKey(object)
-    if not object then return end
+    if not object or not object.Parent then return end
+    local id = object:GetDebugId()
+    if self.SeenObjects[id] then return end
+    self.SeenObjects[id] = true
+
     self:Remember("Keys", object:GetFullName())
-    self:SetState("Yippe", 1.5)
-    self:Say("A key! Keep that.", "Yippe", 3)
+    self:React("A key! Keep that.", "Happy", 3, "SUCCESS")
 end
 
 function Brain:OnImportantObject(object)
-    if not object then return end
+    if not object or not object.Name then return end
     local name = normalize(object.Name)
+    local id = object:GetDebugId()
+    if self.SeenObjects[id] then return end
 
+    local item
     if string.find(name, "crucifix", 1, true) then
-        self:Remember("ImportantItems", "Crucifix")
-        self:Say("That's useful. Keep it.", "Cthinking", 3)
+        item = "Crucifix"
     elseif string.find(name, "lighter", 1, true) then
-        self:Remember("ImportantItems", "Lighter")
-        self:Say("Good. Light could matter later.", "Cthinking", 3)
+        item = "Lighter"
     end
+    if not item then return end
+
+    self.SeenObjects[id] = true
+    self:Remember("ImportantItems", item)
+    self:React(
+        item == "Crucifix" and "That's useful. Keep it." or "Good. Light could matter later.",
+        "Thinking", 3, "INFO"
+    )
 end
 
 function Brain:OnFlicker()
-    local now = os.clock()
-    if self.LastEvent.Flicker and now - self.LastEvent.Flicker < 5 then
-        return
-    end
-
-    self.LastEvent.Flicker = now
-    self.FlickerToken += 1
-    self:SetState("nervous", 2)
-    self:Say("The lights are flickering...", "nervous", 3)
+    if not self:Cooldown("Flicker", 5) then return end
+    self:React("The lights are flickering...", "Nervous", 3, "WARNING")
 end
 
 function Brain:OnHide()
     self:Remember("Hides", os.clock())
-    if math.random(1, 3) == 1 then
-        self:SetState("nervous", 2)
-        self:Say("Good. Stay hidden.", "nervous", 3)
+    if self:Cooldown("Hide", 4) then
+        self:React("Good. Stay hidden.", "Hiding", 3)
     end
 end
 
 function Brain:OnDamage()
-    self:SetState("uhoh", 2)
-    self:Say("Ow. Are you okay?", "uhoh", 3)
+    if not self:Cooldown("Damage", 3) then return end
+    self:React("OW! Are you okay?!", "Hurt", 3, "ERROR")
 end
 
 function Brain:ScanObject(object)
     if not object or not object.Name then return end
     local name = normalize(object.Name)
 
-    if string.find(name, "key", 1, true) then
-        -- Avoid repeatedly treating every Key-related descendant as a pickup.
-        if object:IsA("Tool") or object:IsA("Model") or object:IsA("BasePart") then
-            self:OnKey(object)
-        end
+    if string.find(name, "key", 1, true) and
+        (object:IsA("Tool") or object:IsA("Model") or object:IsA("BasePart")) then
+        self:OnKey(object)
         return
     end
 
@@ -197,80 +243,78 @@ end
 
 function Brain:WatchFlicker(object)
     if not object or not object:IsA("Light") then return end
-
     local last = object.Enabled
-    local connection
-    connection = object:GetPropertyChangedSignal("Enabled"):Connect(function()
+    table.insert(self.Connections, object:GetPropertyChangedSignal("Enabled"):Connect(function()
         local current = object.Enabled
-        if last == true and current == false then
-            self:OnFlicker()
-        end
+        if last and not current then self:OnFlicker() end
         last = current
-    end)
+    end))
+end
 
-    table.insert(self.Connections, connection)
+function Brain:WatchHideObject(object)
+    if not object or not object.Name then return end
+    local n = normalize(object.Name)
+    if n ~= "wardrobe" and n ~= "closet" and n ~= "hiding" and n ~= "hide" then return end
+
+    local touched = object:FindFirstChildWhichIsA("BasePart", true)
+    if not touched then return end
+
+    table.insert(self.Connections, touched.Touched:Connect(function(hit)
+        local player = Players.LocalPlayer
+        if player and player.Character and hit:IsDescendantOf(player.Character) then
+            self:OnHide()
+        end
+    end))
 end
 
 function Brain:Start(Hub)
     local Settings = Hub:GetService("Settings")
-    if Settings and Settings:GetFeatureEnabled(self.Name, true) == false then
-        return
-    end
+    if Settings and Settings:GetFeatureEnabled(self.Name, true) == false then return end
 
     self.Hub = Hub
     self.Connections = {}
-    self.Memory = {
-        Rooms = {},
-        Entities = {},
-        Keys = {},
-        ImportantItems = {},
-        Hides = {}
-    }
+    self.Memory = {Rooms = {}, Entities = {}, Keys = {}, ImportantItems = {}, Hides = {}}
     self.LastEvent = {}
     self.LastRoom = nil
     self.TapIndex = 0
+    self.SeenObjects = {}
+    self.ActiveEntity = {}
 
     local Doors = Hub:GetService("Doors")
     if Doors and Doors.RoomChanged then
         table.insert(self.Connections, Doors.RoomChanged.Event:Connect(function(room)
             self:OnRoom(room)
         end))
+        if Doors.CurrentRoom then self:OnRoom(Doors.CurrentRoom) end
     end
 
     local UI = mainUI(self)
-    if UI then
-        UI.CompanionBrain = self
-    end
+    if UI then UI.CompanionBrain = self end
 
     table.insert(self.Connections, Workspace.DescendantAdded:Connect(function(object)
         self:ScanObject(object)
         self:WatchFlicker(object)
+        self:WatchHideObject(object)
     end))
 
     for _, object in ipairs(Workspace:GetDescendants()) do
+        self:ScanObject(object)
         self:WatchFlicker(object)
+        self:WatchHideObject(object)
     end
 
     local player = Players.LocalPlayer
     if player then
-        local character = player.Character
-        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-
         local function hookCharacter(char)
             local hum = char:WaitForChild("Humanoid", 5)
-            if hum then
-                table.insert(self.Connections, hum.HealthChanged:Connect(function(health)
-                    if health < hum.MaxHealth then
-                        self:OnDamage()
-                    end
-                end))
-            end
+            if not hum then return end
+            local lastHealth = hum.Health
+            table.insert(self.Connections, hum.HealthChanged:Connect(function(health)
+                if health < lastHealth then self:OnDamage() end
+                lastHealth = health
+            end))
         end
-
-        if character then
-            hookCharacter(character)
-        end
-
+        if player.Character then hookCharacter(player.Character) end
         table.insert(self.Connections, player.CharacterAdded:Connect(hookCharacter))
     end
 
@@ -281,7 +325,6 @@ function Brain:Stop()
     for _, connection in ipairs(self.Connections or {}) do
         pcall(function() connection:Disconnect() end)
     end
-
     self.Connections = {}
     self.Hub = nil
     self.Memory = {}
