@@ -389,6 +389,26 @@ function Brain:OnDamage()
     self:React("OW! Are you okay?!", "Hurt", 3, "ERROR")
 end
 
+function Brain:OnPlayerDeath(player)
+    if not player or player == Players.LocalPlayer then return end
+    if not self:Cooldown("PlayerDeath", 2.5) then return end
+
+    local lines = {
+        {"Welp. They didn't make it.", "Thinking", "INFO"},
+        {"And there goes another one.", "Suspicious", "WARNING"},
+        {"Ouch. That looked expensive.", "Confused", "INFO"},
+        {"Well... that's one way to leave.", "Thinking", "INFO"},
+        {"Should we mention that they died?", "Suspicious", "INFO"},
+        {"I was going to say good luck.", "Confused", "INFO"},
+        {"Okay. Maybe don't do whatever THEY did.", "Nervous", "WARNING"},
+        {"Noted. Definitely avoiding that.", "Thinking", "WARNING"}
+    }
+
+    local pick = lines[math.random(1, #lines)]
+    self:Remember("Deaths", player.Name)
+    self:React(pick[1], pick[2], 3.5, pick[3])
+end
+
 function Brain:ScanObject(object)
     if not object or not object.Name then return end
     local name = normalize(object.Name)
@@ -483,7 +503,50 @@ function Brain:Start(Hub)
     end
 
     local player = Players.LocalPlayer
+
+    -- React when another player dies. Local-player deaths are ignored here
+    -- because OnDamage handles our own damage reactions.
+    table.insert(self.Connections, Players.PlayerAdded:Connect(function(other)
+        if other == player then return end
+        table.insert(self.Connections, other.CharacterAdded:Connect(function(char)
+            local hum = char:WaitForChild("Humanoid", 5)
+            if not hum then return end
+            table.insert(self.Connections, hum.Died:Connect(function()
+                self:OnPlayerDeath(other)
+            end))
+        end))
+
+        if other.Character then
+            local hum = other.Character:FindFirstChildOfClass("Humanoid")
+            if hum then
+                table.insert(self.Connections, hum.Died:Connect(function()
+                    self:OnPlayerDeath(other)
+                end))
+            end
+        end
+    end))
+
     if player then
+        for _, other in ipairs(Players:GetPlayers()) do
+            if other ~= player then
+                if other.Character then
+                    local hum = other.Character:FindFirstChildOfClass("Humanoid")
+                    if hum then
+                        table.insert(self.Connections, hum.Died:Connect(function()
+                            self:OnPlayerDeath(other)
+                        end))
+                    end
+                end
+                table.insert(self.Connections, other.CharacterAdded:Connect(function(char)
+                    local hum = char:WaitForChild("Humanoid", 5)
+                    if not hum then return end
+                    table.insert(self.Connections, hum.Died:Connect(function()
+                        self:OnPlayerDeath(other)
+                    end))
+                end))
+            end
+        end
+
         local function hookCharacter(char)
             local hum = char:WaitForChild("Humanoid", 5)
             if not hum then return end
