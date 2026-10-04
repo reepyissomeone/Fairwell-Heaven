@@ -6,6 +6,7 @@ return {
 	-- UI
 	"features/LoadingScreen.lua",
 	"features/MainUI.lua",
+	"features/UIRepair.lua",
 
 	-- DOORS
 	"features/doors/DoorsCore.lua",
