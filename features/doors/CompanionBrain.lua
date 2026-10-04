@@ -44,6 +44,16 @@ end
 function Brain:Remember(kind, value)
     self.Memory[kind] = self.Memory[kind] or {}
     table.insert(self.Memory[kind], value)
+    return #self.Memory[kind]
+end
+
+function Brain:HasRemembered(kind, value)
+    for _, remembered in ipairs(self.Memory[kind] or {}) do
+        if remembered == value then
+            return true
+        end
+    end
+    return false
 end
 
 function Brain:Expression(name)
@@ -119,8 +129,14 @@ function Brain:OnRoom(room)
     local number = tonumber(room.Name)
     if not number or self.LastRoom == number then return end
 
+    local wasVisited = self:HasRemembered("Rooms", number)
     self.LastRoom = number
     self:Remember("Rooms", number)
+
+    if wasVisited and self:Cooldown("RoomRepeat:" .. tostring(number), 8) then
+        self:React("We've been here before...", "Suspicious", 3, "INFO")
+        return
+    end
 
     local lower = normalize(room.Name)
     if lower == "seek" or lower == "seekroom" or lower == "seekroom" then
@@ -250,14 +266,31 @@ function Brain:OnImportantObject(object)
         item = "Crucifix"
     elseif string.find(name, "lighter", 1, true) then
         item = "Lighter"
+    elseif string.find(name, "vitamin", 1, true) or string.find(name, "pills", 1, true) then
+        item = "Vitamins"
+    elseif string.find(name, "bandage", 1, true) or string.find(name, "band aid", 1, true) then
+        item = "Bandage"
+    elseif string.find(name, "lockpick", 1, true) then
+        item = "Lockpick"
     end
     if not item then return end
 
     self.SeenObjects[id] = true
     self:Remember("ImportantItems", item)
+
+    local messages = {
+        Crucifix = "That's useful. Keep it.",
+        Lighter = "Good. Light could matter later.",
+        Vitamins = "Vitamins. That could help us move faster.",
+        Bandage = "A bandage. Keep it in case we need it.",
+        Lockpick = "A lockpick. That could save us some trouble."
+    }
+
     self:React(
-        item == "Crucifix" and "That's useful. Keep it." or "Good. Light could matter later.",
-        "Thinking", 3, "INFO"
+        messages[item] or "That could be useful.",
+        "Thinking",
+        3,
+        "INFO"
     )
 end
 
