@@ -1,11 +1,11 @@
 --// FAIRWELL HEAVEN
 --// Core Hub
---// Version 0.4.3
+--// Version 0.5.0
 
 local Hub = {}
 
 Hub.Name = "Fairwell Heaven"
-Hub.Version = "0.4.3"
+Hub.Version = "0.5.0"
 Hub.Prefix = "[Fairwell Heaven]"
 
 Hub.Features = {}
@@ -697,5 +697,6 @@ function Hub:GetFeatureCount()
 end
 
 Hub:Log(Hub.Name .. " v" .. Hub.Version .. " initialized.")
+Hub:Log("DEV UPDATE:", "Developer infrastructure upgraded. Added runtime diagnostics, copyable reports, live logs, and a safer workflow for adding/testing future features.")
 
 return Hub
