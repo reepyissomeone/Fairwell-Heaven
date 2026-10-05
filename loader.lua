@@ -261,6 +261,12 @@ local function StartAutoUpdater(Hub)
 
 	local UPDATE_INTERVAL = GetUpdateInterval()
 
+	local Settings = Hub:GetService("Settings")
+	if Settings and Settings:Get("AutoUpdateEnabled", true) == false then
+		Hub:Log("Auto-updater disabled in Settings.")
+		return
+	end
+
 	if type(task) ~= "table"
 		or type(task.spawn) ~= "function"
 		or type(task.wait) ~= "function" then
