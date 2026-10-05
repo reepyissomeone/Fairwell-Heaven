@@ -8,7 +8,6 @@ return {
     "features/MainUI.lua",
     "features/UIRepair.lua",
     "features/DeveloperDiagnostics.lua",
-    "features/DevLab.lua",
 
     -- DOORS
     "features/doors/DoorsCore.lua",
