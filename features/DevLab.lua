@@ -13,7 +13,7 @@ local DevLab = {
     -- Set this through getgenv() on your own runtime.
     -- Never put API keys, Discord tokens, admin keys, or passwords here.
     OwnerUserId = 0,
-    Endpoint = "",
+    Endpoint = "https://fully-varies-style-fortune.trycloudflare.com",
     SessionToken = ""
 }
 
