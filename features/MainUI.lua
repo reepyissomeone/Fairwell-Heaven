@@ -318,37 +318,162 @@ end
 
 function MainUI:_BuildGame(Hub)
     local page=self.Pages.Game
-    local info=text(page,"Info","Fairwell found something for you.",UDim2.fromOffset(6,43),UDim2.new(1,-12,0,35),10,GREY)
+
+    local info=text(page,"Info","FAIRWELL HUNT • Tap Fairwell before he moves.",UDim2.fromOffset(6,43),UDim2.new(1,-12,0,34),9,GREY)
     info.TextWrapped=true
 
-    local play=make("TextButton",{
-        Name="Play",
-        Position=UDim2.fromOffset(6,90),
-        Size=UDim2.new(1,-12,0,54),
+    local scoreLabel=text(page,"Score","SCORE 0",UDim2.fromOffset(8,79),UDim2.new(0.5,-10,0,28),11,WHITE)
+    scoreLabel.Font=Enum.Font.GothamBold
+
+    local timeLabel=text(page,"Time","20s",UDim2.new(0.5,0,0,79),UDim2.new(0.5,-8,0,28),11,BLUE)
+    timeLabel.TextXAlignment=Enum.TextXAlignment.Right
+    timeLabel.Font=Enum.Font.GothamBold
+
+    local board=make("Frame",{
+        Name="HuntBoard",
+        Position=UDim2.fromOffset(6,112),
+        Size=UDim2.new(1,-12,0,250),
         BackgroundColor3=PANEL,
         BorderSizePixel=0,
-        Text="PLAY FAIRWELL",
+        ClipsDescendants=true
+    },page)
+    round(board,9); line(board,BLUE,0.3)
+
+    local boardTitle=text(board,"BoardTitle","READY?",UDim2.new(0,0,0,8),UDim2.new(1,0,0,25),10,GREY)
+    boardTitle.TextXAlignment=Enum.TextXAlignment.Center
+    boardTitle.Font=Enum.Font.GothamBold
+
+    local target=make("TextButton",{
+        Name="Target",
+        Size=UDim2.fromOffset(58,58),
+        BackgroundColor3=BLUE,
+        BorderSizePixel=0,
+        Text="FW",
         TextColor3=WHITE,
-        TextSize=13,
+        TextSize=14,
+        Font=Enum.Font.GothamBold,
+        AutoButtonColor=false,
+        Visible=false,
+        Active=true
+    },board)
+    round(target,29); line(target,WHITE,0.25)
+
+    local result=text(page,"Result","Find Fairwell as fast as you can.",UDim2.fromOffset(6,369),UDim2.new(1,-12,0,32),9,GREY)
+    result.TextXAlignment=Enum.TextXAlignment.Center
+    result.TextWrapped=true
+
+    local start=make("TextButton",{
+        Name="StartGame",
+        Position=UDim2.fromOffset(6,408),
+        Size=UDim2.new(1,-12,0,50),
+        BackgroundColor3=PANEL,
+        BorderSizePixel=0,
+        Text="START ROUND",
+        TextColor3=WHITE,
+        TextSize=12,
         Font=Enum.Font.GothamBold,
         Active=true
     },page)
-    round(play,7); line(play,BLUE,0.35)
+    round(start,7); line(start,BLUE,0.35)
 
-    local status=text(page,"Status","Tap PLAY FAIRWELL.",UDim2.fromOffset(6,151),UDim2.new(1,-12,0,30),9,GREY)
-    status.TextXAlignment=Enum.TextXAlignment.Center
+    local roundActive=false
+    local score=0
+    local combo=0
+    local remaining=20
+    local moveToken=0
+    local targetConnection
 
-    local taps=0
-    tap(play,function()
-        taps+=1
-        if taps>=3 then
-            taps=0
-            status.Text="You found it. Feature ideas can be sent to Fairwell Chat."
-            status.TextColor3=GREEN
-        else
-            status.Text="..."
+    local function cleanupTarget()
+        if targetConnection then
+            pcall(function() targetConnection:Disconnect() end)
+            targetConnection=nil
         end
+        target.Visible=false
+    end
+
+    local function moveTarget()
+        if not roundActive then return end
+        moveToken+=1
+        local token=moveToken
+        local maxX=math.max(8,board.AbsoluteSize.X-66)
+        local maxY=math.max(42,board.AbsoluteSize.Y-66)
+        target.Position=UDim2.fromOffset(
+            math.random(8,maxX),
+            math.random(42,maxY)
+        )
+        target.Visible=true
+        boardTitle.Text="FIND HIM!"
+        task.delay(1.05,function()
+            if roundActive and token==moveToken then
+                target.Visible=false
+                task.delay(0.12,function()
+                    if roundActive and token==moveToken then
+                        moveTarget()
+                    end
+                end)
+            end
+        end)
+    end
+
+    local function finish()
+        if not roundActive then return end
+        roundActive=false
+        cleanupTarget()
+        start.Text="PLAY AGAIN"
+        boardTitle.Text="ROUND OVER"
+        result.Text="Final score: "..tostring(score).."  •  Best combo: "..tostring(combo)
+        result.TextColor3=score>0 and GREEN or GREY
+        timeLabel.Text="0s"
+    end
+
+    targetConnection=tap(target,function()
+        if not roundActive then return end
+        score+=1
+        combo+=1
+        scoreLabel.Text="SCORE "..tostring(score).."  •  COMBO "..tostring(combo)
+        result.Text=combo>=5 and "Fairwell can't keep up!" or "Got him!"
+        result.TextColor3=GREEN
+        moveTarget()
     end)
+    -- tap() creates the connection immediately; cleanup only disconnects it
+    -- when the game is stopped/rebuilt.
+    if targetConnection==nil then
+        targetConnection=true
+    end
+
+    tap(start,function()
+        if roundActive then return end
+
+        roundActive=true
+        score=0
+        combo=0
+        remaining=20
+        scoreLabel.Text="SCORE 0"
+        timeLabel.Text="20s"
+        result.Text="Go!"
+        result.TextColor3=WHITE
+        start.Text="ROUND ACTIVE"
+        boardTitle.Text="FIND HIM!"
+
+        moveTarget()
+
+        task.spawn(function()
+            while roundActive and remaining>0 do
+                task.wait(1)
+                if not roundActive then break end
+                remaining-=1
+                timeLabel.Text=tostring(remaining).."s"
+            end
+            if roundActive then finish() end
+        end)
+    end)
+
+    self.GameCleanup=function()
+        roundActive=false
+        moveToken+=1
+        cleanupTarget()
+        self.GameCleanup=nil
+    end
 end
 
 function MainUI:_BuildChat(Hub)
