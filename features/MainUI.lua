@@ -178,6 +178,59 @@ function MainUI:_AddFeature(page,Hub,info,index)
     end)
 end
 
+function MainUI:_FeatureCategory(info)
+    if not info then return "OTHER" end
+    local name=tostring(info.Name or ""):lower()
+
+    if name:find("automation") or name:find("auto") then
+        return "AUTOMATION"
+    end
+
+    if name:find("entity") or name:find("threat") or name:find("dupe") then
+        return "ENTITIES & THREATS"
+    end
+
+    if name:find("companion") or name:find("thought") then
+        return "FAIRWELL AI"
+    end
+
+    if name:find("puzzle") or name:find("objective") or name:find("interactable") or name:find("room intel") then
+        return "OBJECTIVES & PUZZLES"
+    end
+
+    if name:find("highlight") or name:find("esp") or name:find("radar")
+        or name:find("direction") or name:find("hiding spot")
+        or name:find("marker") or name:find("item label")
+        or name:find("fullbright") or name:find("camera") then
+        return "VISUAL & ESP"
+    end
+
+    if name:find("jumpscare") then
+        return "AUDIO & COMFORT"
+    end
+
+    if name:find("room") or name:find("door") then
+        return "CORE & TRACKING"
+    end
+
+    return "OTHER DOORS"
+end
+
+function MainUI:_AddCategoryHeader(parent,category,index)
+    local header=make("TextLabel",{
+        Name="Category_"..tostring(index),
+        Size=UDim2.new(1,-4,0,28),
+        BackgroundTransparency=1,
+        Text="  "..tostring(category),
+        TextColor3=BLUE,
+        TextSize=9,
+        Font=Enum.Font.GothamBold,
+        TextXAlignment=Enum.TextXAlignment.Left,
+        LayoutOrder=index
+    },parent)
+    return header
+end
+
 function MainUI:_BuildMain(Hub)
     local page=self.Pages.Main
     for _,c in ipairs(page:GetChildren()) do
@@ -209,10 +262,55 @@ function MainUI:_BuildMain(Hub)
         SortOrder=Enum.SortOrder.LayoutOrder
     },holder)
 
-    for i,info in ipairs(self:_FeatureList(Hub)) do
-        self:_AddFeature(holder,Hub,info,i)
+    local groups={}
+    local order={
+        "CORE & TRACKING",
+        "ENTITIES & THREATS",
+        "OBJECTIVES & PUZZLES",
+        "AUTOMATION",
+        "VISUAL & ESP",
+        "AUDIO & COMFORT",
+        "FAIRWELL AI",
+        "OTHER DOORS"
+    }
+
+    for _,info in ipairs(self:_FeatureList(Hub)) do
+        if isDoors(info) then
+            local category=self:_FeatureCategory(info)
+            groups[category]=groups[category] or {}
+            table.insert(groups[category],info)
+        elseif not isDoors(info) then
+            local category="GENERAL"
+            groups[category]=groups[category] or {}
+            table.insert(groups[category],info)
+        end
+    end
+
+    local layoutIndex=0
+    for _,category in ipairs(order) do
+        local list=groups[category]
+        if list and #list>0 then
+            layoutIndex+=1
+            self:_AddCategoryHeader(holder,category,layoutIndex)
+            table.sort(list,function(a,b) return tostring(a.Name):lower()<tostring(b.Name):lower() end)
+            for _,info in ipairs(list) do
+                layoutIndex+=1
+                self:_AddFeature(holder,Hub,info,layoutIndex)
+            end
+        end
+    end
+
+    if groups.GENERAL and #groups.GENERAL>0 then
+        layoutIndex+=1
+        self:_AddCategoryHeader(holder,"GENERAL",layoutIndex)
+        table.sort(groups.GENERAL,function(a,b) return tostring(a.Name):lower()<tostring(b.Name):lower() end)
+        for _,info in ipairs(groups.GENERAL) do
+            layoutIndex+=1
+            self:_AddFeature(holder,Hub,info,layoutIndex)
+        end
     end
 end
+
 
 function MainUI:_BuildLogs(Hub)
     local page=self.Pages.Logs
@@ -247,29 +345,69 @@ end
 
 function MainUI:_BuildVisual(Hub)
     local page=self.Pages.Visual
+    for _,c in ipairs(page:GetChildren()) do
+        if c.Name=="VisualContainer" then c:Destroy() end
+    end
+
     local holder=make("Frame",{
         Name="VisualContainer",
         Position=UDim2.fromOffset(6,43),
         Size=UDim2.new(1,-12,0,10),
         BackgroundTransparency=1
     },page)
-    make("UIListLayout",{Padding=UDim.new(0,6),SortOrder=Enum.SortOrder.LayoutOrder},holder)
+    make("UIListLayout",{
+        Padding=UDim.new(0,6),
+        SortOrder=Enum.SortOrder.LayoutOrder
+    },holder)
 
-    local i=0
+    local doorsVisual={}
+    local generalVisual={}
+
     for _,info in ipairs(self:_FeatureList(Hub)) do
-        if not isDoors(info) then
-            i+=1
-            self:_AddFeature(holder,Hub,info,i)
+        if isDoors(info) then
+            if self:_FeatureCategory(info)=="VISUAL & ESP" then
+                table.insert(doorsVisual,info)
+            end
+        else
+            table.insert(generalVisual,info)
         end
     end
-    if i==0 then
-        text(holder,"Empty","No visual/general features are available.",UDim2.fromOffset(4,4),UDim2.new(1,-8,0,30),10,GREY)
+
+    local index=0
+
+    if #doorsVisual>0 then
+        index+=1
+        self:_AddCategoryHeader(holder,"DOORS • VISUAL & ESP",index)
+        table.sort(doorsVisual,function(a,b) return tostring(a.Name):lower()<tostring(b.Name):lower() end)
+        for _,info in ipairs(doorsVisual) do
+            index+=1
+            self:_AddFeature(holder,Hub,info,index)
+        end
+    end
+
+    if #generalVisual>0 then
+        index+=1
+        self:_AddCategoryHeader(holder,"GENERAL VISUAL",index)
+        table.sort(generalVisual,function(a,b) return tostring(a.Name):lower()<tostring(b.Name):lower() end)
+        for _,info in ipairs(generalVisual) do
+            index+=1
+            self:_AddFeature(holder,Hub,info,index)
+        end
+    end
+
+    if index==0 then
+        text(holder,"Empty","No visual features are available.",UDim2.fromOffset(4,4),UDim2.new(1,-8,0,30),10,GREY)
     end
 end
 
+
 function MainUI:_BuildSettings(Hub)
     local page=self.Pages.Settings
-    local info=text(page,"Info","Tap a feature to enable or disable it. Settings are saved automatically.",UDim2.fromOffset(6,43),UDim2.new(1,-12,0,38),9,GREY)
+    for _,c in ipairs(page:GetChildren()) do
+        if c.Name=="SettingsInfo" or c.Name=="SettingsContainer" then c:Destroy() end
+    end
+
+    local info=text(page,"SettingsInfo","Tap a feature to enable or disable it. Settings are saved automatically.",UDim2.fromOffset(6,43),UDim2.new(1,-12,0,38),9,GREY)
     info.TextWrapped=true
 
     local holder=make("Frame",{
@@ -278,10 +416,42 @@ function MainUI:_BuildSettings(Hub)
         Size=UDim2.new(1,-12,0,10),
         BackgroundTransparency=1
     },page)
-    make("UIListLayout",{Padding=UDim.new(0,6),SortOrder=Enum.SortOrder.LayoutOrder},holder)
+    make("UIListLayout",{
+        Padding=UDim.new(0,6),
+        SortOrder=Enum.SortOrder.LayoutOrder
+    },holder)
 
-    for i,feature in ipairs(self:_FeatureList(Hub)) do
-        self:_AddFeature(holder,Hub,feature,i)
+    local groups={}
+    local order={
+        "CORE & TRACKING",
+        "ENTITIES & THREATS",
+        "OBJECTIVES & PUZZLES",
+        "AUTOMATION",
+        "VISUAL & ESP",
+        "AUDIO & COMFORT",
+        "FAIRWELL AI",
+        "OTHER DOORS",
+        "GENERAL"
+    }
+
+    for _,feature in ipairs(self:_FeatureList(Hub)) do
+        local category=isDoors(feature) and self:_FeatureCategory(feature) or "GENERAL"
+        groups[category]=groups[category] or {}
+        table.insert(groups[category],feature)
+    end
+
+    local index=0
+    for _,category in ipairs(order) do
+        local list=groups[category]
+        if list and #list>0 then
+            index+=1
+            self:_AddCategoryHeader(holder,category,index)
+            table.sort(list,function(a,b) return tostring(a.Name):lower()<tostring(b.Name):lower() end)
+            for _,feature in ipairs(list) do
+                index+=1
+                self:_AddFeature(holder,Hub,feature,index)
+            end
+        end
     end
 
     local reset=make("TextButton",{
@@ -307,6 +477,7 @@ function MainUI:_BuildSettings(Hub)
         self:_BuildSettings(Hub)
     end)
 end
+
 
 function MainUI:_RevealGameTab()
     if self.GameRevealed then return end
