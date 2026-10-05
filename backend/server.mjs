@@ -8,9 +8,12 @@ const PORT = Number(process.env.PORT || 8787);
 const ADMIN_KEY = process.env.DEV_LAB_ADMIN_KEY || "";
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || "";
 const GITHUB_REPO = process.env.GITHUB_REPO || "reepyissomeone/Fairwell-Heaven";
+const BOT_SUGGESTION_URL = process.env.BOT_SUGGESTION_URL || "";
+const BOT_SUGGESTION_SECRET = process.env.BOT_SUGGESTION_SECRET || "";
 
 if (!ADMIN_KEY) console.warn("Dev Bridge: DEV_LAB_ADMIN_KEY is not configured.");
 if (!GITHUB_TOKEN) console.warn("Dev Bridge: GITHUB_TOKEN is not configured.");
+if (!BOT_SUGGESTION_URL) console.warn("Dev Bridge: BOT_SUGGESTION_URL is not configured.");
 
 let passwordHash = "";
 const sessions = new Map();
@@ -81,6 +84,44 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+async function sendToDiscordBot({ featureName, description, target, hubVersion, timestamp, userId }) {
+  if (!BOT_SUGGESTION_URL || !BOT_SUGGESTION_SECRET) {
+    return { configured: false };
+  }
+
+  const response = await fetch(BOT_SUGGESTION_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Fairwell-Bridge-Secret": BOT_SUGGESTION_SECRET,
+      "User-Agent": "Fairwell-Dev-Bridge"
+    },
+    body: JSON.stringify({
+      name: featureName,
+      description,
+      target,
+      hubVersion,
+      timestamp,
+      robloxUserId: userId || null
+    })
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      typeof data.error === "string"
+        ? data.error
+        : `Discord bot returned HTTP ${response.status}.`
+    );
+  }
+
+  return {
+    configured: true,
+    suggestionPath: data.suggestionPath || null
+  };
+}
+
 async function createGitHubIssue({ featureName, description, target, hubVersion, timestamp }) {
   if (!GITHUB_TOKEN) {
     return { configured: false };
@@ -135,7 +176,8 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     service: "Fairwell Dev Bridge",
-    githubConfigured: Boolean(GITHUB_TOKEN)
+    githubConfigured: Boolean(GITHUB_TOKEN),
+    botConfigured: Boolean(BOT_SUGGESTION_URL && BOT_SUGGESTION_SECRET)
   });
 });
 
@@ -207,6 +249,7 @@ app.post("/request", requireSession, async (req, res) => {
   }
 
   const timestamp = new Date().toISOString();
+  const userId = body.UserId || body.UserID || null;
 
   console.log(JSON.stringify({
     type: "feature-request",
@@ -218,28 +261,28 @@ app.post("/request", requireSession, async (req, res) => {
   }));
 
   try {
-    const github = await createGitHubIssue({
+    const bot = await sendToDiscordBot({
       featureName,
       description,
       target,
       hubVersion,
-      timestamp
+      timestamp,
+      userId
     });
 
-    if (!github.configured) {
-      return res.status(202).json({
-        accepted: true,
-        github: false,
-        message: "Feature request accepted by the Dev Bridge. GitHub is not configured yet."
+    if (!bot.configured) {
+      return res.status(503).json({
+        accepted: false,
+        bot: false,
+        error: "Discord suggestion bot is not configured on the Dev Bridge."
       });
     }
 
     return res.status(202).json({
       accepted: true,
-      github: true,
-      issueNumber: github.issueNumber,
-      issueUrl: github.issueUrl,
-      message: "Feature request accepted and added to GitHub."
+      bot: true,
+      suggestionPath: bot.suggestionPath,
+      message: "Feature request sent to the Fairwell Discord bot."
     });
   } catch (error) {
     console.error("GitHub issue creation failed:", error);
