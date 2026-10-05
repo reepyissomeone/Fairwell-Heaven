@@ -386,6 +386,74 @@ function MainUI:_BuildGame(Hub)
     local moveToken=0
     local highScore=0
     local roundNumber=0
+    local keyUnlocked=false
+    local startTapCount=0
+    local firstStartTapAt=0
+    local devConsoleUnlocked=false
+
+    local devSecret=make("Frame",{
+        Name="SecretFeatureConsole",
+        Position=UDim2.fromOffset(6,468),
+        Size=UDim2.new(1,-12,0,300),
+        BackgroundColor3=PANEL,
+        BorderSizePixel=0,
+        Visible=false
+    },page)
+    round(devSecret,8); line(devSecret,GREEN,0.2)
+
+    local devHeader=text(devSecret,"Header","PRIVATE FEATURE ADDING",UDim2.fromOffset(10,8),UDim2.new(1,-20,0,26),12,GREEN)
+    devHeader.Font=Enum.Font.GothamBold
+
+    local devName=make("TextBox",{
+        Name="FeatureName",Position=UDim2.fromOffset(10,44),Size=UDim2.new(1,-20,0,40),
+        BackgroundColor3=BACKGROUND,BorderSizePixel=0,Text="",PlaceholderText="Feature name",
+        TextColor3=WHITE,PlaceholderColor3=GREY,TextSize=10,Font=Enum.Font.Gotham,ClearTextOnFocus=false
+    },devSecret)
+    round(devName,6); line(devName,BLUE,0.5)
+
+    local devRequest=make("TextBox",{
+        Name="FeatureRequest",Position=UDim2.fromOffset(10,92),Size=UDim2.new(1,-20,0,110),
+        BackgroundColor3=BACKGROUND,BorderSizePixel=0,Text="",
+        PlaceholderText="Type what you want Fairwell to add...",
+        TextColor3=WHITE,PlaceholderColor3=GREY,TextSize=10,Font=Enum.Font.Gotham,
+        TextWrapped=true,TextXAlignment=Enum.TextXAlignment.Left,TextYAlignment=Enum.TextYAlignment.Top,
+        ClearTextOnFocus=false,MultiLine=true
+    },devSecret)
+    round(devRequest,6); line(devRequest,BLUE,0.5)
+
+    local devSave=make("TextButton",{
+        Name="SaveFeature",Position=UDim2.fromOffset(10,214),Size=UDim2.new(1,-20,0,40),
+        BackgroundColor3=GREEN,BorderSizePixel=0,Text="ADD FEATURE IDEA",
+        TextColor3=WHITE,TextSize=10,Font=Enum.Font.GothamBold,Active=true
+    },devSecret)
+    round(devSave,6)
+
+    local devSaved=text(devSecret,"Saved","Unlocked with the Hunt key + 10 score.",UDim2.fromOffset(10,260),UDim2.new(1,-20,0,30),9,GREY)
+    devSaved.TextWrapped=true
+
+    local function showDevConsoleIfEligible()
+        if devConsoleUnlocked or not keyUnlocked or score < 10 then return end
+        devConsoleUnlocked=true
+        devSecret.Visible=true
+        devSaved.Text="KEY ACCEPTED • Feature adding unlocked."
+        devSaved.TextColor3=GREEN
+        result.Text="KEY ACCEPTED. PRIVATE FEATURE ADDING UNLOCKED."
+        result.TextColor3=GREEN
+    end
+
+    tap(devSave,function()
+        local name=trim(devName.Text)
+        local request=trim(devRequest.Text)
+        if name=="" or request=="" then
+            devSaved.Text="Enter a feature name and description first."
+            devSaved.TextColor3=RED
+            return
+        end
+        devSaved.Text="FEATURE IDEA ADDED: "..name
+        devSaved.TextColor3=GREEN
+        devName.Text=""
+        devRequest.Text=""
+    end)
 
     local function cleanupTarget()
         target.Visible=false
@@ -423,6 +491,7 @@ function MainUI:_BuildGame(Hub)
                 result.Text="No lives left. Score: "..tostring(score).." • Misses: "..tostring(misses)
                 result.TextColor3=RED
                 start.Text="TRY AGAIN"
+                showDevConsoleIfEligible()
                 return
             end
 
@@ -454,6 +523,7 @@ function MainUI:_BuildGame(Hub)
         boardTitle.Text="ROUND OVER"
         start.Text="PLAY AGAIN"
         timeLabel.Text="0s  •  ❤ "..tostring(lives)
+        showDevConsoleIfEligible()
     end
 
     tap(target,function()
@@ -474,6 +544,22 @@ function MainUI:_BuildGame(Hub)
     end)
 
     tap(start,function()
+        local now=os.clock()
+        if firstStartTapAt==0 or now-firstStartTapAt>1 then
+            firstStartTapAt=now
+            startTapCount=1
+        else
+            startTapCount+=1
+        end
+
+        if startTapCount>=5 and not keyUnlocked then
+            keyUnlocked=true
+            startTapCount=0
+            firstStartTapAt=0
+            result.Text="KEY UNLOCKED. Now finish with 10+ score."
+            result.TextColor3=GREEN
+        end
+
         if roundActive then return end
 
         roundNumber+=1
@@ -509,6 +595,7 @@ function MainUI:_BuildGame(Hub)
     self.GameCleanup=function()
         roundActive=false
         cleanupTarget()
+        if devSecret and devSecret.Parent then devSecret.Visible=false end
         self.GameCleanup=nil
     end
 end
