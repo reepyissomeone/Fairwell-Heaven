@@ -449,10 +449,45 @@ function MainUI:_BuildGame(Hub)
             devSaved.TextColor3=RED
             return
         end
-        devSaved.Text="FEATURE IDEA ADDED: "..name
-        devSaved.TextColor3=GREEN
-        devName.Text=""
-        devRequest.Text=""
+
+        -- Send the same two fields used by /suggest to the Discord
+        -- suggestion channel. The Discord bot can turn this into the
+        -- normal GitHub suggestions/<feature>.md entry.
+        local webhook="https://discord.com/api/webhooks/1556506568592195627/-1JabXG5oVpmlBHGjnd1d8onLf9yLlJ7TWc6dilVxfMDBqdkevv383Sjo-cGiouIeJl8"
+
+        local payload={
+            username="Fairwell Suggestion",
+            content="/suggest\nFeature: "..name.."\nDescription: "..request.."\nSubmitted by: "..Players.LocalPlayer.Name
+        }
+
+        local ok=false
+        local errMessage="Unknown error"
+
+        pcall(function()
+            local HttpService=game:GetService("HttpService")
+            local response=HttpService:RequestAsync({
+                Url=webhook,
+                Method="POST",
+                Headers={["Content-Type"]="application/json"},
+                Body=HttpService:JSONEncode(payload)
+            })
+            ok=response and response.Success==true
+            if not ok then
+                errMessage="Discord webhook returned HTTP "..tostring(response and response.StatusCode or "?")
+            end
+        end)
+
+        if ok then
+            devSaved.Text="SUGGESTION SENT: "..name
+            devSaved.TextColor3=GREEN
+            result.Text="FEATURE IDEA SENT TO FAIRWELL."
+            result.TextColor3=GREEN
+            devName.Text=""
+            devRequest.Text=""
+        else
+            devSaved.Text="Could not send suggestion: "..errMessage
+            devSaved.TextColor3=RED
+        end
     end)
 
     local function cleanupTarget()
