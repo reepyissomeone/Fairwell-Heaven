@@ -457,7 +457,7 @@ function MainUI:_BuildGame(Hub)
 
         local payload={
             username="Fairwell Suggestion",
-            content="/suggest\nFeature: "..name.."\nDescription: "..request.."\nSubmitted by: "..Players.LocalPlayer.Name
+            content="/suggest\nname: "..name.."\ndescription: "..request.."\nsubmitted by: "..Players.LocalPlayer.Name
         }
 
         local ok=false
