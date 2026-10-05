@@ -31,6 +31,10 @@ local ENTITY_ALIASES = {
 
 local COOLDOWN = 1.25
 
+local function Normalize(value)
+    return string.lower(tostring(value or "")):gsub("[%s_%-%./]", "")
+end
+
 local function IsScreechObject(object)
     if not object then return false end
 
@@ -41,10 +45,6 @@ local function IsScreechObject(object)
 
     local model = object:FindFirstAncestorOfClass("Model")
     return model and Normalize(model.Name) == "screech"
-end
-
-local function Normalize(value)
-    return string.lower(tostring(value or "")):gsub("[%s_%-%./]", "")
 end
 
 local function IsEntityName(value)
