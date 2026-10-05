@@ -709,6 +709,18 @@ function Brain:OnRoom(room)
     local number = tonumber(room.Name)
     if not number or self.LastRoom == number then return end
 
+    -- Door 50 has a dedicated RoomTracker line with the exact wording.
+    -- Do not let the general room-AI produce a second message here.
+    if number == 50 then
+        self.LastRoom = number
+        self.RoomVisits[number] = (self.RoomVisits[number] or 0) + 1
+        self:RememberRoomEvent(number, "Entered")
+        if not self:HasRemembered("Rooms", number) then
+            self:Remember("Rooms", number)
+        end
+        return
+    end
+
     local visits = (self.RoomVisits[number] or 0) + 1
     self.RoomVisits[number] = visits
 
