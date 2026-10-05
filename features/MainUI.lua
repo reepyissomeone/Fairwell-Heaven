@@ -1085,7 +1085,9 @@ end
 
 function MainUI:Start(Hub)
     if self.Gui and self.Gui.Parent then
-        self:SetVisible(true)
+        -- A feature restart must never undo the user's FW visibility choice.
+        -- Preserve the current state instead of forcing the menu back on.
+        self:SetVisible(self.MenuVisible ~= false)
         return true
     end
 
