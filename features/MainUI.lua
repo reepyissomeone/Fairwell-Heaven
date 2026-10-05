@@ -407,7 +407,17 @@ function MainUI:_BuildSettings(Hub)
         if c.Name=="SettingsInfo" or c.Name=="SettingsContainer" then c:Destroy() end
     end
 
-    local info=text(page,"SettingsInfo","Tap a feature to enable or disable it. Settings are saved automatically.",UDim2.fromOffset(6,43),UDim2.new(1,-12,0,38),9,GREY)
+    local settings=Hub:GetService("Settings")
+
+    local info=text(
+        page,
+        "SettingsInfo",
+        "Fairwell Heaven settings. These control the hub itself, not individual features.",
+        UDim2.fromOffset(6,43),
+        UDim2.new(1,-12,0,38),
+        9,
+        GREY
+    )
     info.TextWrapped=true
 
     local holder=make("Frame",{
@@ -416,65 +426,165 @@ function MainUI:_BuildSettings(Hub)
         Size=UDim2.new(1,-12,0,10),
         BackgroundTransparency=1
     },page)
-    make("UIListLayout",{
-        Padding=UDim.new(0,6),
+
+    local layout=make("UIListLayout",{
+        Padding=UDim.new(0,7),
         SortOrder=Enum.SortOrder.LayoutOrder
     },holder)
 
-    local groups={}
-    local order={
-        "CORE & TRACKING",
-        "ENTITIES & THREATS",
-        "OBJECTIVES & PUZZLES",
-        "AUTOMATION",
-        "VISUAL & ESP",
-        "AUDIO & COMFORT",
-        "FAIRWELL AI",
-        "OTHER DOORS",
-        "GENERAL"
-    }
-
-    for _,feature in ipairs(self:_FeatureList(Hub)) do
-        local category=isDoors(feature) and self:_FeatureCategory(feature) or "GENERAL"
-        groups[category]=groups[category] or {}
-        table.insert(groups[category],feature)
+    local function getSetting(key,default)
+        if settings and type(settings.Get)=="function" then
+            return settings:Get(key,default)
+        end
+        return default
     end
 
-    local index=0
-    for _,category in ipairs(order) do
-        local list=groups[category]
-        if list and #list>0 then
-            index+=1
-            self:_AddCategoryHeader(holder,category,index)
-            table.sort(list,function(a,b) return tostring(a.Name):lower()<tostring(b.Name):lower() end)
-            for _,feature in ipairs(list) do
-                index+=1
-                self:_AddFeature(holder,Hub,feature,index)
-            end
+    local function setSetting(key,value)
+        if settings and type(settings.Set)=="function" then
+            settings:Set(key,value,true)
         end
     end
 
-    local reset=make("TextButton",{
-        Name="Reset",
-        Size=UDim2.new(1,0,0,44),
+    local function addToggle(name,description,key,default,order)
+        local button=make("TextButton",{
+            Name=featureId(name),
+            Size=UDim2.new(1,0,0,58),
+            BackgroundColor3=PANEL,
+            BorderSizePixel=0,
+            Text="",
+            LayoutOrder=order,
+            Active=true
+        },holder)
+        round(button,7)
+        local border=line(button,BLUE,0.6)
+
+        local title=text(button,"Name",name,UDim2.fromOffset(12,5),UDim2.new(1,-90,0,22),10,WHITE)
+        title.Font=Enum.Font.GothamBold
+
+        local desc=text(button,"Description",description,UDim2.fromOffset(12,27),UDim2.new(1,-90,0,22),8,GREY)
+        desc.TextTruncate=Enum.TextTruncate.AtEnd
+
+        local state=text(button,"State","OFF",UDim2.new(1,-70,0,0),UDim2.fromOffset(58,58),9,GREY)
+        state.TextXAlignment=Enum.TextXAlignment.Center
+
+        local value=getSetting(key,default)==true
+
+        local function refresh()
+            state.Text=value and "ON" or "OFF"
+            state.TextColor3=value and GREEN or GREY
+            border.Color=value and GREEN or BLUE
+        end
+
+        refresh()
+
+        tap(button,function()
+            value=not value
+            setSetting(key,value)
+            refresh()
+
+            if key=="CompanionEnabled" and self.CompanionGui then
+                self.CompanionGui.Enabled=value
+            elseif key=="NotificationsEnabled" then
+                Hub.SuppressTopNotifications=not value
+            end
+        end)
+    end
+
+    addToggle(
+        "FAIRWELL COMPANION",
+        "Show or hide the Fairwell companion.",
+        "CompanionEnabled",
+        true,
+        1
+    )
+
+    addToggle(
+        "NOTIFICATIONS",
+        "Allow Fairwell Heaven notifications.",
+        "NotificationsEnabled",
+        true,
+        2
+    )
+
+    addToggle(
+        "AUTO UPDATE",
+        "Allow Fairwell Heaven to check for GitHub updates.",
+        "AutoUpdateEnabled",
+        true,
+        3
+    )
+
+    local intervalBox=make("TextBox",{
+        Name="UpdateInterval",
+        Size=UDim2.new(1,0,0,58),
+        BackgroundColor3=PANEL,
+        BorderSizePixel=0,
+        Text=tostring(getSetting("UpdateInterval",120)),
+        PlaceholderText="Update interval in seconds",
+        TextColor3=WHITE,
+        PlaceholderColor3=GREY,
+        TextSize=10,
+        Font=Enum.Font.Gotham,
+        ClearTextOnFocus=false,
+        LayoutOrder=4
+    },holder)
+    round(intervalBox,7)
+    line(intervalBox,BLUE,0.6)
+
+    local intervalTitle=text(
+        intervalBox,
+        "Title",
+        "UPDATE INTERVAL",
+        UDim2.fromOffset(12,5),
+        UDim2.new(1,-24,0,20),
+        10,
+        WHITE
+    )
+    intervalTitle.Font=Enum.Font.GothamBold
+
+    intervalBox.TextXAlignment=Enum.TextXAlignment.Right
+    intervalBox.TextYAlignment=Enum.TextYAlignment.Bottom
+    intervalBox.TextSize=9
+    intervalBox.TextColor3=GREY
+    intervalBox.Text= tostring(getSetting("UpdateInterval",120)).."s"
+
+    intervalBox.FocusLost:Connect(function()
+        local raw=tostring(intervalBox.Text or ""):match("%d+")
+        local value=tonumber(raw)
+
+        if not value then
+            value=120
+        end
+
+        value=math.clamp(math.floor(value),5,3600)
+        setSetting("UpdateInterval",value)
+        intervalBox.Text=tostring(value).."s"
+    end)
+
+    local unload=make("TextButton",{
+        Name="Unload",
+        Size=UDim2.new(1,0,0,48),
         BackgroundColor3=RED,
         BorderSizePixel=0,
-        Text="RESET FEATURE SETTINGS",
+        Text="UNLOAD FAIRWELL HEAVEN",
         TextColor3=WHITE,
         TextSize=10,
         Font=Enum.Font.GothamBold,
         LayoutOrder=999,
         Active=true
     },holder)
-    round(reset,7)
-    tap(reset,function()
-        local settings=Hub:GetService("Settings")
-        if settings and type(settings.Reset)=="function" then pcall(function() settings:Reset() end) end
-        for _,f in ipairs(Hub:GetFeatures()) do
-            if not HIDDEN_FEATURES[f.Name] then pcall(function() Hub:Disable(f.Name) end) end
+    round(unload,7)
+    tap(unload,function()
+        local hub=Hub
+        if hub and type(hub.Shutdown)=="function" then
+            hub:Shutdown()
+        else
+            self:Stop()
         end
-        Hub:Notify("SETTINGS","Feature settings reset.","SUCCESS",3)
-        self:_BuildSettings(Hub)
+    end)
+
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        holder.Size=UDim2.new(1,-12,0,layout.AbsoluteContentSize.Y)
     end)
 end
 
