@@ -381,13 +381,7 @@ function MainUI:_BuildGame(Hub)
     local combo=0
     local remaining=20
     local moveToken=0
-    local targetConnection
-
     local function cleanupTarget()
-        if targetConnection then
-            pcall(function() targetConnection:Disconnect() end)
-            targetConnection=nil
-        end
         target.Visible=false
     end
 
@@ -426,7 +420,7 @@ function MainUI:_BuildGame(Hub)
         timeLabel.Text="0s"
     end
 
-    targetConnection=tap(target,function()
+    tap(target,function()
         if not roundActive then return end
         score+=1
         combo+=1
@@ -435,12 +429,6 @@ function MainUI:_BuildGame(Hub)
         result.TextColor3=GREEN
         moveTarget()
     end)
-    -- tap() creates the connection immediately; cleanup only disconnects it
-    -- when the game is stopped/rebuilt.
-    if targetConnection==nil then
-        targetConnection=true
-    end
-
     tap(start,function()
         if roundActive then return end
 
@@ -1311,6 +1299,7 @@ function MainUI:Stop()
     end
     if self.RefreshLoop then pcall(task.cancel,self.RefreshLoop) end
     self.RefreshLoop=nil
+    if self.GameCleanup then pcall(self.GameCleanup) end
     if self.NotificationConnection then self.NotificationConnection:Disconnect() end
     self.NotificationConnection=nil
 
