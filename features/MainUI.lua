@@ -319,13 +319,13 @@ end
 function MainUI:_BuildGame(Hub)
     local page=self.Pages.Game
 
-    local info=text(page,"Info","FAIRWELL HUNT • Tap Fairwell before he moves.",UDim2.fromOffset(6,43),UDim2.new(1,-12,0,34),9,GREY)
+    local info=text(page,"Info","FAIRWELL HUNT • Catch him. Build a streak. Don't miss.",UDim2.fromOffset(6,43),UDim2.new(1,-12,0,34),9,GREY)
     info.TextWrapped=true
 
-    local scoreLabel=text(page,"Score","SCORE 0",UDim2.fromOffset(8,79),UDim2.new(0.5,-10,0,28),11,WHITE)
+    local scoreLabel=text(page,"Score","SCORE 0",UDim2.fromOffset(8,79),UDim2.new(0.55,-10,0,28),11,WHITE)
     scoreLabel.Font=Enum.Font.GothamBold
 
-    local timeLabel=text(page,"Time","20s",UDim2.new(0.5,0,0,79),UDim2.new(0.5,-8,0,28),11,BLUE)
+    local timeLabel=text(page,"Time","20s",UDim2.new(0.55,0,0,79),UDim2.new(0.45,-8,0,28),11,BLUE)
     timeLabel.TextXAlignment=Enum.TextXAlignment.Right
     timeLabel.Font=Enum.Font.GothamBold
 
@@ -379,10 +379,22 @@ function MainUI:_BuildGame(Hub)
     local roundActive=false
     local score=0
     local combo=0
+    local bestCombo=0
+    local misses=0
+    local lives=3
     local remaining=20
     local moveToken=0
+    local highScore=0
+    local roundNumber=0
+
     local function cleanupTarget()
         target.Visible=false
+        moveToken+=1
+    end
+
+    local function updateHud()
+        scoreLabel.Text="SCORE "..tostring(score).."  •  x"..tostring(math.max(1,math.min(5,1+math.floor(combo/5))))
+        timeLabel.Text=tostring(remaining).."s  •  ❤ "..tostring(lives)
     end
 
     local function moveTarget()
@@ -391,21 +403,34 @@ function MainUI:_BuildGame(Hub)
         local token=moveToken
         local maxX=math.max(8,board.AbsoluteSize.X-66)
         local maxY=math.max(42,board.AbsoluteSize.Y-66)
-        target.Position=UDim2.fromOffset(
-            math.random(8,maxX),
-            math.random(42,maxY)
-        )
+        target.Position=UDim2.fromOffset(math.random(8,maxX),math.random(42,maxY))
         target.Visible=true
         boardTitle.Text="FIND HIM!"
-        task.delay(1.05,function()
-            if roundActive and token==moveToken then
-                target.Visible=false
-                task.delay(0.12,function()
-                    if roundActive and token==moveToken then
-                        moveTarget()
-                    end
-                end)
+
+        local speed=math.max(0.42,1.05-(roundNumber*0.08)-math.min(combo*0.012,0.3))
+        task.delay(speed,function()
+            if not roundActive or token~=moveToken then return end
+
+            target.Visible=false
+            combo=0
+            misses+=1
+            lives-=1
+            updateHud()
+
+            if lives<=0 then
+                roundActive=false
+                boardTitle.Text="CAUGHT YOU."
+                result.Text="No lives left. Score: "..tostring(score).." • Misses: "..tostring(misses)
+                result.TextColor3=RED
+                start.Text="TRY AGAIN"
+                return
             end
+
+            result.Text="Too slow! Stay sharp."
+            result.TextColor3=GREY
+            task.delay(0.08,function()
+                if roundActive and token==moveToken then moveTarget() end
+            end)
         end)
     end
 
@@ -413,32 +438,57 @@ function MainUI:_BuildGame(Hub)
         if not roundActive then return end
         roundActive=false
         cleanupTarget()
-        start.Text="PLAY AGAIN"
+
+        if score>highScore then
+            highScore=score
+            result.Text="NEW HIGH SCORE! "..tostring(score)
+            result.TextColor3=GREEN
+        elseif combo>=8 then
+            result.Text="PERFECT STREAK! x"..tostring(combo).." • Score "..tostring(score)
+            result.TextColor3=GREEN
+        else
+            result.Text="Final score: "..tostring(score).." • Best combo: "..tostring(bestCombo)
+            result.TextColor3=score>0 and GREEN or GREY
+        end
+
         boardTitle.Text="ROUND OVER"
-        result.Text="Final score: "..tostring(score).."  •  Best combo: "..tostring(combo)
-        result.TextColor3=score>0 and GREEN or GREY
-        timeLabel.Text="0s"
+        start.Text="PLAY AGAIN"
+        timeLabel.Text="0s  •  ❤ "..tostring(lives)
     end
 
     tap(target,function()
         if not roundActive then return end
-        score+=1
+
+        score+=math.max(1,math.min(5,1+math.floor(combo/5)))
         combo+=1
-        scoreLabel.Text="SCORE "..tostring(score).."  •  COMBO "..tostring(combo)
-        result.Text=combo>=5 and "Fairwell can't keep up!" or "Got him!"
+        if combo>bestCombo then bestCombo=combo end
+
+        if combo%5==0 then
+            result.Text="STREAK x"..tostring(combo).."! Bonus multiplier!"
+        else
+            result.Text=combo>=8 and "Fairwell is panicking!" or "Got him!"
+        end
         result.TextColor3=GREEN
+        updateHud()
         moveTarget()
     end)
+
     tap(start,function()
         if roundActive then return end
 
+        roundNumber+=1
         roundActive=true
         score=0
         combo=0
+        bestCombo=0
+        misses=0
+        lives=3
         remaining=20
-        scoreLabel.Text="SCORE 0"
-        timeLabel.Text="20s"
-        result.Text="Go!"
+        moveToken+=1
+
+        scoreLabel.Text="SCORE 0  •  x1"
+        timeLabel.Text="20s  •  ❤ 3"
+        result.Text=roundNumber==1 and "Go!" or "Round "..tostring(roundNumber)..". Faster this time."
         result.TextColor3=WHITE
         start.Text="ROUND ACTIVE"
         boardTitle.Text="FIND HIM!"
@@ -450,7 +500,7 @@ function MainUI:_BuildGame(Hub)
                 task.wait(1)
                 if not roundActive then break end
                 remaining-=1
-                timeLabel.Text=tostring(remaining).."s"
+                updateHud()
             end
             if roundActive then finish() end
         end)
@@ -458,7 +508,6 @@ function MainUI:_BuildGame(Hub)
 
     self.GameCleanup=function()
         roundActive=false
-        moveToken+=1
         cleanupTarget()
         self.GameCleanup=nil
     end
