@@ -16,4 +16,4 @@ Discord ID: `1520857558649409597`
 
 ## Status
 
-Pending
+Approved
