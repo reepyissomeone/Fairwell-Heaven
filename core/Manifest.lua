@@ -34,6 +34,8 @@ return {
     "features/doors/JumpscareMute.lua",
     "features/doors/DoorDirectionHUD.lua",
     "features/doors/InteractableRadar.lua",
+    "features/doors/SmartObjectiveTracker.lua",
+    "features/doors/HidingSpotFinder.lua",
 
     -- Visual
     "features/visual/FPSCounter.lua",
