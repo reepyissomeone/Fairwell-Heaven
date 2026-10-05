@@ -22,6 +22,10 @@ return {
     "features/doors/PuzzleHelpers.lua",
     "features/doors/RoomHUD.lua",
     "features/doors/RoomTimer.lua",
+    -- Start Fairwell's brain before entity detectors so initial/live
+    -- entities are not detected before the companion is listening.
+    "features/doors/ThoughtAI.lua",
+    "features/doors/CompanionBrain.lua",
     "features/doors/EntityNotifications.lua",
     "features/doors/RoomIntel.lua",
     "features/doors/DoorStatus.lua",
@@ -31,8 +35,6 @@ return {
     "features/doors/JumpscareMute.lua",
     "features/doors/DoorDirectionHUD.lua",
     "features/doors/InteractableRadar.lua",
-    "features/doors/ThoughtAI.lua",
-    "features/doors/CompanionBrain.lua",
 
     -- Visual
     "features/visual/FPSCounter.lua",
